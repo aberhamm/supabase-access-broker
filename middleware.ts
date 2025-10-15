@@ -53,9 +53,17 @@ export async function middleware(request: NextRequest) {
 
   // Check if user is claims_admin for protected routes
   if (user && !request.nextUrl.pathname.startsWith('/login')) {
-    const isAdmin = user.app_metadata?.claims_admin === true;
+    const isGlobalAdmin = user.app_metadata?.claims_admin === true;
 
-    if (!isAdmin && !request.nextUrl.pathname.startsWith('/access-denied')) {
+    // Check if user is admin for any app
+    const apps = user.app_metadata?.apps || {};
+    const isAppAdmin = Object.values(apps).some(
+      (app: any) => app?.admin === true
+    );
+
+    const hasAdminAccess = isGlobalAdmin || isAppAdmin;
+
+    if (!hasAdminAccess && !request.nextUrl.pathname.startsWith('/access-denied')) {
       const url = request.nextUrl.clone();
       url.pathname = '/access-denied';
       return NextResponse.redirect(url);

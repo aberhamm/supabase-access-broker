@@ -12,47 +12,38 @@ import {
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle } from 'lucide-react';
-import { deleteClaimAction } from '@/app/actions/claims';
+import { deleteRoleAction } from '@/app/actions/apps';
 import { toast } from 'sonner';
+import type { RoleConfig } from '@/types/claims';
 
-interface DeleteClaimDialogProps {
-  userId: string;
-  claimKey: string;
+interface DeleteRoleDialogProps {
+  role: RoleConfig;
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  appId?: string;
-  customAction?: (userId: string, claimKey: string) => Promise<{ error?: string | null; data?: unknown }>;
 }
 
-export function DeleteClaimDialog({
-  userId,
-  claimKey,
+export function DeleteRoleDialog({
+  role,
   open,
   onOpenChange,
-  appId,
-  customAction,
-}: DeleteClaimDialogProps) {
+}: DeleteRoleDialogProps) {
   const [loading, setLoading] = useState(false);
 
   const handleDelete = async () => {
     setLoading(true);
 
     try {
-      // Use custom action if provided (for app-specific claims), otherwise use default
-      const result = customAction
-        ? await customAction(userId, claimKey)
-        : await deleteClaimAction(userId, claimKey);
+      const result = await deleteRoleAction(role.id);
 
       if (result.error) {
         toast.error(result.error);
       } else {
-        const claimType = appId ? `app claim for ${appId}` : 'claim';
-        toast.success(`${claimType} "${claimKey}" deleted successfully`);
+        toast.success(`Role "${role.label}" deleted successfully`);
         onOpenChange(false);
       }
     } catch (error) {
       const err = error as { message?: string };
-      toast.error(err.message || 'Failed to delete claim');
+      toast.error(err.message || 'Failed to delete role');
     } finally {
       setLoading(false);
     }
@@ -62,19 +53,42 @@ export function DeleteClaimDialog({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>Delete Claim</DialogTitle>
+          <DialogTitle>Delete Role</DialogTitle>
           <DialogDescription>
-            Are you sure you want to delete this claim?
+            Are you sure you want to delete this role?
           </DialogDescription>
         </DialogHeader>
 
         <Alert variant="destructive">
           <AlertCircle className="h-4 w-4" />
           <AlertDescription>
-            This will permanently delete the claim <code className="rounded bg-muted px-1 py-0.5 text-foreground">{claimKey}</code> from this user&apos;s profile.
-            This action cannot be undone.
+            <strong>Warning:</strong> Deleting the role{' '}
+            <code className="rounded bg-muted px-1 py-0.5 text-foreground">
+              {role.label}
+            </code>{' '}
+            will affect any users currently assigned this role. This action cannot
+            be undone.
           </AlertDescription>
         </Alert>
+
+        <div className="rounded-lg border p-4 space-y-2">
+          <p className="text-sm font-medium">Role Details:</p>
+          <div className="space-y-1 text-sm">
+            <p>
+              <span className="text-muted-foreground">Name:</span>{' '}
+              <code className="rounded bg-muted px-1">{role.name}</code>
+            </p>
+            <p>
+              <span className="text-muted-foreground">Label:</span> {role.label}
+            </p>
+            {role.permissions.length > 0 && (
+              <p>
+                <span className="text-muted-foreground">Permissions:</span>{' '}
+                {role.permissions.join(', ')}
+              </p>
+            )}
+          </div>
+        </div>
 
         <DialogFooter>
           <Button
@@ -91,7 +105,7 @@ export function DeleteClaimDialog({
             onClick={handleDelete}
             disabled={loading}
           >
-            {loading ? 'Deleting...' : 'Delete'}
+            {loading ? 'Deleting...' : 'Delete Role'}
           </Button>
         </DialogFooter>
       </DialogContent>

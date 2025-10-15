@@ -6,10 +6,12 @@ import { UserStatsCards } from '@/components/users/UserStatsCards';
 import { UserActivityList } from '@/components/users/UserActivityList';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { DashboardNav } from '@/components/layout/DashboardNav';
 import Link from 'next/link';
-import { Users, LogOut } from 'lucide-react';
+import { Users, AppWindow } from 'lucide-react';
 import { redirect } from 'next/navigation';
 import { UserStats, User, ClaimDistribution } from '@/types/claims';
+import { isClaimsAdmin } from '@/lib/claims';
 
 async function getStats(): Promise<{
   stats: UserStats;
@@ -118,22 +120,17 @@ export default async function DashboardPage() {
   const { stats, recentUsers, claimDistribution } = await getStats();
   const email = await getUserEmail();
 
+  // Check if user is admin to show Apps link
+  const supabase = await createClient();
+  const { data: isAdmin } = await isClaimsAdmin(supabase);
+
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <div>
-            <h1 className="text-xl font-bold">Claims Admin Dashboard</h1>
-            <p className="text-sm text-muted-foreground">{email}</p>
-          </div>
-          <form action={handleLogout}>
-            <Button variant="ghost" size="sm" type="submit">
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign Out
-            </Button>
-          </form>
-        </div>
-      </header>
+      <DashboardNav
+        email={email}
+        logoutAction={handleLogout}
+        showApps={isAdmin || false}
+      />
 
       <main className="container mx-auto space-y-8 p-4 py-8">
         <div className="flex items-center justify-between">
@@ -143,12 +140,22 @@ export default async function DashboardPage() {
               Manage users and custom claims for your Supabase project
             </p>
           </div>
-          <Link href="/users">
-            <Button>
-              <Users className="mr-2 h-4 w-4" />
-              View All Users
-            </Button>
-          </Link>
+          <div className="flex gap-2">
+            {isAdmin && (
+              <Link href="/apps">
+                <Button variant="outline">
+                  <AppWindow className="mr-2 h-4 w-4" />
+                  Manage Apps
+                </Button>
+              </Link>
+            )}
+            <Link href="/users">
+              <Button>
+                <Users className="mr-2 h-4 w-4" />
+                View All Users
+              </Button>
+            </Link>
+          </div>
         </div>
 
         <UserStatsCards stats={stats} />

@@ -23,6 +23,8 @@ interface ClaimEditorProps {
   claimValue?: unknown;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  appId?: string;
+  customAction?: (userId: string, key: string, value: string) => Promise<{ error?: string | null; data?: unknown }>;
 }
 
 export function ClaimEditor({
@@ -31,6 +33,8 @@ export function ClaimEditor({
   claimValue,
   open,
   onOpenChange,
+  appId,
+  customAction,
 }: ClaimEditorProps) {
   const isEditing = !!claimKey;
   const [key, setKey] = useState(claimKey || '');
@@ -56,15 +60,19 @@ export function ClaimEditor({
     setLoading(true);
 
     try {
-      const result = await setClaimAction(userId, key, value);
+      // Use custom action if provided (for app-specific claims), otherwise use default
+      const result = customAction
+        ? await customAction(userId, key, value)
+        : await setClaimAction(userId, key, value);
 
       if (result.error) {
         toast.error(result.error);
       } else {
+        const claimType = appId ? `app claim for ${appId}` : 'claim';
         toast.success(
           isEditing
-            ? `Claim "${key}" updated successfully`
-            : `Claim "${key}" added successfully`
+            ? `${claimType} "${key}" updated successfully`
+            : `${claimType} "${key}" added successfully`
         );
         onOpenChange(false);
       }

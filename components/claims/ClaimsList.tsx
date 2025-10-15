@@ -14,6 +14,7 @@ import { Button } from '@/components/ui/button';
 import { Pencil, Trash2 } from 'lucide-react';
 import { ClaimEditor } from './ClaimEditor';
 import { DeleteClaimDialog } from './DeleteClaimDialog';
+import { Badge } from '@/components/ui/badge';
 
 interface ClaimsListProps {
   claims: Record<string, unknown>;
@@ -27,19 +28,19 @@ export function ClaimsList({ claims, userId }: ClaimsListProps) {
   } | null>(null);
   const [deletingClaim, setDeletingClaim] = useState<string | null>(null);
 
-  // Filter out system claims (provider, providers)
+  // Filter out system claims (provider, providers) and apps object (displayed separately)
   const claimEntries = claims
     ? Object.entries(claims).filter(
-        ([key]) => key !== 'provider' && key !== 'providers'
+        ([key]) => key !== 'provider' && key !== 'providers' && key !== 'apps'
       )
     : [];
 
   if (claimEntries.length === 0) {
     return (
       <div className="text-center py-8 text-muted-foreground">
-        <p>No custom claims set for this user</p>
+        <p>No global claims set for this user</p>
         <p className="text-xs mt-2">
-          System claims like &ldquo;provider&rdquo; are hidden
+          System claims like &ldquo;provider&rdquo; and app-scoped claims are displayed separately
         </p>
       </div>
     );
@@ -47,6 +48,12 @@ export function ClaimsList({ claims, userId }: ClaimsListProps) {
 
   return (
     <>
+      <div className="mb-4">
+        <Badge variant="secondary">Global Claims</Badge>
+        <p className="text-xs text-muted-foreground mt-1">
+          These claims are available across all applications
+        </p>
+      </div>
       <Table>
         <TableHeader>
           <TableRow>

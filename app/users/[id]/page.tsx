@@ -5,12 +5,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { ArrowLeft, LogOut } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { redirect } from 'next/navigation';
 import { ClaimsList } from '@/components/claims/ClaimsList';
 import { AddClaimButton } from '@/components/claims/AddClaimButton';
 import { ToggleAdminButton } from '@/components/users/ToggleAdminButton';
 import { CopyButton } from '@/components/users/CopyButton';
+import { AppAccessCard } from '@/components/apps/AppAccessCard';
+import { AppClaimsList } from '@/components/apps/AppClaimsList';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { DashboardNav } from '@/components/layout/DashboardNav';
+import { getApps } from '@/lib/apps-service';
+import { isClaimsAdmin } from '@/lib/claims';
 import { format } from 'date-fns';
 
 async function getUserEmail() {
@@ -61,23 +67,23 @@ export default async function UserDetailPage({
   // This is more reliable than calling the RPC function
   const claims = user.app_metadata || {};
   const isAdmin = user.app_metadata?.claims_admin === true;
+  const userApps = user.app_metadata?.apps || {};
+  const isGlobalAdmin = user.app_metadata?.claims_admin === true;
+
+  // Fetch available apps from service
+  const availableApps = await getApps();
+
+  // Check if user is admin to show Apps link
+  const supabaseClient = await createClient();
+  const { data: isAdminCheck } = await isClaimsAdmin(supabaseClient);
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b">
-        <div className="container mx-auto flex h-16 items-center justify-between px-4">
-          <div>
-            <h1 className="text-xl font-bold">Claims Admin Dashboard</h1>
-            <p className="text-sm text-muted-foreground">{email}</p>
-          </div>
-          <form action={handleLogout}>
-            <Button variant="ghost" size="sm" type="submit">
-              <LogOut className="mr-2 h-4 w-4" />
-              Sign Out
-            </Button>
-          </form>
-        </div>
-      </header>
+      <DashboardNav
+        email={email}
+        logoutAction={handleLogout}
+        showApps={isAdminCheck || false}
+      />
 
       <main className="container mx-auto space-y-8 p-4 py-8">
         <div className="flex items-center justify-between">
@@ -98,7 +104,7 @@ export default async function UserDetailPage({
         </div>
 
         <div className="grid gap-8 lg:grid-cols-3">
-          <div className="space-y-8 lg:col-span-1">
+          <div className="space-y-6 lg:col-span-1">
             <Card>
               <CardHeader>
                 <CardTitle>User Information</CardTitle>
@@ -191,15 +197,46 @@ export default async function UserDetailPage({
           </div>
 
           <div className="lg:col-span-2">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-4">
-                <CardTitle>Custom Claims</CardTitle>
-                <AddClaimButton userId={id} />
-              </CardHeader>
-              <CardContent>
-                <ClaimsList claims={claims} userId={id} />
-              </CardContent>
-            </Card>
+            <div className="space-y-6">
+              <AppAccessCard
+                userId={id}
+                userApps={userApps}
+                availableApps={availableApps}
+                isGlobalAdmin={isGlobalAdmin}
+              />
+
+              <Card>
+                <CardHeader>
+                  <CardTitle>Custom Claims</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <Tabs defaultValue="global" className="w-full">
+                    <TabsList className="grid w-full grid-cols-2">
+                      <TabsTrigger value="global">Global Claims</TabsTrigger>
+                      <TabsTrigger value="apps">
+                        App Claims
+                        {Object.keys(userApps).length > 0 && (
+                          <Badge variant="secondary" className="ml-2">
+                            {Object.keys(userApps).length}
+                          </Badge>
+                        )}
+                      </TabsTrigger>
+                    </TabsList>
+
+                    <TabsContent value="global" className="mt-6">
+                      <div className="flex justify-end mb-4">
+                        <AddClaimButton userId={id} />
+                      </div>
+                      <ClaimsList claims={claims} userId={id} />
+                    </TabsContent>
+
+                    <TabsContent value="apps" className="mt-6">
+                      <AppClaimsList userId={id} apps={userApps} />
+                    </TabsContent>
+                  </Tabs>
+                </CardContent>
+              </Card>
+            </div>
           </div>
         </div>
       </main>
