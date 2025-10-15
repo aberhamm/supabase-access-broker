@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { LogOut, LayoutDashboard, Users, AppWindow } from 'lucide-react';
+import { LogOut, LayoutDashboard, Users, AppWindow, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface DashboardNavProps {
@@ -38,6 +38,13 @@ export function DashboardNav({ email, logoutAction, showApps = true }: Dashboard
       active: pathname?.startsWith('/apps'),
     });
   }
+
+  navItems.push({
+    href: '/docs',
+    label: 'Docs',
+    icon: BookOpen,
+    active: pathname?.startsWith('/docs'),
+  });
 
   return (
     <header className="border-b bg-background">

@@ -237,6 +237,20 @@ Ensure:
   - What are custom claims and why use them?
   - How to use claims in SQL, JavaScript, and RLS policies
   - Best practices and troubleshooting
+- **[AUTHENTICATION_GUIDE.md](./AUTHENTICATION_GUIDE.md)** - Authentication setup ⭐
+  - Setting up Supabase Auth with sign up/sign in flows
+  - Automatic role assignment during user registration
+  - Route protection and middleware examples
+- **[APP_AUTH_INTEGRATION_GUIDE.md](./APP_AUTH_INTEGRATION_GUIDE.md)** - Integration patterns
+  - Self-service and invite-only sign up
+  - Multi-tenant applications
+  - Real-world integration examples
+- **[MULTI_APP_GUIDE.md](./MULTI_APP_GUIDE.md)** - Multi-app architecture
+  - Managing multiple applications with one auth system
+  - App-specific roles and permissions
+- **[AUTH_QUICK_REFERENCE.md](./AUTH_QUICK_REFERENCE.md)** - Authentication code snippets ⚡
+  - Copy-paste ready code for all auth tasks
+  - Quick reference for common patterns
 - **[QUICK_START.md](./QUICK_START.md)** - Get started in 5 minutes
 - **[SETUP.md](./SETUP.md)** - Detailed setup instructions
 - **[PROJECT_SUMMARY.md](./PROJECT_SUMMARY.md)** - Technical architecture overview
