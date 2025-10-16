@@ -20,6 +20,10 @@ interface CodeProps {
 }
 
 export function MarkdownRenderer({ content }: MarkdownRendererProps) {
+  // Remove the first h1 from content to avoid duplicate headers
+  // The title is already displayed above the markdown
+  const processedContent = content.replace(/^#\s+.+$/m, '');
+
   const components: Components = {
     code({ inline, className, children, ...props }: CodeProps) {
       const match = /language-(\w+)/.exec(className || '');
@@ -93,7 +97,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
         rehypePlugins={[rehypeRaw]}
         components={components}
       >
-        {content}
+        {processedContent}
       </ReactMarkdown>
     </div>
   );
