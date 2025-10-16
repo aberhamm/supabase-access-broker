@@ -21,19 +21,29 @@ export function TableOfContents({ content }: TableOfContentsProps) {
     // Extract headings from markdown
     const headingRegex = /^(#{1,4})\s+(.+)$/gm;
     const items: TOCItem[] = [];
+    const usedIds = new Set<string>();
     let match;
 
     while ((match = headingRegex.exec(content)) !== null) {
       const level = match[1].length;
       const text = match[2].replace(/\*\*/g, '').replace(/\*/g, '');
       // Create ID from text
-      const id = text
+      const baseId = text
         .toLowerCase()
         .replace(/[^\w\s-]/g, '')
         .replace(/\s+/g, '-');
 
+      // Ensure unique IDs by appending number if duplicate
+      let uniqueId = baseId;
+      let counter = 1;
+      while (usedIds.has(uniqueId)) {
+        uniqueId = `${baseId}-${counter}`;
+        counter++;
+      }
+      usedIds.add(uniqueId);
+
       if (level <= 3) { // Only show h1, h2, h3
-        items.push({ id, text, level });
+        items.push({ id: uniqueId, text, level });
       }
     }
 

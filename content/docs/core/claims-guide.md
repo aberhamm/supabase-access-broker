@@ -1,3 +1,11 @@
+---
+title: "Supabase Custom Claims Guide"
+description: "Complete guide to Supabase custom claims"
+category: "core"
+audience: "all"
+order: 1
+---
+
 # Supabase Custom Claims Guide
 
 ## What are Custom Claims?

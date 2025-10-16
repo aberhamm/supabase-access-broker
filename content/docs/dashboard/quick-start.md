@@ -1,3 +1,11 @@
+---
+title: "Quick Start"
+description: "Get started with the dashboard in 5 minutes"
+category: "dashboard"
+audience: "dashboard-admin"
+order: 1
+---
+
 # Quick Start Guide
 
 ## 🚀 Get Started in 5 Minutes

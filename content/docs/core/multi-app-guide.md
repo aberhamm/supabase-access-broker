@@ -1,3 +1,11 @@
+---
+title: "Multi-App Architecture Guide"
+description: "Managing multiple applications with one auth system"
+category: "core"
+audience: "all"
+order: 2
+---
+
 # Multi-App Claims Management Guide
 
 This guide explains how to use the multi-app claims system to manage user access across multiple applications using a single Supabase Auth instance.

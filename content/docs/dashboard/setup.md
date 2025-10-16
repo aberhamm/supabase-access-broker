@@ -1,3 +1,11 @@
+---
+title: "Setup Guide"
+description: "Detailed setup instructions for the dashboard"
+category: "dashboard"
+audience: "dashboard-admin"
+order: 2
+---
+
 # Setup Guide
 
 ## What You're Setting Up

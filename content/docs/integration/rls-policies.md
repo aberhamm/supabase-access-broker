@@ -1,3 +1,11 @@
+---
+title: "RLS Policies Guide"
+description: "Set up Row Level Security policies with custom claims"
+category: "integration"
+audience: "app-developer"
+order: 3
+---
+
 # Row Level Security (RLS) Policies Guide
 
 **Context:** This guide shows how to use custom claims with Supabase Row Level Security (RLS) policies to control database access at the row level. RLS policies leverage the claims stored in user JWT tokens for high-performance authorization without additional database queries.

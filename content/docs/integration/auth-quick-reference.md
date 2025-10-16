@@ -1,3 +1,11 @@
+---
+title: "Authentication Quick Reference"
+description: "Copy-paste ready code snippets"
+category: "integration"
+audience: "app-developer"
+order: 4
+---
+
 # Authentication Quick Reference
 
 **Context:** Quick copy-paste reference for common authentication tasks with Supabase Auth and custom claims. All snippets are production-ready and tested.

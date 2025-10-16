@@ -1,3 +1,11 @@
+---
+title: "App Authentication Integration Guide"
+description: "Advanced integration patterns for authentication"
+category: "integration"
+audience: "app-developer"
+order: 2
+---
+
 # App-Based Authentication Integration Guide
 
 **Context:** This guide is part of the Supabase Claims Admin Dashboard documentation. It provides practical, production-ready patterns for integrating app-based roles and permissions into your authentication flow.
