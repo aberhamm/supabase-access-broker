@@ -177,7 +177,44 @@ The editor validates JSON and shows the detected type.
 
 ## Deployment
 
-### Vercel (Recommended)
+### Docker (Recommended for Production)
+
+**Production-ready Docker configuration included!**
+
+#### Quick Start
+
+```bash
+# 1. Setup environment
+cp .env.docker.example .env.production
+
+# 2. Build and deploy
+docker-compose up -d
+
+# 3. Access at http://localhost:3000
+```
+
+#### Production with Nginx + SSL
+
+```bash
+# Deploy with nginx reverse proxy
+docker-compose -f docker-compose.prod.yml up -d
+
+# Access at http://localhost (or your domain)
+```
+
+**Documentation:**
+- [🚀 Quick Start Guide](./DOCKER_QUICK_START.md) - Get running in 5 minutes
+- [📚 Complete Deployment Guide](./DOCKER_DEPLOYMENT.md) - Full production setup with SSL, monitoring, and troubleshooting
+
+**Features:**
+- Multi-stage optimized builds
+- Nginx reverse proxy with SSL/TLS support
+- Health checks and monitoring
+- Security hardening
+- Easy updates and maintenance
+- Make commands for convenience
+
+### Vercel
 
 1. Push your code to GitHub
 2. Import the project in Vercel
@@ -191,7 +228,8 @@ This is a standard Next.js 14 app and can be deployed to any platform that suppo
 - Railway
 - Digital Ocean App Platform
 - AWS (Amplify, ECS, etc.)
-- Self-hosted with Docker
+- Fly.io
+- Render
 
 ## Technologies
 
