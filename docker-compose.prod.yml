@@ -1,5 +1,3 @@
-version: '3.8'
-
 # Production configuration with nginx reverse proxy
 services:
   # Next.js Application
@@ -60,5 +58,3 @@ services:
 networks:
   claims-network:
     driver: bridge
-
-

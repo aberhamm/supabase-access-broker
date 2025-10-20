@@ -13,7 +13,8 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 
 # Install dependencies
-RUN pnpm install --frozen-lockfile
+# Use --no-frozen-lockfile to allow pnpm to update if needed
+RUN pnpm install --no-frozen-lockfile
 
 # Builder stage
 FROM base AS builder
@@ -71,5 +72,3 @@ HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
 
 # Start the application
 CMD ["node", "server.js"]
-
-
