@@ -6,11 +6,19 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { DashboardNav } from '@/components/layout/DashboardNav';
 import { Badge } from '@/components/ui/badge';
-import { Plus, ArrowLeft } from 'lucide-react';
+import { Plus, Home } from 'lucide-react';
 import Link from 'next/link';
 import { redirect, notFound } from 'next/navigation';
 import { isClaimsAdmin } from '@/lib/claims';
 import { RolesManagementList } from '@/components/roles/RolesManagementList';
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbSeparator,
+  BreadcrumbPage,
+} from '@/components/ui/breadcrumb';
 
 async function getUserEmail() {
   const supabase = await createClient();
@@ -67,14 +75,28 @@ export default async function AppRolesPage({
       />
 
       <main className="container mx-auto space-y-8 p-4 py-8">
-        <div className="flex items-center gap-4">
-          <Link href="/apps">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Apps
-            </Button>
-          </Link>
-        </div>
+        {/* Breadcrumb */}
+        <Breadcrumb>
+          <BreadcrumbList>
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/">
+                <Home className="h-4 w-4" />
+              </BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink href="/apps">Apps</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbLink href={`/apps/${id}`}>{app.name}</BreadcrumbLink>
+            </BreadcrumbItem>
+            <BreadcrumbSeparator />
+            <BreadcrumbItem>
+              <BreadcrumbPage>Roles</BreadcrumbPage>
+            </BreadcrumbItem>
+          </BreadcrumbList>
+        </Breadcrumb>
 
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-3">

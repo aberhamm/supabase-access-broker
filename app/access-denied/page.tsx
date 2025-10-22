@@ -11,50 +11,135 @@ import {
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
-import { AlertCircle } from 'lucide-react';
+import { AlertCircle, RefreshCw, Copy } from 'lucide-react';
+import { useEffect, useState } from 'react';
+import { toast } from 'sonner';
 
 export default function AccessDeniedPage() {
   const router = useRouter();
   const supabase = createClient();
+  const [userInfo, setUserInfo] = useState<any>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function loadUserInfo() {
+      const { data: { user } } = await supabase.auth.getUser();
+      console.log('🚫 [ACCESS DENIED] Current user:', user);
+      console.log('🚫 [ACCESS DENIED] User ID:', user?.id);
+      console.log('🚫 [ACCESS DENIED] User email:', user?.email);
+      console.log('🚫 [ACCESS DENIED] App metadata:', JSON.stringify(user?.app_metadata, null, 2));
+      setUserInfo(user);
+      setLoading(false);
+    }
+    loadUserInfo();
+  }, []);
 
   const handleLogout = async () => {
+    console.log('🚪 [ACCESS DENIED] Logging out...');
     await supabase.auth.signOut();
     router.push('/login');
   };
 
+  const copyUserId = () => {
+    if (userInfo?.id) {
+      navigator.clipboard.writeText(userInfo.id);
+      toast.success('User ID copied to clipboard');
+    }
+  };
+
+  const copySqlCommand = () => {
+    if (userInfo?.id) {
+      const sql = `UPDATE auth.users SET raw_app_meta_data = raw_app_meta_data || '{"claims_admin": true}'::jsonb WHERE id = '${userInfo.id}'::uuid;`;
+      navigator.clipboard.writeText(sql);
+      toast.success('SQL command copied to clipboard');
+    }
+  };
+
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader>
-          <CardTitle className="text-2xl font-bold text-destructive">
-            Access Denied
-          </CardTitle>
-          <CardDescription>
-            You do not have permission to access this application
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <Alert variant="destructive">
-            <AlertCircle className="h-4 w-4" />
-            <AlertDescription>
-              This application requires the <code className="rounded bg-muted px-1 py-0.5">claims_admin</code> claim to be set to <code className="rounded bg-muted px-1 py-0.5">true</code> in your user profile.
-            </AlertDescription>
-          </Alert>
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              To gain access, please contact your system administrator to have
-              the claims_admin claim added to your account.
-            </p>
-            <p className="text-sm text-muted-foreground">
-              If you believe this is an error, try logging out and back in to
-              refresh your session.
-            </p>
-          </div>
-          <Button onClick={handleLogout} variant="outline" className="w-full">
-            Sign Out
-          </Button>
-        </CardContent>
-      </Card>
+      <div className="w-full max-w-2xl space-y-4">
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-2xl font-bold text-destructive">
+              Access Denied
+            </CardTitle>
+            <CardDescription>
+              You do not have permission to access this application
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>
+                This application requires the <code className="rounded bg-muted px-1 py-0.5">claims_admin</code> claim to be set to <code className="rounded bg-muted px-1 py-0.5">true</code> in your user profile.
+              </AlertDescription>
+            </Alert>
+
+            {!loading && userInfo && (
+              <div className="space-y-4">
+                <div className="bg-muted p-4 rounded-lg space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">Your User ID:</p>
+                    <Button onClick={copyUserId} variant="ghost" size="sm">
+                      <Copy className="h-4 w-4 mr-1" />
+                      Copy
+                    </Button>
+                  </div>
+                  <code className="text-xs block break-all">{userInfo.id}</code>
+                </div>
+
+                <div className="bg-muted p-4 rounded-lg space-y-2">
+                  <p className="text-sm font-medium">Your Email:</p>
+                  <code className="text-xs block">{userInfo.email}</code>
+                </div>
+
+                <div className="bg-muted p-4 rounded-lg space-y-2">
+                  <p className="text-sm font-medium">Your Current Claims:</p>
+                  <pre className="text-xs overflow-auto max-h-32 bg-background p-2 rounded border">
+                    {JSON.stringify(userInfo.app_metadata || {}, null, 2)}
+                  </pre>
+                </div>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <p className="text-sm font-medium">How to fix this:</p>
+              <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
+                <li>Go to your Supabase dashboard → SQL Editor</li>
+                <li>Run the SQL command below (or click to copy)</li>
+                <li>Come back here and click "Refresh Session"</li>
+              </ol>
+            </div>
+
+            {userInfo && (
+              <div className="bg-muted p-4 rounded-lg space-y-2">
+                <div className="flex items-center justify-between">
+                  <p className="text-sm font-medium">SQL Command:</p>
+                  <Button onClick={copySqlCommand} variant="ghost" size="sm">
+                    <Copy className="h-4 w-4 mr-1" />
+                    Copy
+                  </Button>
+                </div>
+                <pre className="text-xs overflow-auto bg-background p-2 rounded border">
+{`UPDATE auth.users
+SET raw_app_meta_data = raw_app_meta_data || '{"claims_admin": true}'::jsonb
+WHERE id = '${userInfo.id}'::uuid;`}
+                </pre>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              <Button onClick={() => router.push('/refresh-session')} className="flex-1">
+                <RefreshCw className="h-4 w-4 mr-2" />
+                Refresh Session
+              </Button>
+              <Button onClick={handleLogout} variant="outline" className="flex-1">
+                Sign Out
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 }

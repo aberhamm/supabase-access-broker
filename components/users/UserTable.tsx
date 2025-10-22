@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import {
   Table,
   TableBody,
@@ -24,16 +24,22 @@ interface UserTableProps {
 export function UserTable({ users }: UserTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
 
-  const filteredUsers = users.filter((user) =>
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  // Memoize filtered users to avoid unnecessary recalculations
+  const filteredUsers = useMemo(() => {
+    if (!searchTerm) return users;
+    const lowerSearch = searchTerm.toLowerCase();
+    return users.filter((user) =>
+      user.email.toLowerCase().includes(lowerSearch)
+    );
+  }, [users, searchTerm]);
 
-  const getClaimsCount = (user: User) => {
+  // Memoize the claims count function
+  const getClaimsCount = useCallback((user: User) => {
     if (!user.app_metadata) return 0;
     return Object.keys(user.app_metadata).filter(
       (key) => key !== 'provider' && key !== 'providers'
     ).length;
-  };
+  }, []);
 
   return (
     <div className="space-y-4">

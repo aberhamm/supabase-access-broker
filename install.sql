@@ -555,4 +555,55 @@ BEGIN
 END;
 $$;
 
+-- Paginated user listing for performance
+CREATE OR REPLACE FUNCTION get_users_paginated(
+  page_size integer DEFAULT 50,
+  page_offset integer DEFAULT 0,
+  search_email text DEFAULT NULL
+)
+RETURNS TABLE(
+  id uuid,
+  email text,
+  created_at timestamptz,
+  last_sign_in_at timestamptz,
+  app_metadata jsonb,
+  total_count bigint
+)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public
+AS $$
+DECLARE
+  total_users bigint;
+BEGIN
+  -- Only admins can view users
+  IF NOT is_claims_admin() THEN
+    RAISE EXCEPTION 'access denied: only claims admins can view users';
+  END IF;
+
+  -- Get total count
+  IF search_email IS NOT NULL THEN
+    SELECT COUNT(*) INTO total_users
+    FROM auth.users
+    WHERE email ILIKE '%' || search_email || '%';
+  ELSE
+    SELECT COUNT(*) INTO total_users FROM auth.users;
+  END IF;
+
+  RETURN QUERY
+  SELECT
+    u.id,
+    u.email::text,
+    u.created_at,
+    u.last_sign_in_at,
+    u.raw_app_meta_data as app_metadata,
+    total_users as total_count
+  FROM auth.users u
+  WHERE search_email IS NULL OR u.email ILIKE '%' || search_email || '%'
+  ORDER BY u.created_at DESC
+  LIMIT page_size
+  OFFSET page_offset;
+END;
+$$;
+
 NOTIFY pgrst, 'reload schema';

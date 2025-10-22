@@ -7,6 +7,10 @@ const CACHE_TTL = parseInt(process.env.APP_CACHE_TTL || '300000'); // 5 minutes 
 const USE_FALLBACK = process.env.USE_FALLBACK_CONFIG !== 'false'; // true by default
 
 // In-memory cache
+// Note: This cache is instance-local and works best with long-running server instances.
+// In serverless environments, each request may get a new instance, so the cache helps
+// primarily within a request lifecycle or when the same instance handles multiple requests.
+// This is acceptable because the underlying database queries are optimized with proper indexes.
 let appsCache: AppConfig[] | null = null;
 let rolesCache: RoleConfig[] | null = null;
 let lastFetch: number = 0;

@@ -2,31 +2,89 @@
 
 This directory contains database migrations for the Supabase Claims Admin Dashboard.
 
+## 🚀 Quick Start
+
+```bash
+# Check what migrations need to be run
+pnpm migrate:status
+
+# Run all pending migrations
+pnpm migrate
+```
+
+See [MIGRATION_GUIDE.md](../MIGRATION_GUIDE.md) for comprehensive documentation.
+
 ## Migration Files
 
+- `000_migration_tracker.sql` - Migration tracking system infrastructure
 - `001_multi_app_support.sql` - Adds support for multi-app claims management
 - `002_app_configuration_tables.sql` - Adds database tables for managing apps and roles
 - `002_seed_default_apps.sql` - Seeds initial apps and roles (optional)
+- `003_api_keys.sql` - API key management system
+- `004_external_key_sources.sql` - External key source integration
+- `006_performance_optimizations.sql` - Database performance improvements
 
-## How to Apply Migrations
+## Automated Migration System
+
+We now have an automated migration runner that:
+
+- ✅ Tracks which migrations have been applied
+- ✅ Runs pending migrations in correct order
+- ✅ Detects file modifications via checksums
+- ✅ Records execution time and errors
+- ✅ Prevents duplicate runs
+
+### Using the Migration Runner
+
+```bash
+# Show migration status
+pnpm migrate:status
+make migrate-status
+
+# Run pending migrations
+pnpm migrate
+make migrate
+
+# Force re-run a specific migration
+pnpm migrate:force 001_multi_app_support
+make migrate-force NAME=001_multi_app_support
+```
+
+## First-Time Setup
+
+### For New Installations
+
+**Option 1: Use Install Script (Recommended)**
+1. Run the main `install.sql` file from the project root
+2. This includes all migrations and base functions
+
+**Option 2: Use Migration Runner**
+1. Manually run `000_migration_tracker.sql` in Supabase SQL Editor first
+2. Then run: `pnpm migrate`
 
 ### For Existing Installations
 
 If you already have the dashboard installed and want to upgrade:
 
+1. Set up the migration tracker:
+   - Open Supabase SQL Editor
+   - Run `migrations/000_migration_tracker.sql`
+2. Run pending migrations:
+   ```bash
+   pnpm migrate:status  # Check what's pending
+   pnpm migrate         # Apply pending migrations
+   ```
+
+## Manual Migration (Legacy Method)
+
+You can still manually apply migrations via Supabase SQL Editor:
+
 1. Open your Supabase project dashboard
 2. Navigate to the **SQL Editor**
-3. Copy the contents of `001_multi_app_support.sql`
+3. Copy the contents of the migration file
 4. Paste and execute the SQL
 
 All migrations use `CREATE OR REPLACE FUNCTION`, so they are safe to re-run.
-
-### For New Installations
-
-If you're setting up the dashboard for the first time:
-
-1. Simply run the main `install.sql` file from the project root
-2. This file includes all migrations and base functions
 
 ## Migration Details
 

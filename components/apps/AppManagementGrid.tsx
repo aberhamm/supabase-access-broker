@@ -1,12 +1,23 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import type { AppConfig } from '@/types/claims';
 import { AppCardDisplay } from './AppCardDisplay';
-import { AppFormDialog } from './AppFormDialog';
-import { DeleteAppConfirmDialog } from './DeleteAppConfirmDialog';
 import { Input } from '@/components/ui/input';
 import { Search } from 'lucide-react';
+import { Skeleton } from '@/components/ui/skeleton';
+
+// Lazy load dialog components for better performance
+const AppFormDialog = dynamic(() => import('./AppFormDialog').then(mod => ({ default: mod.AppFormDialog })), {
+  loading: () => <Skeleton className="h-64 w-full" />,
+  ssr: false
+});
+
+const DeleteAppConfirmDialog = dynamic(() => import('./DeleteAppConfirmDialog').then(mod => ({ default: mod.DeleteAppConfirmDialog })), {
+  loading: () => <Skeleton className="h-32 w-full" />,
+  ssr: false
+});
 
 interface AppManagementGridProps {
   apps: AppConfig[];

@@ -1,7 +1,7 @@
 export const dynamic = 'force-dynamic';
 
-import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { getAllUsers, isClaimsAdmin } from '@/lib/claims';
+import { createClient } from '@/lib/supabase/server';
+import { isClaimsAdmin } from '@/lib/claims';
 import { UserTable } from '@/components/users/UserTable';
 import { DashboardNav } from '@/components/layout/DashboardNav';
 import { redirect } from 'next/navigation';
@@ -22,13 +22,42 @@ async function handleLogout() {
 }
 
 export default async function UsersPage() {
-  const adminSupabase = await createAdminClient();
-  const { data: users } = await getAllUsers(adminSupabase);
+  const supabase = await createClient();
   const email = await getUserEmail();
 
   // Check if user is admin to show Apps link
-  const supabase = await createClient();
   const { data: isAdmin } = await isClaimsAdmin(supabase);
+
+  // Use paginated query to prevent memory issues
+  // Default: load first 100 users
+  const { data: paginatedData, error } = await supabase.rpc('get_users_paginated', {
+    page_size: 100,
+    page_offset: 0,
+    search_email: null,
+  });
+
+  if (error) {
+    console.error('Error fetching users:', error);
+  }
+
+  const users = paginatedData || [];
+  const totalCount = users.length > 0 ? users[0].total_count : 0;
+
+  // Transform the data to match User type
+  const transformedUsers = users.map((u: {
+    id: string;
+    email: string;
+    created_at: string;
+    last_sign_in_at?: string;
+    app_metadata: Record<string, unknown>;
+    total_count: number;
+  }) => ({
+    id: u.id,
+    email: u.email,
+    created_at: u.created_at,
+    last_sign_in_at: u.last_sign_in_at,
+    app_metadata: u.app_metadata,
+  }));
 
   return (
     <div className="min-h-screen bg-background">
@@ -43,12 +72,12 @@ export default async function UsersPage() {
           <div>
             <h2 className="text-3xl font-bold tracking-tight">Users</h2>
             <p className="text-muted-foreground">
-              {users?.length || 0} users registered
+              {totalCount} users registered {users.length < totalCount && `(showing first ${users.length})`}
             </p>
           </div>
         </div>
 
-        <UserTable users={users || []} />
+        <UserTable users={transformedUsers} />
       </main>
     </div>
   );

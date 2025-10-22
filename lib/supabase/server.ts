@@ -11,6 +11,12 @@ export async function createClient() {
     supabaseUrl,
     supabaseKey,
     {
+      auth: {
+        // Server checks for existing sessions and can refresh tokens
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+      },
       cookies: {
         getAll() {
           return cookieStore.getAll();
@@ -18,7 +24,13 @@ export async function createClient() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
+              cookieStore.set(name, value, {
+                ...options,
+                // Extend cookie expiry to 7 days
+                maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
+                path: '/',
+                sameSite: 'lax',
+              })
             );
           } catch {
             // The `setAll` method was called from a Server Component.
@@ -43,6 +55,11 @@ export async function createAdminClient() {
     supabaseUrl,
     supabaseKey,
     {
+      auth: {
+        // Admin client - session handling
+        persistSession: true,
+        autoRefreshToken: true,
+      },
       cookies: {
         getAll() {
           return cookieStore.getAll();
@@ -50,7 +67,12 @@ export async function createAdminClient() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
+              cookieStore.set(name, value, {
+                ...options,
+                maxAge: 7 * 24 * 60 * 60, // 7 days
+                path: '/',
+                sameSite: 'lax',
+              })
             );
           } catch {
             // The `setAll` method was called from a Server Component.

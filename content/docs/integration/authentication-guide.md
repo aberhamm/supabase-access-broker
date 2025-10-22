@@ -1116,13 +1116,17 @@ export async function POST(request: Request) {
 
 ### Magic Link Sign In (Used by Dashboard)
 
+**Security Note:** The dashboard login uses `shouldCreateUser: false` to prevent unauthorized user creation. Only existing users can request magic links.
+
+#### For Admin Dashboards (Existing Users Only)
+
 ```typescript
 'use client';
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 
-export default function LoginPage() {
+export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
   const supabase = createClient();
@@ -1135,7 +1139,69 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/`,
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          shouldCreateUser: false, // Security: Only allow existing users
+        },
+      });
+
+      if (error) throw error;
+      alert('Check your email for the magic link!');
+    } catch (error: any) {
+      // Provide helpful error messages
+      const errorMessage = error.message || '';
+      if (errorMessage.toLowerCase().includes('user not found')) {
+        alert('This email is not registered. Contact an administrator.');
+      } else {
+        alert(errorMessage);
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <form onSubmit={handleLogin}>
+      <input
+        type="email"
+        value={email}
+        onChange={(e) => setEmail(e.target.value)}
+        placeholder="Email"
+        required
+      />
+      <button type="submit" disabled={loading}>
+        {loading ? 'Sending...' : 'Send Magic Link'}
+      </button>
+      <p className="text-sm text-gray-600">
+        Only existing users can sign in. New users must be created by an administrator.
+      </p>
+    </form>
+  );
+}
+```
+
+#### For User-Facing Apps (Allow New Users)
+
+```typescript
+'use client';
+
+import { useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
+
+export default function UserLoginPage() {
+  const [email, setEmail] = useState('');
+  const [loading, setLoading] = useState(false);
+  const supabase = createClient();
+
+  const handleLogin = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setLoading(true);
+
+    try {
+      const { error } = await supabase.auth.signInWithOtp({
+        email,
+        options: {
+          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          shouldCreateUser: true, // Allow new user creation
         },
       });
 
@@ -1164,6 +1230,41 @@ export default function LoginPage() {
   );
 }
 ```
+
+#### Auth Callback Handler (Required)
+
+Create `app/auth/callback/route.ts` to handle the magic link redirect:
+
+```typescript
+import { createClient } from '@/lib/supabase/server';
+import { NextResponse } from 'next/server';
+
+export async function GET(request: Request) {
+  const requestUrl = new URL(request.url);
+  const code = requestUrl.searchParams.get('code');
+  const next = requestUrl.searchParams.get('next') ?? '/';
+
+  if (code) {
+    const supabase = await createClient();
+    const { error } = await supabase.auth.exchangeCodeForSession(code);
+
+    if (!error) {
+      return NextResponse.redirect(new URL(next, requestUrl.origin));
+    }
+  }
+
+  // If there's an error or no code, redirect to login
+  return NextResponse.redirect(new URL('/login', requestUrl.origin));
+}
+```
+
+#### Key Points
+
+1. **`shouldCreateUser: false`** - For admin dashboards to prevent unauthorized access
+2. **`shouldCreateUser: true`** - For user-facing apps to allow sign-ups
+3. **Callback handler** - Required to exchange the auth code for a session
+4. **Error handling** - Provide clear messages for unregistered emails
+5. **Supabase defaults** - Use default Supabase SSR config (no custom flowType needed)
 
 ### Email/Password Sign In
 

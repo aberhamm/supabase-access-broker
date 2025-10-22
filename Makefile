@@ -1,4 +1,4 @@
-.PHONY: help build up down logs restart clean rebuild health test prod-up prod-down prod-logs
+.PHONY: help build up down logs restart clean rebuild health test prod-up prod-down prod-logs migrate migrate-status migrate-force
 
 # Default target
 help:
@@ -12,6 +12,11 @@ help:
 	@echo "  make clean        - Remove containers and images"
 	@echo "  make health       - Check application health"
 	@echo "  make test         - Run tests"
+	@echo ""
+	@echo "Database Migration commands:"
+	@echo "  make migrate              - Run all pending migrations"
+	@echo "  make migrate-status       - Show migration status"
+	@echo "  make migrate-force NAME=  - Force re-run a migration"
 	@echo ""
 	@echo "Production commands:"
 	@echo "  make prod-up      - Start production stack"
@@ -95,3 +100,21 @@ stats:
 backup-env:
 	cp .env.production .env.production.backup-$$(date +%Y%m%d-%H%M%S)
 	@echo "Environment backed up"
+
+# Migration commands
+migrate:
+	@echo "Running database migrations..."
+	pnpm migrate
+
+migrate-status:
+	@echo "Checking migration status..."
+	pnpm migrate:status
+
+migrate-force:
+	@if [ -z "$(NAME)" ]; then \
+		echo "Error: Please specify NAME=<migration-name>"; \
+		echo "Example: make migrate-force NAME=001_multi_app_support"; \
+		exit 1; \
+	fi
+	@echo "Force re-running migration: $(NAME)"
+	pnpm migrate:force $(NAME)

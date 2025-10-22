@@ -1,12 +1,20 @@
 import { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
-import { ChevronLeft, ExternalLink } from 'lucide-react';
+import { Home, ExternalLink } from 'lucide-react';
 import { getDocContent, getAllDocs } from '@/lib/docs';
 import { MarkdownRenderer } from '@/components/docs/MarkdownRenderer';
 import { CopyDocButton } from '@/components/docs/CopyDocButton';
 import { TableOfContents } from '@/components/docs/TableOfContents';
 import { Badge } from '@/components/ui/badge';
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbSeparator,
+  BreadcrumbPage,
+} from '@/components/ui/breadcrumb';
 
 interface DocPageProps {
   params: Promise<{ slug: string }>;
@@ -58,14 +66,24 @@ export default async function DocPage({ params }: DocPageProps) {
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
-      {/* Back button */}
-      <Link
-        href="/docs"
-        className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary mb-6"
-      >
-        <ChevronLeft className="h-4 w-4" />
-        Back to Documentation
-      </Link>
+      {/* Breadcrumb */}
+      <Breadcrumb className="mb-6">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/">
+              <Home className="h-4 w-4" />
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/docs">Documentation</BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>{metadata.title}</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_250px] gap-8">
         {/* Main content */}

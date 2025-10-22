@@ -37,17 +37,16 @@ async function handleLogout() {
 async function getUserDetails(userId: string) {
   const adminSupabase = await createAdminClient();
 
-  // Get user from auth.users using admin client
+  // Get specific user by ID (efficient, doesn't load all users)
   const { data: userData, error: userError } =
-    await adminSupabase.auth.admin.listUsers();
+    await adminSupabase.auth.admin.getUserById(userId);
 
   if (userError) {
     console.error('Error fetching user:', userError);
     return null;
   }
 
-  const user = userData.users.find((u) => u.id === userId);
-  return user;
+  return userData.user;
 }
 
 export default async function UserDetailPage({

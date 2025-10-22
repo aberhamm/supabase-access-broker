@@ -140,13 +140,46 @@ const { data, error } = await supabase.auth.signInWithPassword({
 
 ### Magic Link Sign In
 
+**Admin Dashboard (Existing Users Only):**
 ```typescript
 const { error } = await supabase.auth.signInWithOtp({
   email: 'user@example.com',
   options: {
-    emailRedirectTo: `${window.location.origin}/`,
+    emailRedirectTo: `${window.location.origin}/auth/callback`,
+    shouldCreateUser: false, // Security: Only existing users
   },
 });
+```
+
+**User-Facing App (Allow New Users):**
+```typescript
+const { error } = await supabase.auth.signInWithOtp({
+  email: 'user@example.com',
+  options: {
+    emailRedirectTo: `${window.location.origin}/auth/callback`,
+    shouldCreateUser: true, // Allow new user creation
+  },
+});
+```
+
+**Required Callback Handler** (`app/auth/callback/route.ts`):
+```typescript
+import { createClient } from '@/lib/supabase/server';
+import { NextResponse } from 'next/server';
+
+export async function GET(request: Request) {
+  const requestUrl = new URL(request.url);
+  const code = requestUrl.searchParams.get('code');
+  const next = requestUrl.searchParams.get('next') ?? '/';
+
+  if (code) {
+    const supabase = await createClient();
+    await supabase.auth.exchangeCodeForSession(code);
+    return NextResponse.redirect(new URL(next, requestUrl.origin));
+  }
+
+  return NextResponse.redirect(new URL('/login', requestUrl.origin));
+}
 ```
 
 ### Get Current User

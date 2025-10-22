@@ -1309,4 +1309,47 @@ console.log(user?.app_metadata?.apps?.[APP_ID]?.role); // 'admin'
 
 ---
 
-**You now have everything needed to integrate claims-based authentication into your application!**
+## Part 7: API Keys for Webhooks
+
+For external integrations like n8n, Zapier, or custom webhooks, you can use API keys instead of user authentication.
+
+### When to Use API Keys
+
+- **Webhooks** from external services (n8n, Zapier, Make)
+- **Server-to-server** communication
+- **Automated processes** that don't represent a user
+- **Third-party integrations** that need app access
+
+### Creating API Keys
+
+API keys are created through the admin dashboard:
+
+1. Navigate to your app in the dashboard
+2. Go to the **API Keys** tab
+3. Create a key with appropriate permissions
+4. Copy the key immediately (you won't see it again!)
+
+### Using API Keys in Requests
+
+Include the key in your HTTP requests:
+
+```bash
+curl -X POST https://your-app.com/api/webhooks/your-app-id \
+  -H "X-API-Key: sk_your_api_key_here" \
+  -H "Content-Type: application/json" \
+  -d '{"event": "data", "payload": {...}}'
+```
+
+### API Key Features
+
+- **App-scoped**: Each key belongs to one app
+- **Role-based**: Can be assigned permissions via roles
+- **Expiration**: Optional expiration dates
+- **Usage tracking**: Monitors last usage time
+- **Secure**: Hashed in database, never retrievable
+
+For detailed information, see the [API Keys Guide](./api-keys-guide).
+
+---
+
+**You now have everything needed to integrate claims-based authentication into your application, including webhook support!**

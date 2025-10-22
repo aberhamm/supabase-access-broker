@@ -1,31 +1,77 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
+import { validateApiKey, recordApiKeyUsage } from '@/lib/api-keys-service';
 
 export async function middleware(request: NextRequest) {
-  let supabaseResponse = NextResponse.next({
-    request,
-  });
+  const response = NextResponse.next();
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+
+  // Check if this is a webhook route that should use API key authentication
+  const isWebhookRoute = request.nextUrl.pathname.startsWith('/api/webhooks/');
+
+  if (isWebhookRoute) {
+    // Try to authenticate with API key
+    const apiKey =
+      request.headers.get('x-api-key') ||
+      request.headers.get('authorization')?.replace('Bearer ', '');
+
+    if (!apiKey) {
+      return NextResponse.json(
+        { error: 'API key required' },
+        { status: 401 }
+      );
+    }
+
+    const validatedKey = await validateApiKey(apiKey);
+
+    if (!validatedKey || !validatedKey.is_valid) {
+      return NextResponse.json(
+        { error: 'Invalid or expired API key' },
+        { status: 401 }
+      );
+    }
+
+    // Record usage (non-blocking)
+    recordApiKeyUsage(apiKey).catch(console.error);
+
+    // Add app context to response headers for the API route to use
+    const webhookResponse = NextResponse.next({
+      request: {
+        headers: new Headers(request.headers),
+      },
+    });
+    webhookResponse.headers.set('x-app-id', validatedKey.app_id);
+    webhookResponse.headers.set('x-key-id', validatedKey.key_id);
+    if (validatedKey.role_name) {
+      webhookResponse.headers.set('x-role-name', validatedKey.role_name);
+    }
+
+    return webhookResponse;
+  }
 
   const supabase = createServerClient(
     supabaseUrl,
     supabaseKey,
     {
+      auth: {
+        // Middleware checks existing sessions and auto-refreshes tokens
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true, // Detect and handle auth state in URLs
+      },
       cookies: {
-        getAll() {
-          return request.cookies.getAll();
-        },
-        setAll(cookiesToSet) {
+        getAll: () => request.cookies.getAll(),
+        setAll: (cookiesToSet) => {
           cookiesToSet.forEach(({ name, value, options }) =>
-            request.cookies.set(name, value)
-          );
-          supabaseResponse = NextResponse.next({
-            request,
-          });
-          cookiesToSet.forEach(({ name, value, options }) =>
-            supabaseResponse.cookies.set(name, value, options)
+            response.cookies.set(name, value, {
+              ...options,
+              httpOnly: true,
+              sameSite: 'lax',
+              path: '/',
+              maxAge: 7 * 24 * 60 * 60, // 7 days
+            })
           );
         },
       },
@@ -37,45 +83,70 @@ export async function middleware(request: NextRequest) {
     data: { user },
   } = await supabase.auth.getUser();
 
+  const pathname = request.nextUrl.pathname;
+
   // Allow auth callback and login routes without authentication
   const isPublicRoute =
-    request.nextUrl.pathname.startsWith('/login') ||
-    request.nextUrl.pathname.startsWith('/auth/callback');
+    pathname.startsWith('/login') ||
+    pathname.startsWith('/auth/callback');
+
+  console.log('🛡️ [MIDDLEWARE]', {
+    pathname,
+    isPublicRoute,
+    hasUser: !!user,
+    userEmail: user?.email,
+  });
 
   // If user is not signed in and the current path is not a public route, redirect to /login
   if (!user && !isPublicRoute) {
+    console.log('🔒 [MIDDLEWARE] No user and not public route, redirecting to /login');
     const url = request.nextUrl.clone();
     url.pathname = '/login';
+    // Optional: remember where to return after login
+    url.searchParams.set('next', pathname + request.nextUrl.search);
     return NextResponse.redirect(url);
   }
 
   // If user is signed in and tries to access /login, redirect to dashboard
-  if (user && request.nextUrl.pathname.startsWith('/login')) {
+  if (user && pathname.startsWith('/login')) {
+    console.log('🔓 [MIDDLEWARE] User already logged in, redirecting to dashboard');
     const url = request.nextUrl.clone();
     url.pathname = '/';
     return NextResponse.redirect(url);
   }
 
   // Check if user is claims_admin for protected routes
-  if (user && !request.nextUrl.pathname.startsWith('/login')) {
+  if (user && !pathname.startsWith('/login') && !pathname.startsWith('/access-denied') && !pathname.startsWith('/refresh-session')) {
     const isGlobalAdmin = user.app_metadata?.claims_admin === true;
 
     // Check if user is admin for any app
     const apps = user.app_metadata?.apps || {};
     const isAppAdmin = Object.values(apps).some(
-      (app: any) => app?.admin === true
+      (app) => (app as { admin?: boolean })?.admin === true
     );
 
     const hasAdminAccess = isGlobalAdmin || isAppAdmin;
 
-    if (!hasAdminAccess && !request.nextUrl.pathname.startsWith('/access-denied')) {
+    console.log('🔐 [MIDDLEWARE] Admin check:', {
+      isGlobalAdmin,
+      isAppAdmin,
+      hasAdminAccess,
+      appMetadata: user.app_metadata,
+    });
+
+    if (!hasAdminAccess) {
+      console.warn('⚠️ [MIDDLEWARE] User lacks admin access, redirecting to /access-denied');
+      console.warn('⚠️ [MIDDLEWARE] User ID:', user.id);
+      console.warn('⚠️ [MIDDLEWARE] User metadata:', JSON.stringify(user.app_metadata, null, 2));
       const url = request.nextUrl.clone();
       url.pathname = '/access-denied';
       return NextResponse.redirect(url);
     }
+
+    console.log('✅ [MIDDLEWARE] User has admin access, allowing request');
   }
 
-  return supabaseResponse;
+  return response;
 }
 
 export const config = {

@@ -1,9 +1,18 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { FileText, BookOpen, Zap, Shield, Rocket, Code, Play, Lock, LucideIcon } from 'lucide-react';
+import { FileText, BookOpen, Zap, Shield, Rocket, Code, Play, Lock, LucideIcon, Home } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
 import { getAllDocs } from '@/lib/docs';
+import {
+  Breadcrumb,
+  BreadcrumbList,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbSeparator,
+  BreadcrumbPage,
+} from '@/components/ui/breadcrumb';
 
 export const metadata: Metadata = {
   title: 'Documentation | Claims Admin Dashboard',
@@ -61,11 +70,36 @@ export default async function DocsPage() {
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
+      {/* Breadcrumb */}
+      <Breadcrumb className="mb-6">
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink href="/">
+              <Home className="h-4 w-4" />
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage>Documentation</BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
+
       <div className="mb-8">
-        <h1 className="text-4xl font-bold mb-2">Documentation</h1>
-        <p className="text-muted-foreground text-lg">
-          Complete guides for authentication, custom claims, and integration patterns
-        </p>
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-4xl font-bold mb-2">Documentation</h1>
+            <p className="text-muted-foreground text-lg">
+              Complete guides for authentication, custom claims, and integration patterns
+            </p>
+          </div>
+          <Link href="/">
+            <Button variant="outline">
+              <Home className="mr-2 h-4 w-4" />
+              Back to Dashboard
+            </Button>
+          </Link>
+        </div>
       </div>
 
       <div className="mb-8 p-4 bg-blue-50 dark:bg-blue-950 rounded-lg border border-blue-200 dark:border-blue-800">

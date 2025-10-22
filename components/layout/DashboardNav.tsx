@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { LogOut, LayoutDashboard, Users, AppWindow, BookOpen } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 interface DashboardNavProps {
   email: string;
@@ -77,12 +78,15 @@ export function DashboardNav({ email, logoutAction, showApps = true }: Dashboard
           </nav>
         </div>
 
-        <form action={logoutAction}>
-          <Button variant="ghost" size="sm" type="submit">
-            <LogOut className="mr-2 h-4 w-4" />
-            Sign Out
-          </Button>
-        </form>
+        <div className="flex items-center gap-2">
+          <ThemeToggle />
+          <form action={logoutAction}>
+            <Button variant="ghost" size="sm" type="submit">
+              <LogOut className="mr-2 h-4 w-4" />
+              Sign Out
+            </Button>
+          </form>
+        </div>
       </div>
     </header>
   );
