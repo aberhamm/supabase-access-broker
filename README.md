@@ -65,9 +65,15 @@ Before you begin, ensure you have:
    NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
    NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
    SUPABASE_SERVICE_ROLE_KEY=your-service-role-key  # Required for migrations
+
+   # Production only - set your production domain for auth redirects
+   # Example: https://admin.yourdomain.com
+   # NEXT_PUBLIC_APP_URL=https://your-production-domain.com
    ```
 
-   You can find these values in your Supabase project settings under API.
+   You can find the Supabase values in your Supabase project settings under API.
+
+   **⚠️ Production Note:** `NEXT_PUBLIC_APP_URL` is **required** in production to ensure magic links and password reset emails redirect to the correct domain. Without it, they may redirect to `localhost`.
 
 4. **Run database migrations:**
 

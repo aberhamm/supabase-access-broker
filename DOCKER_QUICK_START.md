@@ -21,7 +21,13 @@ Edit `.env.production` with your Supabase credentials:
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# IMPORTANT: Set this to your production domain for auth redirects
+# This ensures magic links and password resets redirect to the correct URL
+NEXT_PUBLIC_APP_URL=https://admin.yourdomain.com
 ```
+
+**Note:** `NEXT_PUBLIC_APP_URL` is critical for production. Without it, auth magic links may redirect to `localhost`.
 
 ## Step 2: Build and Start
 

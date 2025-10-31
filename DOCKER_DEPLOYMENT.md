@@ -52,6 +52,11 @@ Edit `.env.production` with your Supabase credentials:
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# CRITICAL: Production app URL for auth redirects
+# Set this to your production domain to ensure magic links and password resets work correctly
+NEXT_PUBLIC_APP_URL=https://admin.yourdomain.com
+
 NODE_ENV=production
 PORT=3000
 HOSTNAME=0.0.0.0
@@ -98,6 +103,7 @@ Open your browser to:
 | `NEXT_PUBLIC_SUPABASE_URL` | Yes | Your Supabase project URL |
 | `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | Supabase anonymous/public key |
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key (SECRET) |
+| `NEXT_PUBLIC_APP_URL` | **Yes (Prod)** | Production domain for auth redirects (e.g., `https://admin.yourdomain.com`) - **CRITICAL for magic links** |
 | `NODE_ENV` | Yes | Set to `production` |
 | `PORT` | No | Port to run on (default: 3000) |
 | `HOSTNAME` | No | Hostname to bind (default: 0.0.0.0) |

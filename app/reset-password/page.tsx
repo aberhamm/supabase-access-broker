@@ -15,6 +15,7 @@ import {
 import { toast } from 'sonner';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
+import { getAppUrl } from '@/lib/app-url';
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState('');
@@ -59,7 +60,7 @@ export default function ResetPasswordPage() {
       setLoading(true);
 
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${getAppUrl()}/reset-password`,
       });
 
       if (error) throw error;
