@@ -85,7 +85,7 @@ export function UserTable({ users }: UserTableProps) {
                   <TableCell className="font-medium">
                     <div className="flex items-center gap-2">
                       {user.email}
-                      {user.app_metadata?.claims_admin && (
+                      {user.app_metadata?.claims_admin === true && (
                         <Badge variant="secondary">Admin</Badge>
                       )}
                     </div>

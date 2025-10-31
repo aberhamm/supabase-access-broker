@@ -11,7 +11,7 @@
  *   pnpm migrate:force <name> - Force re-run a specific migration
  */
 
-import { createClient } from '@supabase/supabase-js';
+import { createClient, SupabaseClient } from '@supabase/supabase-js';
 import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
@@ -20,6 +20,10 @@ import { dirname } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+
+// Type for Supabase client (using any for Database type to avoid complex generics)
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type MigrationSupabaseClient = SupabaseClient<any>;
 
 // Colors for console output
 const colors = {
@@ -96,7 +100,7 @@ function getMigrationFiles(): Migration[] {
 }
 
 // Get applied migrations from database
-async function getAppliedMigrations(supabase: ReturnType<typeof createClient>): Promise<AppliedMigration[]> {
+async function getAppliedMigrations(supabase: MigrationSupabaseClient): Promise<AppliedMigration[]> {
   const { data, error } = await supabase
     .from('migrations')
     .select('name, applied_at, checksum, success')
@@ -114,7 +118,7 @@ async function getAppliedMigrations(supabase: ReturnType<typeof createClient>): 
 }
 
 // Initialize migration tracking (run 000_migration_tracker.sql if needed)
-async function initializeMigrationTracking(supabase: ReturnType<typeof createClient>): Promise<boolean> {
+async function initializeMigrationTracking(supabase: MigrationSupabaseClient): Promise<boolean> {
   const trackerPath = path.join(__dirname, '../migrations/000_migration_tracker.sql');
 
   if (!fs.existsSync(trackerPath)) {
@@ -136,7 +140,8 @@ async function initializeMigrationTracking(supabase: ReturnType<typeof createCli
   log.info('Initializing migration tracking system...');
   const trackerSQL = fs.readFileSync(trackerPath, 'utf-8');
 
-  const { error } = await supabase.rpc('exec_sql', { sql: trackerSQL });
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { error } = await (supabase.rpc as any)('exec_sql', { sql: trackerSQL });
 
   if (error) {
     // Try direct execution (for service role)
@@ -154,7 +159,7 @@ async function initializeMigrationTracking(supabase: ReturnType<typeof createCli
 
 // Execute a migration
 async function executeMigration(
-  supabase: ReturnType<typeof createClient>,
+  supabase: MigrationSupabaseClient,
   migration: Migration
 ): Promise<{ success: boolean; error?: string; executionTime: number }> {
   const startTime = Date.now();
@@ -170,7 +175,8 @@ async function executeMigration(
 
     // Execute each statement
     for (const statement of statements) {
-      const { error } = await supabase.rpc('exec_sql', { sql: statement });
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const { error } = await (supabase.rpc as any)('exec_sql', { sql: statement });
 
       if (error) {
         // For service role, try direct query
@@ -184,7 +190,8 @@ async function executeMigration(
     const executionTime = Date.now() - startTime;
 
     // Record successful migration
-    await supabase.rpc('record_migration', {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.rpc as any)('record_migration', {
       migration_name: migration.name,
       checksum_val: migration.checksum,
       exec_time: executionTime,
@@ -199,7 +206,8 @@ async function executeMigration(
     const errorMessage = error instanceof Error ? error.message : String(error);
 
     // Record failed migration
-    await supabase.rpc('record_migration', {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    await (supabase.rpc as any)('record_migration', {
       migration_name: migration.name,
       checksum_val: migration.checksum,
       exec_time: executionTime,
@@ -214,7 +222,7 @@ async function executeMigration(
 }
 
 // Show migration status
-async function showStatus(supabase: ReturnType<typeof createClient>) {
+async function showStatus(supabase: MigrationSupabaseClient) {
   console.log('\n' + colors.cyan + '═'.repeat(70) + colors.reset);
   console.log(colors.cyan + '  Database Migration Status' + colors.reset);
   console.log(colors.cyan + '═'.repeat(70) + colors.reset + '\n');
@@ -252,7 +260,7 @@ async function showStatus(supabase: ReturnType<typeof createClient>) {
 }
 
 // Run pending migrations
-async function runMigrations(supabase: ReturnType<typeof createClient>, force?: string) {
+async function runMigrations(supabase: MigrationSupabaseClient, force?: string) {
   const migrations = getMigrationFiles();
   const applied = await getAppliedMigrations(supabase);
   const appliedMap = new Map(applied.map(m => [m.name, m]));
@@ -341,6 +349,3 @@ main().catch(error => {
   console.error(error);
   process.exit(1);
 });
-
-
-

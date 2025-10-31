@@ -40,7 +40,7 @@ export function UserActivityList({ users }: UserActivityListProps) {
                   </p>
                 </div>
                 <div className="flex items-center gap-2">
-                  {user.app_metadata?.claims_admin && (
+                  {user.app_metadata?.claims_admin === true && (
                     <Badge variant="secondary">Admin</Badge>
                   )}
                   <ArrowRight className="h-4 w-4 text-muted-foreground" />
