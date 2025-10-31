@@ -3,6 +3,7 @@ export const dynamic = 'force-dynamic';
 import { createClient } from '@/lib/supabase/server';
 import { isClaimsAdmin } from '@/lib/claims';
 import { UserTable } from '@/components/users/UserTable';
+import { CreateUserDialog } from '@/components/users/CreateUserDialog';
 import { DashboardNav } from '@/components/layout/DashboardNav';
 import { redirect } from 'next/navigation';
 
@@ -75,6 +76,7 @@ export default async function UsersPage() {
               {totalCount} users registered {users.length < totalCount && `(showing first ${users.length})`}
             </p>
           </div>
+          <CreateUserDialog />
         </div>
 
         <UserTable users={transformedUsers} />

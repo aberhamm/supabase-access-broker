@@ -10,6 +10,7 @@ import { redirect } from 'next/navigation';
 import { ClaimsList } from '@/components/claims/ClaimsList';
 import { AddClaimButton } from '@/components/claims/AddClaimButton';
 import { ToggleAdminButton } from '@/components/users/ToggleAdminButton';
+import { ResetPasswordButton } from '@/components/users/ResetPasswordButton';
 import { CopyButton } from '@/components/users/CopyButton';
 import { AppAccessCard } from '@/components/apps/AppAccessCard';
 import { AppClaimsList } from '@/components/apps/AppClaimsList';
@@ -180,6 +181,8 @@ export default async function UserDetailPage({
               </CardHeader>
               <CardContent className="space-y-3">
                 <ToggleAdminButton userId={id} isAdmin={isAdmin} />
+
+                <ResetPasswordButton userEmail={user.email || ''} />
 
                 <div className="rounded-lg border p-3">
                   <p className="text-sm font-medium">Session Refresh</p>

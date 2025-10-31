@@ -85,10 +85,11 @@ export async function middleware(request: NextRequest) {
 
   const pathname = request.nextUrl.pathname;
 
-  // Allow auth callback and login routes without authentication
+  // Allow auth callback, login, and reset password routes without authentication
   const isPublicRoute =
     pathname.startsWith('/login') ||
-    pathname.startsWith('/auth/callback');
+    pathname.startsWith('/auth/callback') ||
+    pathname.startsWith('/reset-password');
 
   console.log('🛡️ [MIDDLEWARE]', {
     pathname,

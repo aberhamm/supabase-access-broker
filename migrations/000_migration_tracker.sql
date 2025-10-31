@@ -73,3 +73,5 @@ COMMENT ON TABLE public.migrations IS 'Tracks applied database migrations';
 COMMENT ON FUNCTION public.is_migration_applied IS 'Checks if a migration has been successfully applied';
 COMMENT ON FUNCTION public.record_migration IS 'Records a migration execution in the tracker';
 
+
+
