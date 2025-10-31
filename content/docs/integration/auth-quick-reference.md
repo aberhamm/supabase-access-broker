@@ -22,6 +22,11 @@ order: 4
 - `your-anon-key` → Your Supabase anonymous/public key
 - `your-service-role-key` → Your Supabase service role key (SECRET!)
 
+**⚠️ Important for Production:**
+- All code examples use `getAppUrl()` helper for auth redirects
+- You MUST set `NEXT_PUBLIC_APP_URL` in production (see [Environment Configuration](./environment-configuration.md))
+- Without it, redirects go to `localhost` instead of your domain
+
 ## Table of Contents
 
 - [Setup](#setup)
@@ -55,6 +60,25 @@ export function createClient() {
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
   );
+}
+```
+
+### URL Helper for Auth Redirects
+
+**File:** `lib/app-url.ts`
+**Critical:** Use this for all auth redirects (magic links, password resets, OAuth)
+
+```typescript
+export function getAppUrl(): string {
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL;
+  }
+
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+
+  return 'http://localhost:3000';
 }
 ```
 
@@ -103,6 +127,8 @@ const { data, error } = await supabase.auth.signUp({
 ### Sign Up with Metadata
 
 ```typescript
+import { getAppUrl } from '@/lib/app-url';
+
 const { data, error } = await supabase.auth.signUp({
   email: 'user@example.com',
   password: 'password123',
@@ -111,7 +137,7 @@ const { data, error } = await supabase.auth.signUp({
       full_name: 'John Doe',
       age: 30,
     },
-    emailRedirectTo: `${window.location.origin}/welcome`,
+    emailRedirectTo: `${getAppUrl()}/welcome`,
   },
 });
 ```
@@ -119,10 +145,12 @@ const { data, error } = await supabase.auth.signUp({
 ### OAuth Sign Up
 
 ```typescript
+import { getAppUrl } from '@/lib/app-url';
+
 const { error } = await supabase.auth.signInWithOAuth({
   provider: 'google',
   options: {
-    redirectTo: `${window.location.origin}/auth/callback`,
+    redirectTo: `${getAppUrl()}/auth/callback`,
   },
 });
 ```
@@ -142,10 +170,12 @@ const { data, error } = await supabase.auth.signInWithPassword({
 
 **Admin Dashboard (Existing Users Only):**
 ```typescript
+import { getAppUrl } from '@/lib/app-url';
+
 const { error } = await supabase.auth.signInWithOtp({
   email: 'user@example.com',
   options: {
-    emailRedirectTo: `${window.location.origin}/auth/callback`,
+    emailRedirectTo: `${getAppUrl()}/auth/callback`,
     shouldCreateUser: false, // Security: Only existing users
   },
 });
@@ -153,10 +183,12 @@ const { error } = await supabase.auth.signInWithOtp({
 
 **User-Facing App (Allow New Users):**
 ```typescript
+import { getAppUrl } from '@/lib/app-url';
+
 const { error } = await supabase.auth.signInWithOtp({
   email: 'user@example.com',
   options: {
-    emailRedirectTo: `${window.location.origin}/auth/callback`,
+    emailRedirectTo: `${getAppUrl()}/auth/callback`,
     shouldCreateUser: true, // Allow new user creation
   },
 });

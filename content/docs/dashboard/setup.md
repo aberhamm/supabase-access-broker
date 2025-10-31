@@ -36,6 +36,10 @@ Then edit `.env.local` with your actual Supabase credentials:
 NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Optional for development (auto-detects localhost)
+# Required for production to ensure magic links work correctly
+# NEXT_PUBLIC_APP_URL=https://your-production-domain.com
 ```
 
 **Where to find these values:**
@@ -48,6 +52,8 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
    - ⚠️ **Important**: The service role key is required for admin operations (listing users)
    - This key bypasses Row Level Security, so keep it secret!
    - It's only used server-side and never exposed to the client
+
+**📘 For Production Setup:** See the complete [Environment Variables & Deployment Guide](../integration/environment-configuration.md) for production configuration, Docker deployment, and troubleshooting auth redirect issues.
 
 ### 3. Install Custom Claims Functions
 

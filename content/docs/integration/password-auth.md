@@ -27,6 +27,7 @@ order: 6
 ## Table of Contents
 
 - [Overview](#overview)
+- [Environment Setup](#environment-setup)
 - [Implementation](#implementation)
 - [Password Reset Flow](#password-reset-flow)
 - [Admin User Management](#admin-user-management)
@@ -49,6 +50,32 @@ order: 6
 - Consumer applications prioritizing simplicity
 - Mobile-first experiences
 - Applications where email is primary identifier
+
+## Environment Setup
+
+**Before implementing password authentication**, ensure your environment is configured correctly:
+
+### Required Environment Variables
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# CRITICAL for production - ensures password reset emails redirect correctly
+NEXT_PUBLIC_APP_URL=https://your-domain.com
+```
+
+### Configure Supabase Redirect URLs
+
+For password reset emails to work, add to **Supabase Dashboard → Authentication → URL Configuration**:
+
+```
+https://your-domain.com/reset-password
+https://your-domain.com/**
+```
+
+**For complete setup:** See [Environment Configuration Guide](./environment-configuration.md)
 
 ### Authentication Flows
 
@@ -153,6 +180,7 @@ export async function createAdminClient() {
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
+import { getAppUrl } from '@/lib/app-url'; // ⭐ Import URL helper
 
 export default function SignUpPage() {
   const [email, setEmail] = useState('');
@@ -176,7 +204,7 @@ export default function SignUpPage() {
       email,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
+        emailRedirectTo: `${getAppUrl()}/auth/callback`, // ⭐ Use helper
       },
     });
 
@@ -475,6 +503,7 @@ export const config = {
 import { useState, useEffect, useRef } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { useRouter, useSearchParams } from 'next/navigation';
+import { getAppUrl } from '@/lib/app-url'; // ⭐ Import URL helper
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState('');
@@ -505,7 +534,7 @@ export default function ResetPasswordPage() {
     setLoading(true);
 
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/reset-password?mode=update`,
+      redirectTo: `${getAppUrl()}/reset-password?mode=update`, // ⭐ Use helper
     });
 
     setLoading(false);
@@ -898,5 +927,3 @@ Supabase uses bcrypt by default - no action needed!
 - [Supabase Auth Documentation](https://supabase.com/docs/guides/auth)
 - [Password Authentication](https://supabase.com/docs/guides/auth/auth-password)
 - [Server-Side Auth](https://supabase.com/docs/guides/auth/server-side)
-
-

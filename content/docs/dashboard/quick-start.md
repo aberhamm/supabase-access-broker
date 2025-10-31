@@ -31,7 +31,10 @@ cp env.example .env.local
 # - NEXT_PUBLIC_SUPABASE_URL
 # - NEXT_PUBLIC_SUPABASE_ANON_KEY
 # - SUPABASE_SERVICE_ROLE_KEY (⚠️ required for listing users)
+# - NEXT_PUBLIC_APP_URL (for production - see note below)
 ```
+
+**⚠️ Production Note:** If deploying to production or using Docker, you MUST set `NEXT_PUBLIC_APP_URL` to your actual domain. See [Environment Configuration Guide](../integration/environment-configuration.md) for details.
 
 ### 4. Bootstrap an Admin User
 In your Supabase SQL Editor:
@@ -62,9 +65,15 @@ Visit [http://localhost:3000](http://localhost:3000) and sign in!
 
 ## 📚 Documentation
 
-- **SETUP.md** - Detailed setup instructions
-- **README.md** - Full documentation
-- **PROJECT_SUMMARY.md** - Technical overview
+### Dashboard Setup
+- **[Setup Guide](./setup.md)** - Detailed setup instructions
+- **[README](../../../README.md)** - Full documentation
+
+### For Implementers
+- **[Environment Configuration](../integration/environment-configuration.md)** - Production deployment & environment variables
+- **[Authentication Guide](../integration/authentication-guide.md)** - Implementing auth in your apps
+- **[Session Management](../integration/session-management.md)** - Managing user sessions
+- **[Complete Integration Guide](../integration/complete-integration-guide.md)** - Full integration walkthrough
 
 ## 🐛 Troubleshooting
 

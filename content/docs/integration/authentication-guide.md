@@ -32,6 +32,7 @@ order: 1
 - [Overview](#overview)
 - [Architecture: Dashboard vs Your Applications](#architecture-dashboard-vs-your-applications)
 - [Initial Supabase Auth Setup](#initial-supabase-auth-setup)
+- [Environment Configuration](#environment-configuration)
 - [Setting Up Your Application](#setting-up-your-application)
 - [Complete Sign Up Implementation for Your App](#complete-sign-up-implementation-for-your-app)
 - [Complete Sign In Implementation for Your App](#complete-sign-in-implementation-for-your-app)
@@ -165,6 +166,59 @@ When a user signs up for App 1:
 5. Dashboard can manage their claims for both apps
 
 **This guide shows you how to implement sign up/sign in in YOUR separate applications.**
+
+## Environment Configuration
+
+**⚠️ CRITICAL:** Before implementing authentication, configure your environment properly to ensure auth redirects work in production.
+
+### Required Environment Variables
+
+```env
+# Supabase credentials
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# CRITICAL for production - ensures redirects work correctly
+# Without this, magic links/password resets redirect to localhost
+NEXT_PUBLIC_APP_URL=https://your-domain.com
+```
+
+### Configure Supabase Redirect URLs
+
+Go to **Supabase Dashboard → Authentication → URL Configuration** and add:
+
+**Production:**
+```
+https://your-domain.com/auth/callback
+https://your-domain.com/**
+```
+
+**Development:**
+```
+http://localhost:3000/auth/callback
+http://localhost:3000/**
+```
+
+### Create URL Helper
+
+Create `lib/app-url.ts` in your application:
+
+```typescript
+export function getAppUrl(): string {
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL;
+  }
+
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+
+  return 'http://localhost:3000';
+}
+```
+
+**For complete details:** See [Environment Configuration Guide](./environment-configuration.md)
 
 ## Initial Supabase Auth Setup
 
@@ -1139,7 +1193,7 @@ export default function AdminLoginPage() {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${getAppUrl()}/auth/callback`,
           shouldCreateUser: false, // Security: Only allow existing users
         },
       });
@@ -1200,7 +1254,7 @@ export default function UserLoginPage() {
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {
-          emailRedirectTo: `${window.location.origin}/auth/callback`,
+          emailRedirectTo: `${getAppUrl()}/auth/callback`,
           shouldCreateUser: true, // Allow new user creation
         },
       });
@@ -1351,7 +1405,7 @@ export default function OAuthLogin() {
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
-        redirectTo: `${window.location.origin}/auth/callback`,
+        redirectTo: `${getAppUrl()}/auth/callback`,
       },
     });
 

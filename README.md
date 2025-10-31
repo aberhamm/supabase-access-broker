@@ -1,107 +1,133 @@
-# Supabase Claims Admin Dashboard
+# Supabase Custom Claims System
 
-A modern Next.js 14 admin dashboard for managing Supabase users and their custom claims. Built with TypeScript, Tailwind CSS, and shadcn/ui components.
+**A complete system for implementing flexible, scalable user authorization in your Supabase applications.**
 
-## Features
+## What This Is
 
-- 🔐 **Secure Authentication** - Magic link authentication with claims_admin verification
-- 📊 **Dashboard Overview** - View user statistics, recent activity, and claims distribution
-- 👥 **User Management** - Search, filter, and manage all users
-- 🏷️ **Claims Management** - Add, edit, and delete custom claims with type safety
-- 🎨 **Modern UI** - Beautiful, responsive interface built with shadcn/ui
-- 🚀 **Server Components** - Leverages Next.js App Router and Server Components for optimal performance
-- 📱 **Mobile Friendly** - Fully responsive design
+This project provides:
 
-## What This Dashboard Does
+1. **Custom Claims System** - Add flexible user attributes (roles, permissions, metadata) to your Supabase users that are embedded in JWT tokens for high-performance authorization
+2. **Admin Dashboard** - A Next.js application to manage users and their claims
+3. **Integration Guides** - Complete documentation for implementing claims-based authorization in YOUR applications
 
-This is an admin dashboard for managing **Supabase Custom Claims** - special attributes attached to users that control access to your application. Claims are stored in JWT tokens for high-performance authorization without database queries.
+## Why Use Custom Claims?
 
-**Learn more:** See [Claims Guide](./content/docs/core/claims-guide.md) for complete documentation on what custom claims are and how to use them.
+✅ **High Performance** - Claims are in the JWT token, no database queries needed
+✅ **Flexible Authorization** - Define any roles, permissions, or attributes you need
+✅ **Multi-App Support** - One user can have different roles in different apps
+✅ **Works with RLS** - Integrate with Supabase Row Level Security policies
+✅ **Type-Safe** - Full TypeScript support
 
-## Prerequisites
+## Quick Start for Implementers
 
-Before you begin, ensure you have:
+**Want to add claims to YOUR application?**
 
-1. **Supabase Project** with custom claims functions installed
-   - **Option A - Automated (Recommended):** Use our migration system
-     ```bash
-     # Set up .env.local with your credentials first
-     pnpm migrate
-     ```
-   - **Option B - Manual:** Open your [Supabase SQL Editor](https://app.supabase.com/project/_/sql)
-     - Copy and run the contents of [install.sql](./install.sql)
-     - This creates the necessary PostgreSQL functions for managing claims
+1. **Understand Claims:** Read the [Claims Guide](./content/docs/core/claims-guide.md)
+2. **Set Up the System:** Install the SQL functions (see below)
+3. **Integrate into Your App:** Follow the [Integration Guide](./content/docs/integration/complete-integration-guide.md)
+4. **Optional:** Deploy the admin dashboard to manage claims
 
-2. **Bootstrap an Admin User**
-   - ⚠️ **Important**: The login page does NOT create new users (`shouldCreateUser: false`)
-   - Users must be created manually by an administrator first
-   - To create and grant admin access:
-     1. Create user in Supabase Dashboard: **Authentication → Users → Add User**
-     2. Copy the user ID
-     3. Run this in SQL Editor to grant claims_admin:
-        ```sql
-        select set_claim('YOUR-USER-ID', 'claims_admin', 'true');
-        ```
+## For Application Developers
 
-3. **Node.js** - Version 18+ recommended
-4. **pnpm** - Version 8+ recommended
+**📚 [Start Here: Complete Integration Guide](./content/docs/integration/complete-integration-guide.md)**
 
-## Installation
+### Essential Reading
 
-1. **Clone and navigate to this directory:**
-   ```bash
-   cd supabase-claims-admin-dashboard
-   ```
+1. **[Claims Guide](./content/docs/core/claims-guide.md)** - What are custom claims and how they work
+2. **[Complete Integration Guide](./content/docs/integration/complete-integration-guide.md)** - Step-by-step implementation
+3. **[Authentication Guide](./content/docs/integration/authentication-guide.md)** - Implementing auth with claims
+4. **[Authorization Patterns](./content/docs/integration/authorization-patterns.md)** - Role-based access control
+5. **[Environment Configuration](./content/docs/integration/environment-configuration.md)** - Production deployment
 
-2. **Install dependencies:**
-   ```bash
-   pnpm install
-   ```
+### Quick Reference
 
-3. **Set up environment variables:**
+- **[Auth Quick Reference](./content/docs/integration/auth-quick-reference.md)** - Copy-paste code snippets
+- **[API Documentation](./docs/EXTERNAL_API_CONTRACT.md)** - RPC function reference
+- **[Session Management](./content/docs/integration/session-management.md)** - Working with sessions
 
-   Create a `.env.local` file with your Supabase credentials:
-   ```env
-   NEXT_PUBLIC_SUPABASE_URL=your-supabase-project-url
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-supabase-anon-key
-   SUPABASE_SERVICE_ROLE_KEY=your-service-role-key  # Required for migrations
+## Installation (For Your Supabase Project)
 
-   # Production only - set your production domain for auth redirects
-   # Example: https://admin.yourdomain.com
-   # NEXT_PUBLIC_APP_URL=https://your-production-domain.com
-   ```
+### Step 1: Install SQL Functions
 
-   You can find the Supabase values in your Supabase project settings under API.
+The custom claims system requires PostgreSQL functions in your Supabase project.
 
-   **⚠️ Production Note:** `NEXT_PUBLIC_APP_URL` is **required** in production to ensure magic links and password reset emails redirect to the correct domain. Without it, they may redirect to `localhost`.
-
-4. **Run database migrations:**
-
-   ```bash
-   # Check migration status
-   pnpm migrate:status
-
-   # Run all pending migrations
-   pnpm migrate
-   ```
-
-   See [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) for detailed migration documentation.
-
-## Development
-
-Run the development server:
-
+**Option A - Automated (Recommended):**
 ```bash
+# Clone this repo
+git clone <repo-url>
+cd supabase-claims-admin-dashboard
+
+# Install dependencies
+pnpm install
+
+# Set up environment
+cp .env.example .env.local
+# Edit .env.local with your Supabase credentials
+
+# Run migrations
+pnpm migrate
+```
+
+**Option B - Manual:**
+1. Open your [Supabase SQL Editor](https://app.supabase.com/project/_/sql)
+2. Copy and run the contents of [install.sql](./install.sql)
+3. This creates the PostgreSQL functions for managing claims
+
+**What gets installed:**
+- `set_claim(user_id, claim, value)` - Set a user claim
+- `get_claim(user_id, claim)` - Get a user claim
+- `delete_claim(user_id, claim)` - Delete a user claim
+- `set_app_claim(user_id, app_id, claim, value)` - Set app-specific claim
+- And more... see [API Documentation](./docs/EXTERNAL_API_CONTRACT.md)
+
+### Step 2: Start Using Claims in Your App
+
+See the [Complete Integration Guide](./content/docs/integration/complete-integration-guide.md) for step-by-step instructions.
+
+**Quick Example:**
+
+```typescript
+// In your Next.js app
+import { createClient } from '@supabase/supabase-js';
+
+// After user signs in
+const { data: { user } } = await supabase.auth.getUser();
+
+// Access claims from JWT
+const userRole = user?.app_metadata?.role;
+const hasAccess = user?.app_metadata?.apps?.['my-app']?.enabled;
+
+// Use for authorization
+if (userRole === 'admin') {
+  // Show admin features
+}
+```
+
+### Step 3: (Optional) Deploy Admin Dashboard
+
+The admin dashboard provides a UI for managing users and claims.
+
+**Quick Setup:**
+```bash
+# Install dependencies
+pnpm install
+
+# Configure environment
+cp .env.example .env.local
+# Edit with your credentials
+
+# Start dev server
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) in your browser.
+**Production Deployment:**
+- See [Docker Deployment Guide](./DOCKER_DEPLOYMENT.md) for Docker
+- See [Environment Configuration](./content/docs/integration/environment-configuration.md) for all platforms
 
-## Building for Production
-
-```bash
-pnpm build
-pnpm start
+**Grant yourself admin access:**
+```sql
+-- In Supabase SQL Editor
+select set_claim('your-user-id', 'claims_admin', 'true');
 ```
 
 ## Project Structure
@@ -321,38 +347,57 @@ See [Migration Guide](./docs/MIGRATION_GUIDE.md#troubleshooting) for detailed tr
 
 ## Documentation
 
-### Core Guides
+**📚 [Complete Documentation Index](./content/docs/INDEX.md)** - Full documentation navigation
 
-- **[Quick Start](./content/docs/dashboard/quick-start.md)** - Get started in 5 minutes
-- **[Setup Guide](./content/docs/dashboard/setup.md)** - Detailed setup instructions
-- **[Magic Link Setup](./content/docs/dashboard/magic-link-setup.md)** - Implement passwordless auth ⭐
-- **[Claims Guide](./content/docs/core/claims-guide.md)** - Understanding custom claims ⭐
-- **[Multi-App Guide](./content/docs/core/multi-app-guide.md)** - Multi-app architecture
+### For Application Developers (Primary Audience) ⭐
 
-### Integration
+**Goal:** Integrate custom claims into YOUR Supabase applications
 
-- **[Authentication Guide](./content/docs/integration/authentication-guide.md)** - Auth setup and patterns
-- **[App Auth Integration](./content/docs/integration/app-auth-integration.md)** - Real-world integration examples
-- **[Complete Integration Guide](./content/docs/integration/complete-integration-guide.md)** - End-to-end integration
-- **[API Keys Guide](./content/docs/integration/api-keys-guide.md)** - API key management
-- **[Auth Quick Reference](./content/docs/integration/auth-quick-reference.md)** - Code snippets ⚡
-- **[RLS Policies](./content/docs/integration/rls-policies.md)** - Row level security patterns
+| Step | Guide | Purpose |
+|------|-------|---------|
+| 1 | **[Claims Guide](./content/docs/core/claims-guide.md)** | Understand what custom claims are |
+| 2 | **[Complete Integration Guide](./content/docs/integration/complete-integration-guide.md)** | Step-by-step implementation |
+| 3 | **[Authentication Guide](./content/docs/integration/authentication-guide.md)** | Implement auth with claims |
+| 4 | **[Authorization Patterns](./content/docs/integration/authorization-patterns.md)** | Role-based access control |
+| 5 | **[Environment Configuration](./content/docs/integration/environment-configuration.md)** | Production deployment |
+
+**Quick Reference:**
+- **[Auth Quick Reference](./content/docs/integration/auth-quick-reference.md)** - Copy-paste code snippets
+- **[API Documentation](./docs/EXTERNAL_API_CONTRACT.md)** - RPC function reference
+- **[Session Management](./content/docs/integration/session-management.md)** - Session handling
+
+### For Dashboard Administrators (Optional)
+
+**Goal:** Deploy and manage the admin dashboard
+
+- **[Dashboard Quick Start](./content/docs/dashboard/quick-start.md)** - Get dashboard running in 5 minutes
+- **[Dashboard Setup Guide](./content/docs/dashboard/setup.md)** - Detailed configuration
+
+### Additional Integration Resources
+
+| Category | Guides |
+|----------|--------|
+| **Auth Methods** | [Passwordless Auth](./content/docs/integration/passwordless-auth.md), [Password Auth](./content/docs/integration/password-auth.md) |
+| **Advanced** | [Multi-App Guide](./content/docs/core/multi-app-guide.md), [RLS Policies](./content/docs/integration/rls-policies.md), [API Keys](./content/docs/integration/api-keys-guide.md) |
+| **Examples** | [App Auth Integration](./content/docs/integration/app-auth-integration.md) |
+
+### Deployment Resources
+
+| Resource | Purpose |
+|----------|---------|
+| **[Environment Configuration](./content/docs/integration/environment-configuration.md)** | **Critical** - Production environment setup |
+| [Docker Deployment](./DOCKER_DEPLOYMENT.md) | Complete Docker deployment guide |
+| [Docker Quick Start](./DOCKER_QUICK_START.md) | Quick Docker setup |
+| [Session Configuration](./docs/SESSION_CONFIGURATION.md) | Session tuning and configuration |
 
 ### Technical Reference
 
-- **[Migration Guide](./docs/MIGRATION_GUIDE.md)** - Database migration system
-- **[External API Contract](./docs/EXTERNAL_API_CONTRACT.md)** - API documentation
-- **[Session Configuration](./docs/SESSION_CONFIGURATION.md)** - Auth session setup
-
-### Deployment
-
-- **[Docker Deployment](./DOCKER_DEPLOYMENT.md)** - Docker & Docker Compose deployment
-- **[Docker Quick Start](./DOCKER_QUICK_START.md)** - Quick Docker setup
-
-### SQL Functions
-
-- **[install.sql](./install.sql)** - Install claims management functions
-- **[uninstall.sql](./uninstall.sql)** - Remove claims functions
+| Resource | Purpose |
+|----------|---------|
+| [External API Contract](./docs/EXTERNAL_API_CONTRACT.md) | RPC function documentation |
+| [Migration Guide](./docs/MIGRATION_GUIDE.md) | Database migration system |
+| [install.sql](./install.sql) | SQL functions installation script |
+| [uninstall.sql](./uninstall.sql) | SQL functions removal script |
 
 ## Contributing
 

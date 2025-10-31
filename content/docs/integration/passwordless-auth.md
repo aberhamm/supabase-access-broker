@@ -27,6 +27,7 @@ order: 5
 
 - [Overview](#overview)
 - [How Magic Links Work](#how-magic-links-work)
+- [Environment Setup](#environment-setup)
 - [Implementation](#implementation)
 - [Access Control](#access-control)
 - [Configuration](#configuration)
@@ -98,6 +99,71 @@ Passwordless authentication eliminates the need for users to remember passwords.
 
 ### Security Model
 
+## Environment Setup
+
+**⚠️ CRITICAL:** Before implementing magic links, you MUST configure your environment variables and Supabase redirect URLs. Skipping this will cause magic links to redirect to `localhost` in production.
+
+### 1. Set Environment Variables
+
+Create a `.env.local` file (development) or set in your production environment:
+
+```env
+# Required
+NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
+NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
+
+# CRITICAL for production - ensures magic links redirect correctly
+NEXT_PUBLIC_APP_URL=https://your-domain.com
+```
+
+**For more details:** See [Environment Configuration Guide](./environment-configuration.md)
+
+### 2. Configure Supabase Redirect URLs
+
+Go to **Supabase Dashboard → Authentication → URL Configuration** and add:
+
+**Development:**
+```
+http://localhost:3000/auth/callback
+http://localhost:3000/**
+```
+
+**Production:**
+```
+https://your-domain.com/auth/callback
+https://your-domain.com/**
+```
+
+**Why this matters:** Supabase only allows redirects to whitelisted URLs for security. Missing this configuration will cause "Invalid redirect URL" errors.
+
+### 3. Create URL Helper (Recommended)
+
+Create `lib/app-url.ts` to properly handle redirects:
+
+```typescript
+/**
+ * Get the application URL for auth redirects
+ * Uses NEXT_PUBLIC_APP_URL in production, window.location.origin in development
+ */
+export function getAppUrl(): string {
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL;
+  }
+
+  if (typeof window !== 'undefined') {
+    return window.location.origin;
+  }
+
+  return 'http://localhost:3000';
+}
+```
+
+Now you're ready to implement magic links!
+
+## Implementation
+
+### Security Model
+
 - Magic links expire after **1 hour** (Supabase default, configurable)
 - Each link can only be used **once**
 - Links are tied to the requesting browser session (PKCE flow)
@@ -161,6 +227,7 @@ export async function createClient() {
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { getAppUrl } from '@/lib/app-url'; // ⭐ Use helper for proper redirects
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -175,8 +242,9 @@ export default function LoginPage() {
     const { error } = await supabase.auth.signInWithOtp({
       email,
       options: {
-        emailRedirectTo: `${window.location.origin}/auth/callback`,
-        // Set to false for existing-users-only apps
+        // ⭐ Use getAppUrl() instead of window.location.origin for production compatibility
+        emailRedirectTo: `${getAppUrl()}/auth/callback`,
+        // Set to false for existing-users-only apps (like admin dashboards)
         shouldCreateUser: true,
       },
     });
@@ -257,10 +325,36 @@ export default function LoginPage() {
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 
+// Get the base URL for redirects
+function getBaseUrl(request: Request): string {
+  // Production: use environment variable
+  if (process.env.NEXT_PUBLIC_APP_URL) {
+    return process.env.NEXT_PUBLIC_APP_URL;
+  }
+
+  // Check for forwarded host (nginx/proxy)
+  const forwardedHost = request.headers.get('x-forwarded-host');
+  if (forwardedHost) {
+    const protocol = request.headers.get('x-forwarded-proto') || 'https';
+    return `${protocol}://${forwardedHost}`;
+  }
+
+  // Check host header
+  const host = request.headers.get('host');
+  if (host) {
+    const protocol = host.includes('localhost') ? 'http' : 'https';
+    return `${protocol}://${host}`;
+  }
+
+  // Fallback
+  return new URL(request.url).origin;
+}
+
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
   const next = requestUrl.searchParams.get('next') ?? '/dashboard';
+  const baseUrl = getBaseUrl(request); // ⭐ Use proper URL detection
 
   if (code) {
     const supabase = await createClient();
@@ -268,14 +362,16 @@ export async function GET(request: Request) {
 
     if (!error) {
       // Successfully authenticated
-      return NextResponse.redirect(new URL(next, requestUrl.origin));
+      return NextResponse.redirect(new URL(next, baseUrl));
     }
   }
 
   // Auth failed, redirect to login
-  return NextResponse.redirect(new URL('/login', requestUrl.origin));
+  return NextResponse.redirect(new URL('/login', baseUrl));
 }
 ```
+
+**⚠️ Important:** The `getBaseUrl()` function ensures redirects work correctly in production, especially with Docker, nginx, or other reverse proxies. See [Environment Configuration Guide](./environment-configuration.md) for details.
 
 ### 4. Middleware for Route Protection
 
@@ -341,10 +437,12 @@ export const config = {
 For applications where only existing users should be able to sign in:
 
 ```typescript
+import { getAppUrl } from '@/lib/app-url';
+
 const { error } = await supabase.auth.signInWithOtp({
   email,
   options: {
-    emailRedirectTo: `${window.location.origin}/auth/callback`,
+    emailRedirectTo: `${getAppUrl()}/auth/callback`, // ⭐ Use helper
     shouldCreateUser: false, // ✅ Only existing users
   },
 });
@@ -624,5 +722,3 @@ analytics.track('user_authenticated', { userId: user.id, method: 'magic_link' })
 - [Supabase Auth Documentation](https://supabase.com/docs/guides/auth)
 - [Email Link (Magic Link) Guide](https://supabase.com/docs/guides/auth/auth-magic-link)
 - [Next.js Middleware](https://nextjs.org/docs/app/building-your-application/routing/middleware)
-
-
