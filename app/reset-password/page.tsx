@@ -14,7 +14,7 @@ import {
 } from '@/components/ui/card';
 import { toast } from 'sonner';
 import Link from 'next/link';
-import { useRouter, useSearchParams } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState('');
@@ -24,7 +24,6 @@ export default function ResetPasswordPage() {
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
   const supabase = createClient();
   const router = useRouter();
-  const searchParams = useSearchParams();
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {

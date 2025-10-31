@@ -14,11 +14,12 @@ import { useRouter } from 'next/navigation';
 import { AlertCircle, RefreshCw, Copy } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import type { User } from '@supabase/supabase-js';
 
 export default function AccessDeniedPage() {
   const router = useRouter();
   const supabase = createClient();
-  const [userInfo, setUserInfo] = useState<any>(null);
+  const [userInfo, setUserInfo] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -32,7 +33,7 @@ export default function AccessDeniedPage() {
       setLoading(false);
     }
     loadUserInfo();
-  }, []);
+  }, [supabase.auth]);
 
   const handleLogout = async () => {
     console.log('🚪 [ACCESS DENIED] Logging out...');
@@ -107,7 +108,7 @@ export default function AccessDeniedPage() {
               <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
                 <li>Go to your Supabase dashboard → SQL Editor</li>
                 <li>Run the SQL command below (or click to copy)</li>
-                <li>Come back here and click "Refresh Session"</li>
+                <li>Come back here and click &quot;Refresh Session&quot;</li>
               </ol>
             </div>
 

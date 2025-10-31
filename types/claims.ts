@@ -1,8 +1,8 @@
 export interface User {
   id: string;
   email: string;
-  app_metadata: Record<string, any>;
-  raw_app_meta_data?: Record<string, any>;
+  app_metadata: Record<string, unknown>;
+  raw_app_meta_data?: Record<string, unknown>;
   created_at: string;
   last_sign_in_at?: string;
   email_confirmed_at?: string;
@@ -11,12 +11,12 @@ export interface User {
 export interface ClaimOperation {
   uid: string;
   claim: string;
-  value?: any;
+  value?: unknown;
 }
 
 export interface ClaimValue {
   key: string;
-  value: any;
+  value: unknown;
   type: 'string' | 'number' | 'boolean' | 'array' | 'object' | 'null';
 }
 
@@ -38,13 +38,13 @@ export interface AppClaim {
   role?: string;
   admin?: boolean;
   permissions?: string[];
-  metadata?: Record<string, any>;
-  [key: string]: any;
+  metadata?: Record<string, unknown>;
+  [key: string]: unknown;
 }
 
 export interface AppMetadata {
   apps?: Record<string, AppClaim>;
-  [key: string]: any; // Maintain backward compatibility
+  [key: string]: unknown; // Maintain backward compatibility
 }
 
 export interface AppInfo {

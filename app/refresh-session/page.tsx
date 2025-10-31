@@ -11,7 +11,7 @@ export default function RefreshSessionPage() {
   const router = useRouter();
   const [status, setStatus] = useState<'idle' | 'refreshing' | 'success' | 'error'>('idle');
   const [errorMessage, setErrorMessage] = useState('');
-  const [claims, setClaims] = useState<any>(null);
+  const [claims, setClaims] = useState<Record<string, unknown> | null>(null);
 
   const refreshSession = async () => {
     setStatus('refreshing');
@@ -38,15 +38,16 @@ export default function RefreshSessionPage() {
           router.push('/');
         }, 2000);
       }
-    } catch (err: any) {
+    } catch (err) {
       setStatus('error');
-      setErrorMessage(err.message || 'Failed to refresh session');
+      setErrorMessage(err instanceof Error ? err.message : 'Failed to refresh session');
     }
   };
 
   useEffect(() => {
     // Auto-refresh on page load
     refreshSession();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   return (
@@ -136,7 +137,7 @@ export default function RefreshSessionPage() {
           </p>
           <p>
             If your <code className="bg-muted px-1 py-0.5 rounded">claims_admin</code> flag was added
-            after you logged in, your current JWT won't have it.
+            after you logged in, your current JWT won&apos;t have it.
           </p>
           <p>
             Refreshing your session updates the JWT with your latest permissions from the database.
