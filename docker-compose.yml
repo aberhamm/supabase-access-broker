@@ -11,7 +11,7 @@ services:
     container_name: claims-admin-dashboard
     restart: unless-stopped
     ports:
-      - "3050:3050"
+      - '127.0.0.1:3050:3050'
     environment:
       # Public variables (already baked into build)
       - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
@@ -32,14 +32,20 @@ services:
     networks:
       - claims-network
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3050/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      test:
+        [
+          'CMD',
+          'node',
+          '-e',
+          "require('http').get('http://localhost:3050/api/health', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})",
+        ]
       interval: 30s
       timeout: 3s
       retries: 3
       start_period: 40s
     labels:
-      - "com.claims-admin.description=Supabase Claims Admin Dashboard"
-      - "com.claims-admin.version=1.0.0"
+      - 'com.claims-admin.description=Supabase Claims Admin Dashboard'
+      - 'com.claims-admin.version=1.0.0'
 
 networks:
   claims-network:
