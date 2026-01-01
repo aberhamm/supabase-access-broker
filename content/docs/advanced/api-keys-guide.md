@@ -1,8 +1,8 @@
 ---
-title: 'API Keys Guide'
-description: 'Secure your webhooks and external integrations with app-specific API keys'
-category: 'integration'
-audience: 'developers'
+title: "API Keys Guide"
+description: "Secure your webhooks and external integrations with app-specific API keys"
+category: "advanced"
+audience: "app-developer"
 ---
 
 # API Keys Guide
@@ -364,11 +364,21 @@ async function sendWebhook(data) {
 
 ## Next Steps
 
-- [Complete Integration Guide](./complete-integration-guide) - Full authentication setup
-- [Authentication Guide](./authentication-guide) - User authentication patterns
-- [RLS Policies](./rls-policies) - Secure your database with Row Level Security
+- [Complete Integration Guide](/docs/complete-integration-guide) - Full authentication setup
+- [Authentication Guide](/docs/authentication-guide) - User authentication patterns
+- [RLS Policies](/docs/rls-policies) - Secure your database with Row Level Security
 
 ## Need Help?
 
 Check the webhook endpoint logs or create an issue if you encounter problems not covered in this guide.
 
+
+---
+
+## What's Next
+
+- **Docs home:** [/docs](/docs)
+- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
+- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
+- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
+- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)

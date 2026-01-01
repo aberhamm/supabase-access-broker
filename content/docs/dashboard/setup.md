@@ -12,7 +12,7 @@ order: 2
 
 This dashboard manages **Supabase Custom Claims** - special user attributes stored in JWT tokens for high-performance authorization.
 
-👉 **New to custom claims?** Read [CLAIMS_GUIDE.md](./CLAIMS_GUIDE.md) first to understand what they are and how they work.
+👉 **New to custom claims?** Read [CLAIMS_GUIDE.md](/docs/claims-guide) first to understand what they are and how they work.
 
 ## Quick Start
 
@@ -53,17 +53,17 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
    - This key bypasses Row Level Security, so keep it secret!
    - It's only used server-side and never exposed to the client
 
-**📘 For Production Setup:** See the complete [Environment Variables & Deployment Guide](../integration/environment-configuration.md) for production configuration, Docker deployment, and troubleshooting auth redirect issues.
+**📘 For Production Setup:** See the complete [Environment Variables & Deployment Guide](/docs/environment-configuration) for production configuration, Docker deployment, and troubleshooting auth redirect issues.
 
 ### 3. Install Custom Claims Functions
 
 If you haven't already, you need to install the custom claims functions in your Supabase project:
 
-1. Open your Supabase SQL Editor: https://app.supabase.com/project/YOUR-PROJECT/sql
-2. Copy the contents of [`install.sql`](./install.sql) (in this directory)
+1. Open your Supabase SQL Editor (example: `https://app.supabase.com/project/YOUR-PROJECT/sql`)
+2. Copy the contents of `install.sql` (repo file at the project root)
 3. Paste and run it
 
-This creates the PostgreSQL functions needed for managing claims. See [CLAIMS_GUIDE.md](./CLAIMS_GUIDE.md) for details on what these functions do.
+This creates the PostgreSQL functions needed for managing claims. See [CLAIMS_GUIDE.md](/docs/claims-guide) for details on what these functions do.
 
 ### 4. Bootstrap an Admin User
 
@@ -117,4 +117,14 @@ Once you're signed in:
 - Click on any user to manage their custom claims
 - Add, edit, or delete claims as needed
 
-Refer to the [README.md](./README.md) for more detailed documentation.
+Refer to `README.md` (repo file at the project root) for more detailed documentation.
+
+---
+
+## What's Next
+
+- **Docs home:** [/docs](/docs)
+- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
+- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
+- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
+- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)

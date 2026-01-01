@@ -1,7 +1,7 @@
 ---
 title: "RLS Policies Guide"
 description: "Set up Row Level Security policies with custom claims"
-category: "integration"
+category: "authorization"
 audience: "app-developer"
 order: 3
 ---
@@ -960,9 +960,9 @@ ORDER BY tablename, policyname;
 
 ## Related Documentation
 
-- [CLAIMS_GUIDE.md](./CLAIMS_GUIDE.md) - Understanding custom claims
-- [AUTHENTICATION_GUIDE.md](./AUTHENTICATION_GUIDE.md) - Setting up authentication
-- [MULTI_APP_GUIDE.md](./MULTI_APP_GUIDE.md) - Multi-app architecture
+- [CLAIMS_GUIDE.md](/docs/claims-guide) - Understanding custom claims
+- [AUTHENTICATION_GUIDE.md](/docs/authentication-guide) - Setting up authentication
+- [MULTI_APP_GUIDE.md](/docs/multi-app-guide) - Multi-app architecture
 - [PostgreSQL RLS Documentation](https://www.postgresql.org/docs/current/ddl-rowsecurity.html)
 
 ## Summary
@@ -983,3 +983,13 @@ RLS policies combined with custom claims provide powerful, performant access con
 6. Document your policies
 
 Start with simple policies and add complexity as needed. Remember: simpler policies are easier to maintain and often perform better!
+
+---
+
+## What's Next
+
+- **Docs home:** [/docs](/docs)
+- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
+- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
+- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
+- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)

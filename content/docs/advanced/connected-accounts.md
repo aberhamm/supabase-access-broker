@@ -1,8 +1,8 @@
 ---
 title: "Connected Accounts"
 description: "Link external accounts like Telegram to Supabase users"
-category: "integration"
-audience: "developers"
+category: "advanced"
+audience: "app-developer"
 order: 12
 ---
 
@@ -272,7 +272,17 @@ The same pattern can be extended for other platforms:
 
 ## Related Documentation
 
-- [Claims Guide](../core/claims-guide.md) - Understanding custom claims
-- [Complete Integration Guide](./complete-integration-guide.md) - Full integration walkthrough
-- [Authorization Patterns](./authorization-patterns.md) - Role-based access patterns
-- [RLS Policies](./rls-policies.md) - Database security with claims
+- [Claims Guide](/docs/claims-guide) - Understanding custom claims
+- [Complete Integration Guide](/docs/complete-integration-guide) - Full integration walkthrough
+- [Authorization Patterns](/docs/authorization-patterns) - Role-based access patterns
+- [RLS Policies](/docs/rls-policies) - Database security with claims
+
+---
+
+## What's Next
+
+- **Docs home:** [/docs](/docs)
+- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
+- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
+- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
+- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)

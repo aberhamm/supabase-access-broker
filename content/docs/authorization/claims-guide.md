@@ -1,7 +1,7 @@
 ---
 title: "Supabase Custom Claims Guide"
 description: "Complete guide to Supabase custom claims"
-category: "core"
+category: "authorization"
 audience: "all"
 order: 1
 ---
@@ -358,3 +358,13 @@ To remove all custom claims functions:
 2. This removes all functions but preserves existing claim data
 
 Your claims data in `auth.users.raw_app_meta_data` will remain intact.
+
+---
+
+## What's Next
+
+- **Docs home:** [/docs](/docs)
+- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
+- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
+- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
+- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)

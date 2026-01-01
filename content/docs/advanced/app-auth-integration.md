@@ -1,7 +1,7 @@
 ---
 title: "App Authentication Integration Guide"
 description: "Advanced integration patterns for authentication"
-category: "integration"
+category: "advanced"
 audience: "app-developer"
 order: 2
 ---
@@ -1036,9 +1036,9 @@ const handleEnterpriseSignUp = async (department: string) => {
 
 ## Related Documentation
 
-- [AUTHENTICATION_GUIDE.md](./AUTHENTICATION_GUIDE.md) - Basic auth setup
-- [MULTI_APP_GUIDE.md](./MULTI_APP_GUIDE.md) - Multi-app architecture
-- [CLAIMS_GUIDE.md](./CLAIMS_GUIDE.md) - Custom claims overview
+- [AUTHENTICATION_GUIDE.md](/docs/authentication-guide) - Basic auth setup
+- [MULTI_APP_GUIDE.md](/docs/multi-app-guide) - Multi-app architecture
+- [CLAIMS_GUIDE.md](/docs/claims-guide) - Custom claims overview
 
 ## Next Steps
 
@@ -1047,3 +1047,13 @@ const handleEnterpriseSignUp = async (department: string) => {
 3. Add middleware for route protection
 4. Test different user scenarios
 5. Monitor and refine permissions as needed
+
+---
+
+## What's Next
+
+- **Docs home:** [/docs](/docs)
+- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
+- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
+- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
+- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)

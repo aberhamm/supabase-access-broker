@@ -1,8 +1,8 @@
 ---
 title: "Authorization Patterns"
 description: "Implementing access control and user permissions"
-category: "integration"
-audience: "developer"
+category: "authorization"
+audience: "app-developer"
 order: 7
 ---
 
@@ -594,10 +594,10 @@ const { data, error } = await supabase.auth.refreshSession();
 
 ## Next Steps
 
-- [Passwordless Authentication](./passwordless-auth.md) - Magic link auth
-- [Password Authentication](./password-auth.md) - Password + reset
-- [RLS Policies](./rls-policies.md) - Database-level security
-- [Authentication Guide](./authentication-guide.md) - Full auth patterns
+- [Passwordless Authentication](/docs/passwordless-auth) - Magic link auth
+- [Password Authentication](/docs/password-auth) - Password + reset
+- [RLS Policies](/docs/rls-policies) - Database-level security
+- [Authentication Guide](/docs/authentication-guide) - Full auth patterns
 
 ## Additional Resources
 
@@ -608,3 +608,13 @@ const { data, error } = await supabase.auth.refreshSession();
 
 
 
+
+---
+
+## What's Next
+
+- **Docs home:** [/docs](/docs)
+- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
+- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
+- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
+- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)

@@ -2,22 +2,45 @@ import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 
+const DOC_CATEGORIES = [
+  'getting-started',
+  'authentication',
+  'authorization',
+  'guides',
+  'advanced',
+  'dashboard',
+  'reference',
+  'contributing',
+] as const;
+
+export type DocCategory = (typeof DOC_CATEGORIES)[number];
+
+const DOC_AUDIENCES = ['dashboard-admin', 'app-developer', 'all'] as const;
+export type DocAudience = (typeof DOC_AUDIENCES)[number];
+
+function isDocCategory(value: unknown): value is DocCategory {
+  return typeof value === 'string' && (DOC_CATEGORIES as readonly string[]).includes(value);
+}
+
+function isDocAudience(value: unknown): value is DocAudience {
+  return typeof value === 'string' && (DOC_AUDIENCES as readonly string[]).includes(value);
+}
+
 export interface DocMetadata {
   slug: string;
   title: string;
   description: string;
-  category: 'dashboard' | 'integration' | 'core';
-  audience: 'dashboard-admin' | 'app-developer' | 'all';
+  category: DocCategory;
+  audience: DocAudience;
   order: number;
   filePath: string;
 }
 
 export async function getAllDocs(): Promise<DocMetadata[]> {
   const docsDir = path.join(process.cwd(), 'content/docs');
-  const categories: ('dashboard' | 'integration' | 'core')[] = ['dashboard', 'integration', 'core'];
   const docs: DocMetadata[] = [];
 
-  for (const category of categories) {
+  for (const category of DOC_CATEGORIES) {
     const categoryPath = path.join(docsDir, category);
 
     // Check if directory exists
@@ -36,8 +59,8 @@ export async function getAllDocs(): Promise<DocMetadata[]> {
         slug: file.replace('.md', ''),
         title: data.title || 'Untitled',
         description: data.description || '',
-        category: data.category || category,
-        audience: data.audience || 'all',
+        category: isDocCategory(data.category) ? data.category : category,
+        audience: isDocAudience(data.audience) ? data.audience : 'all',
         order: data.order || 999,
         filePath: `${category}/${file}`,
       });
@@ -45,8 +68,11 @@ export async function getAllDocs(): Promise<DocMetadata[]> {
   }
 
   return docs.sort((a, b) => {
-    // Sort by category first (dashboard, integration, core)
-    const categoryOrder = { dashboard: 1, integration: 2, core: 3 };
+    // Sort by category first
+    const categoryOrder = Object.fromEntries(DOC_CATEGORIES.map((c, idx) => [c, idx])) as Record<
+      DocCategory,
+      number
+    >;
     if (categoryOrder[a.category] !== categoryOrder[b.category]) {
       return categoryOrder[a.category] - categoryOrder[b.category];
     }
@@ -77,10 +103,9 @@ export async function getDocContent(slug: string): Promise<{ content: string; me
 
 export function getAllDocSlugs(): string[] {
   const docsDir = path.join(process.cwd(), 'content/docs');
-  const categories = ['dashboard', 'integration', 'core'];
   const slugs: string[] = [];
 
-  for (const category of categories) {
+  for (const category of DOC_CATEGORIES) {
     const categoryPath = path.join(docsDir, category);
 
     if (!fs.existsSync(categoryPath)) {

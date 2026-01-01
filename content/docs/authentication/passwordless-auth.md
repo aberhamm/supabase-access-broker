@@ -1,8 +1,8 @@
 ---
 title: "Passwordless Authentication (Magic Links)"
 description: "Implement secure passwordless authentication using email magic links"
-category: "integration"
-audience: "developer"
+category: "authentication"
+audience: "app-developer"
 order: 5
 ---
 
@@ -116,7 +116,7 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 NEXT_PUBLIC_APP_URL=https://your-domain.com
 ```
 
-**For more details:** See [Environment Configuration Guide](./environment-configuration.md)
+**For more details:** See [Environment Configuration Guide](/docs/environment-configuration)
 
 ### 2. Configure Supabase Redirect URLs
 
@@ -371,7 +371,7 @@ export async function GET(request: Request) {
 }
 ```
 
-**⚠️ Important:** The `getBaseUrl()` function ensures redirects work correctly in production, especially with Docker, nginx, or other reverse proxies. See [Environment Configuration Guide](./environment-configuration.md) for details.
+**⚠️ Important:** The `getBaseUrl()` function ensures redirects work correctly in production, especially with Docker, nginx, or other reverse proxies. See [Environment Configuration Guide](/docs/environment-configuration) for details.
 
 ### 4. Middleware for Route Protection
 
@@ -477,7 +477,7 @@ if (!userRole || !allowedRoles.includes(userRole)) {
 }
 ```
 
-See [Authorization Patterns](./authorization-patterns.md) for comprehensive access control strategies.
+See [Authorization Patterns](/docs/authorization-patterns) for comprehensive access control strategies.
 
 ## Configuration
 
@@ -712,13 +712,23 @@ analytics.track('user_authenticated', { userId: user.id, method: 'magic_link' })
 
 ## Next Steps
 
-- [Password Authentication](./password-auth.md) - Add password option
-- [Authorization Patterns](./authorization-patterns.md) - Control access
-- [Authentication Guide](./authentication-guide.md) - Full auth patterns
-- [API Keys Guide](./api-keys-guide.md) - API authentication
+- [Password Authentication](/docs/password-auth) - Add password option
+- [Authorization Patterns](/docs/authorization-patterns) - Control access
+- [Authentication Guide](/docs/authentication-guide) - Full auth patterns
+- [API Keys Guide](/docs/api-keys-guide) - API authentication
 
 ## Additional Resources
 
 - [Supabase Auth Documentation](https://supabase.com/docs/guides/auth)
 - [Email Link (Magic Link) Guide](https://supabase.com/docs/guides/auth/auth-magic-link)
 - [Next.js Middleware](https://nextjs.org/docs/app/building-your-application/routing/middleware)
+
+---
+
+## What's Next
+
+- **Docs home:** [/docs](/docs)
+- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
+- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
+- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
+- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)

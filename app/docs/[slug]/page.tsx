@@ -59,9 +59,14 @@ export default async function DocPage({ params }: DocPageProps) {
 
   // Category labels
   const categoryLabels = {
-    dashboard: 'Dashboard Setup',
-    integration: 'App Integration',
-    core: 'Core Concepts',
+    'getting-started': 'Getting Started',
+    guides: 'Integration Guides',
+    authentication: 'Authentication',
+    authorization: 'Authorization',
+    advanced: 'Advanced',
+    reference: 'Reference',
+    dashboard: 'Admin Dashboard',
+    contributing: 'Contributing',
   };
 
   return (

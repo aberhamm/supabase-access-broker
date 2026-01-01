@@ -1,7 +1,7 @@
 ---
 title: "Multi-App Architecture Guide"
 description: "Managing multiple applications with one auth system"
-category: "core"
+category: "advanced"
 audience: "all"
 order: 2
 ---
@@ -466,3 +466,13 @@ For issues or questions:
 ## License
 
 Same as the main project.
+
+---
+
+## What's Next
+
+- **Docs home:** [/docs](/docs)
+- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
+- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
+- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
+- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)

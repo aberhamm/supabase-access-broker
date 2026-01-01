@@ -1,7 +1,7 @@
 ---
 title: "Complete App Integration Guide"
 description: "Everything you need to integrate claims-based authentication into your application"
-category: "integration"
+category: "guides"
 audience: "app-developer"
 order: 1
 ---
@@ -1348,8 +1348,18 @@ curl -X POST https://your-app.com/api/webhooks/your-app-id \
 - **Usage tracking**: Monitors last usage time
 - **Secure**: Hashed in database, never retrievable
 
-For detailed information, see the [API Keys Guide](./api-keys-guide).
+For detailed information, see the [API Keys Guide](/docs/api-keys-guide).
 
 ---
 
 **You now have everything needed to integrate claims-based authentication into your application, including webhook support!**
+
+---
+
+## What's Next
+
+- **Docs home:** [/docs](/docs)
+- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
+- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
+- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
+- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)

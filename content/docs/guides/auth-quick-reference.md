@@ -1,7 +1,7 @@
 ---
 title: "Authentication Quick Reference"
 description: "Copy-paste ready code snippets"
-category: "integration"
+category: "guides"
 audience: "app-developer"
 order: 4
 ---
@@ -24,7 +24,7 @@ order: 4
 
 **⚠️ Important for Production:**
 - All code examples use `getAppUrl()` helper for auth redirects
-- You MUST set `NEXT_PUBLIC_APP_URL` in production (see [Environment Configuration](./environment-configuration.md))
+- You MUST set `NEXT_PUBLIC_APP_URL` in production (see [Environment Configuration](/docs/environment-configuration))
 - Without it, redirects go to `localhost` instead of your domain
 
 ## Table of Contents
@@ -597,11 +597,21 @@ const { data: isAdmin } = await supabase.rpc('is_app_admin', {
 
 ## Related Documentation
 
-- [AUTHENTICATION_GUIDE.md](./AUTHENTICATION_GUIDE.md) - Complete authentication setup
-- [APP_AUTH_INTEGRATION_GUIDE.md](./APP_AUTH_INTEGRATION_GUIDE.md) - Integration patterns
-- [CLAIMS_GUIDE.md](./CLAIMS_GUIDE.md) - Custom claims reference
-- [MULTI_APP_GUIDE.md](./MULTI_APP_GUIDE.md) - Multi-app architecture
+- [AUTHENTICATION_GUIDE.md](/docs/authentication-guide) - Complete authentication setup
+- [APP_AUTH_INTEGRATION_GUIDE.md](/docs/app-auth-integration) - Integration patterns
+- [CLAIMS_GUIDE.md](/docs/claims-guide) - Custom claims reference
+- [MULTI_APP_GUIDE.md](/docs/multi-app-guide) - Multi-app architecture
 
 ---
 
 **Note:** This is a quick reference. For detailed explanations and advanced patterns, see the full guides.
+
+---
+
+## What's Next
+
+- **Docs home:** [/docs](/docs)
+- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
+- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
+- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
+- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)

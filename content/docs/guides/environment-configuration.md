@@ -1,7 +1,7 @@
 ---
 title: "Environment Variables & Deployment"
 description: "Complete guide to environment configuration for development and production"
-category: "integration"
+category: "guides"
 audience: "app-developer"
 order: 10
 ---
@@ -232,7 +232,7 @@ docker-compose -f docker-compose.prod.yml build
 docker-compose -f docker-compose.prod.yml up -d
 ```
 
-See [DOCKER_DEPLOYMENT.md](../../../DOCKER_DEPLOYMENT.md) for complete Docker guide.
+See `DOCKER_DEPLOYMENT.md` (repo file) for the complete Docker guide.
 
 ## Supabase Configuration
 
@@ -512,10 +512,10 @@ Before deploying to production:
 
 ## Related Documentation
 
-- [Authentication Guide](./authentication-guide.md) - Complete auth setup
-- [Session Management](./session-management.md) - Session handling
-- [Docker Deployment](../../../DOCKER_DEPLOYMENT.md) - Docker guide
-- [README](../../../README.md) - Main documentation
+- [Authentication Guide](/docs/authentication-guide) - Complete auth setup
+- [Session Management](/docs/session-management) - Session handling
+- `DOCKER_DEPLOYMENT.md` - Docker guide (repo file)
+- `README.md` - Main repository documentation (repo file)
 
 ## Quick Reference
 
@@ -550,3 +550,13 @@ NEXT_PUBLIC_APP_URL=https://your-domain.com  # or http://localhost:3050
 - Configure Supabase redirect URLs
 - Test magic link authentication
 - Deploy to production with confidence
+
+---
+
+## What's Next
+
+- **Docs home:** [/docs](/docs)
+- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
+- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
+- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
+- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)

@@ -1,7 +1,7 @@
 ---
 title: "Session Management Guide"
 description: "Complete guide for getting, retrieving, and managing user sessions"
-category: "integration"
+category: "authentication"
 audience: "app-developer"
 order: 5
 ---
@@ -1185,9 +1185,9 @@ echo $NEXT_PUBLIC_SUPABASE_URL
 
 ## Related Documentation
 
-- [Authentication Guide](./authentication-guide.md) - Complete auth setup
-- [Auth Quick Reference](./auth-quick-reference.md) - Code snippets
-- [Session Configuration](../../docs/SESSION_CONFIGURATION.md) - Dashboard config
+- [Authentication Guide](/docs/authentication-guide) - Complete auth setup
+- [Auth Quick Reference](/docs/auth-quick-reference) - Code snippets
+- `docs/SESSION_CONFIGURATION.md` - Session tuning reference (repo file)
 
 ---
 
@@ -1197,3 +1197,13 @@ echo $NEXT_PUBLIC_SUPABASE_URL
 - Configure session duration in Supabase Dashboard
 - Test session persistence across page reloads
 - Handle session expiration gracefully in your UI
+
+---
+
+## What's Next
+
+- **Docs home:** [/docs](/docs)
+- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
+- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
+- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
+- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)

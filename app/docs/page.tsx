@@ -21,7 +21,10 @@ export const metadata: Metadata = {
 
 const iconMap: Record<string, LucideIcon> = {
   'setup': Code,
-  'quick-start': Play,
+  'dashboard-quick-start': Play,
+  'quick-start': Rocket,
+  'overview': BookOpen,
+  'installation': Code,
   'claims-guide': BookOpen,
   'complete-integration-guide': Rocket,
   'authentication-guide': Shield,
@@ -29,11 +32,18 @@ const iconMap: Record<string, LucideIcon> = {
   'multi-app-guide': FileText,
   'auth-quick-reference': Zap,
   'rls-policies': Lock,
+  'agent-context': FileText,
+  'architecture': FileText,
+  'development': Code,
+  'contributing': FileText,
 };
 
 const colorMap: Record<string, string> = {
   'setup': 'text-red-600',
+  'dashboard-quick-start': 'text-green-600',
   'quick-start': 'text-green-600',
+  'overview': 'text-blue-600',
+  'installation': 'text-orange-600',
   'claims-guide': 'text-blue-600',
   'complete-integration-guide': 'text-purple-600',
   'authentication-guide': 'text-green-600',
@@ -41,32 +51,68 @@ const colorMap: Record<string, string> = {
   'multi-app-guide': 'text-orange-600',
   'auth-quick-reference': 'text-yellow-600',
   'rls-policies': 'text-red-600',
+  'agent-context': 'text-slate-600',
+  'architecture': 'text-slate-600',
+  'development': 'text-slate-600',
+  'contributing': 'text-slate-600',
 };
 
-const categoryInfo = {
+const CATEGORY_ORDER = [
+  'getting-started',
+  'guides',
+  'authentication',
+  'authorization',
+  'advanced',
+  'reference',
+  'dashboard',
+  'contributing',
+] as const;
+
+const categoryInfo: Record<string, { title: string; description: string }> = {
+  'getting-started': {
+    title: 'Getting Started',
+    description: 'Start here to integrate auth + claims into your Next.js app',
+  },
+  guides: {
+    title: 'Integration Guides',
+    description: 'End-to-end walkthroughs and copy-paste references',
+  },
+  authentication: {
+    title: 'Authentication',
+    description: 'Sign-up/sign-in flows, callbacks, password & passwordless auth, sessions',
+  },
+  authorization: {
+    title: 'Authorization',
+    description: 'Claims, roles, permissions patterns, and RLS policies',
+  },
+  advanced: {
+    title: 'Advanced',
+    description: 'Multi-app architecture, API keys, and external integrations',
+  },
+  reference: {
+    title: 'Reference',
+    description: 'High-signal reference docs (including AI/agent context)',
+  },
   dashboard: {
-    title: 'Dashboard Setup',
-    description: 'Set up and configure the admin dashboard',
+    title: 'Admin Dashboard',
+    description: 'Run and configure the Claims Admin Dashboard',
   },
-  integration: {
-    title: 'App Integration',
-    description: 'Build apps that use your Supabase Auth instance',
-  },
-  core: {
-    title: 'Core Concepts',
-    description: 'Understand custom claims and multi-app architecture',
+  contributing: {
+    title: 'Contributing',
+    description: 'Codebase architecture and contribution workflow',
   },
 };
 
 export default async function DocsPage() {
   const allDocs = await getAllDocs();
 
-  // Group docs by category
-  const docsByCategory = {
-    dashboard: allDocs.filter(d => d.category === 'dashboard'),
-    integration: allDocs.filter(d => d.category === 'integration'),
-    core: allDocs.filter(d => d.category === 'core'),
-  };
+  // Group docs by category (dynamic)
+  const docsByCategory = Object.fromEntries(
+    CATEGORY_ORDER.map((category) => [
+      category,
+      allDocs.filter((d) => d.category === category),
+    ]),
+  );
 
   return (
     <div className="container mx-auto p-6 max-w-7xl">
@@ -115,10 +161,10 @@ export default async function DocsPage() {
           <div key={category} className="mb-12">
             <div className="mb-6">
               <h2 className="text-2xl font-semibold mb-2">
-                {categoryInfo[category as keyof typeof categoryInfo].title}
+                {categoryInfo[category]?.title ?? category}
               </h2>
               <p className="text-muted-foreground">
-                {categoryInfo[category as keyof typeof categoryInfo].description}
+                {categoryInfo[category]?.description ?? ''}
               </p>
             </div>
 
@@ -168,6 +214,11 @@ export default async function DocsPage() {
           Check out the troubleshooting sections in each guide or review the quick reference for common patterns.
         </p>
         <div className="flex gap-2">
+          <Link href="/docs/quick-start">
+            <button className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
+              App Quick Start
+            </button>
+          </Link>
           <Link href="/docs/auth-quick-reference">
             <button className="px-4 py-2 bg-primary text-primary-foreground rounded-md hover:bg-primary/90">
               Quick Reference

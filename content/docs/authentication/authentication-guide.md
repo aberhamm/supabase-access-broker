@@ -1,7 +1,7 @@
 ---
 title: "Authentication Setup Guide"
 description: "Set up Supabase Auth with automatic role assignment"
-category: "integration"
+category: "authentication"
 audience: "app-developer"
 order: 1
 ---
@@ -218,7 +218,7 @@ export function getAppUrl(): string {
 }
 ```
 
-**For complete details:** See [Environment Configuration Guide](./environment-configuration.md)
+**For complete details:** See [Environment Configuration Guide](/docs/environment-configuration)
 
 ## Initial Supabase Auth Setup
 
@@ -2019,9 +2019,9 @@ export default async function DashboardPage() {
 
 ## Related Documentation
 
-- [CLAIMS_GUIDE.md](./CLAIMS_GUIDE.md) - Understanding custom claims
-- [MULTI_APP_GUIDE.md](./MULTI_APP_GUIDE.md) - Multi-app architecture
-- [SETUP.md](./SETUP.md) - Initial dashboard setup
+- [CLAIMS_GUIDE.md](/docs/claims-guide) - Understanding custom claims
+- [MULTI_APP_GUIDE.md](/docs/multi-app-guide) - Multi-app architecture
+- [SETUP.md](/docs/setup) - Initial dashboard setup
 - [Supabase Auth Docs](https://supabase.com/docs/guides/auth)
 
 ## Support
@@ -2039,3 +2039,13 @@ For additional help:
 - Configure default roles via triggers or API routes
 - Test authentication flow thoroughly
 - Set up proper error handling and logging
+
+---
+
+## What's Next
+
+- **Docs home:** [/docs](/docs)
+- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
+- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
+- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
+- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)

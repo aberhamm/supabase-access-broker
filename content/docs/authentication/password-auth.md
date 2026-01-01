@@ -1,8 +1,8 @@
 ---
 title: "Password Authentication"
 description: "Implement secure password authentication with reset and recovery flows"
-category: "integration"
-audience: "developer"
+category: "authentication"
+audience: "app-developer"
 order: 6
 ---
 
@@ -75,7 +75,7 @@ https://your-domain.com/reset-password
 https://your-domain.com/**
 ```
 
-**For complete setup:** See [Environment Configuration Guide](./environment-configuration.md)
+**For complete setup:** See [Environment Configuration Guide](/docs/environment-configuration)
 
 ### Authentication Flows
 
@@ -918,12 +918,22 @@ Supabase uses bcrypt by default - no action needed!
 
 ## Next Steps
 
-- [Passwordless Authentication](./passwordless-auth.md) - Magic link option
-- [Authorization Patterns](./authorization-patterns.md) - Control access
-- [Authentication Guide](./authentication-guide.md) - Full auth patterns
+- [Passwordless Authentication](/docs/passwordless-auth) - Magic link option
+- [Authorization Patterns](/docs/authorization-patterns) - Control access
+- [Authentication Guide](/docs/authentication-guide) - Full auth patterns
 
 ## Additional Resources
 
 - [Supabase Auth Documentation](https://supabase.com/docs/guides/auth)
 - [Password Authentication](https://supabase.com/docs/guides/auth/auth-password)
 - [Server-Side Auth](https://supabase.com/docs/guides/auth/server-side)
+
+---
+
+## What's Next
+
+- **Docs home:** [/docs](/docs)
+- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
+- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
+- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
+- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)
