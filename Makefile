@@ -1,8 +1,24 @@
-.PHONY: help build up down logs restart clean rebuild health test prod-up prod-down prod-logs migrate migrate-status migrate-force
+.PHONY: \
+	help \
+	install dev dev-port build-local start-local lint typecheck \
+	build up down logs restart clean rebuild health test \
+	prod-up prod-down prod-logs prod-restart prod-rebuild deploy \
+	shell nginx-shell nginx-test ps stats backup-env \
+	migrate migrate-status migrate-force
 
 # Default target
 help:
 	@echo "Available commands:"
+	@echo ""
+	@echo "Local (non-Docker) commands:"
+	@echo "  make install      - Install dependencies (pnpm)"
+	@echo "  make dev          - Start Next.js dev server (auto-picks a free port)"
+	@echo "  make dev-port PORT=3000 - Start dev server on a specific port"
+	@echo "  make lint         - Run eslint"
+	@echo "  make typecheck    - Run TypeScript typecheck"
+	@echo "  make build-local  - Build Next.js"
+	@echo "  make start-local  - Start Next.js (requires build)"
+	@echo ""
 	@echo "  make build        - Build Docker images"
 	@echo "  make up           - Start containers"
 	@echo "  make down         - Stop containers"
@@ -23,6 +39,34 @@ help:
 	@echo "  make prod-down    - Stop production stack"
 	@echo "  make prod-logs    - View production logs"
 	@echo "  make prod-restart - Restart production stack"
+	@echo "  make deploy       - Alias for prod-up"
+
+# Local (non-Docker) commands
+install:
+	pnpm install
+
+dev:
+	pnpm dev
+
+dev-port:
+	@if [ -z "$(PORT)" ]; then \
+		echo "Error: Please specify PORT=<port>"; \
+		echo "Example: make dev-port PORT=3000"; \
+		exit 1; \
+	fi
+	DEV_PORT=$(PORT) pnpm dev
+
+lint:
+	pnpm lint
+
+typecheck:
+	npx tsc --noEmit
+
+build-local:
+	pnpm build
+
+start-local:
+	pnpm start
 
 # Development/Staging commands
 build:
@@ -30,8 +74,8 @@ build:
 
 up:
 	docker-compose up -d
-	@echo "Application started at http://localhost:3000"
-	@echo "Health check: http://localhost:3000/api/health"
+	@echo "Application started at http://localhost:3050"
+	@echo "Health check: http://localhost:3050/api/health"
 
 down:
 	docker-compose down
@@ -54,7 +98,7 @@ clean:
 	@echo "Cleaned up containers and images"
 
 health:
-	@curl -f http://localhost:3000/api/health || echo "Health check failed"
+	@curl -f http://localhost:3050/api/health || echo "Health check failed"
 
 test:
 	docker-compose exec app pnpm test
@@ -80,6 +124,8 @@ prod-rebuild:
 	docker-compose -f docker-compose.prod.yml build --no-cache
 	docker-compose -f docker-compose.prod.yml up -d
 	@echo "Production stack rebuilt and restarted"
+
+deploy: prod-up
 
 # Utility commands
 shell:

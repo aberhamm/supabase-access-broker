@@ -24,6 +24,7 @@ interface RoleFormDialogProps {
   appId: string;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
 export function RoleFormDialog({
@@ -31,6 +32,7 @@ export function RoleFormDialog({
   appId,
   open,
   onOpenChange,
+  onSuccess,
 }: RoleFormDialogProps) {
   const isEditing = !!role;
   const [loading, setLoading] = useState(false);
@@ -77,6 +79,7 @@ export function RoleFormDialog({
             : `Role "${formData.label}" created successfully`
         );
         onOpenChange(false);
+        onSuccess?.();
       }
     } catch (error) {
       const err = error as { message?: string };

@@ -22,9 +22,10 @@ interface AppFormDialogProps {
   app?: AppConfig;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
-export function AppFormDialog({ app, open, onOpenChange }: AppFormDialogProps) {
+export function AppFormDialog({ app, open, onOpenChange, onSuccess }: AppFormDialogProps) {
   const isEditing = !!app;
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
@@ -70,6 +71,7 @@ export function AppFormDialog({ app, open, onOpenChange }: AppFormDialogProps) {
             : `App "${formData.name}" created successfully`
         );
         onOpenChange(false);
+        onSuccess?.();
       }
     } catch (error) {
       const err = error as { message?: string };

@@ -20,12 +20,14 @@ interface DeleteRoleDialogProps {
   role: RoleConfig;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  onSuccess?: () => void;
 }
 
 export function DeleteRoleDialog({
   role,
   open,
   onOpenChange,
+  onSuccess,
 }: DeleteRoleDialogProps) {
   const [loading, setLoading] = useState(false);
 
@@ -40,6 +42,7 @@ export function DeleteRoleDialog({
       } else {
         toast.success(`Role "${role.label}" deleted successfully`);
         onOpenChange(false);
+        onSuccess?.();
       }
     } catch (error) {
       const err = error as { message?: string };

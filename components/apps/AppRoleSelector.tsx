@@ -22,7 +22,7 @@ export function AppRoleSelector({
 }: AppRoleSelectorProps) {
   return (
     <Select value={currentRole} onValueChange={onRoleChange} disabled={disabled}>
-      <SelectTrigger className="w-[140px]">
+      <SelectTrigger className="w-[220px]" multiline>
         <SelectValue placeholder="Select role" />
       </SelectTrigger>
       <SelectContent>

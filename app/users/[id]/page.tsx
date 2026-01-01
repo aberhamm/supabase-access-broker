@@ -12,6 +12,9 @@ import { AddClaimButton } from '@/components/claims/AddClaimButton';
 import { ToggleAdminButton } from '@/components/users/ToggleAdminButton';
 import { ResetPasswordButton } from '@/components/users/ResetPasswordButton';
 import { CopyButton } from '@/components/users/CopyButton';
+import { DeleteUserDialog } from '@/components/users/DeleteUserDialog';
+import { TelegramLink } from '@/components/users/TelegramLink';
+import { TelegramData } from '@/app/actions/telegram';
 import { AppAccessCard } from '@/components/apps/AppAccessCard';
 import { AppClaimsList } from '@/components/apps/AppClaimsList';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -69,6 +72,7 @@ export default async function UserDetailPage({
   const isAdmin = user.app_metadata?.claims_admin === true;
   const userApps = user.app_metadata?.apps || {};
   const isGlobalAdmin = user.app_metadata?.claims_admin === true;
+  const telegramData = user.app_metadata?.telegram as TelegramData | undefined;
 
   // Fetch available apps from service
   const availableApps = await getApps();
@@ -194,6 +198,19 @@ export default async function UserDetailPage({
                     ) to see updated claims.
                   </p>
                 </div>
+
+                <div className="pt-4 border-t">
+                  <DeleteUserDialog userId={id} userEmail={user.email || ''} />
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader>
+                <CardTitle>Connected Accounts</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <TelegramLink userId={id} telegram={telegramData} />
               </CardContent>
             </Card>
           </div>

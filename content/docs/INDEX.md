@@ -25,6 +25,7 @@ Welcome to the Supabase Custom Claims documentation. This system allows you to a
 - **Get copy-paste code examples** → [Auth Quick Reference](./integration/auth-quick-reference.md)
 - **Manage user sessions** → [Session Management](./integration/session-management.md)
 - **Set up the admin dashboard** → [Dashboard Quick Start](./dashboard/quick-start.md)
+- **Link Telegram/external accounts** → [Connected Accounts](./integration/connected-accounts.md)
 - **Fix auth redirect issues** → [Environment Configuration - Troubleshooting](./integration/environment-configuration.md#common-issues)
 
 ## 📚 Documentation by Category
@@ -68,6 +69,7 @@ Welcome to the Supabase Custom Claims documentation. This system allows you to a
 | [RLS Policies](./integration/rls-policies.md) | Row Level Security with claims | Database security |
 | [API Keys Guide](./integration/api-keys-guide.md) | Managing API keys | Server-to-server auth |
 | [App Auth Integration](./integration/app-auth-integration.md) | Integrating apps with the system | Multi-app setup |
+| [Connected Accounts](./integration/connected-accounts.md) | Link Telegram & external accounts | Cross-platform identity |
 
 ### Dashboard Administration (Optional)
 

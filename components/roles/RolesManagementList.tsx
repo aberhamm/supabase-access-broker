@@ -20,12 +20,14 @@ interface RolesManagementListProps {
   roles: RoleConfig[];
   appId: string;
   isReadOnly?: boolean;
+  onRolesChanged?: () => void;
 }
 
 export function RolesManagementList({
   roles,
   appId,
   isReadOnly = false,
+  onRolesChanged,
 }: RolesManagementListProps) {
   const [editingRole, setEditingRole] = useState<RoleConfig | null>(null);
   const [deletingRole, setDeletingRole] = useState<RoleConfig | null>(null);
@@ -121,6 +123,7 @@ export function RolesManagementList({
           appId={appId}
           open={!!editingRole}
           onOpenChange={(open) => !open && setEditingRole(null)}
+          onSuccess={onRolesChanged}
         />
       )}
 
@@ -129,6 +132,7 @@ export function RolesManagementList({
           role={deletingRole}
           open={!!deletingRole}
           onOpenChange={(open) => !open && setDeletingRole(null)}
+          onSuccess={onRolesChanged}
         />
       )}
     </>

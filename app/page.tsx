@@ -36,14 +36,33 @@ export default async function DashboardPage() {
   }
 
   const email = await getUserEmail();
-  const { data: isAdmin } = await isClaimsAdmin(supabase);
+  const isGlobalAdmin = user.app_metadata?.claims_admin === true;
+  const apps = (user.app_metadata?.apps as Record<string, unknown>) || {};
+  const isAppAdmin = Object.values(apps).some(
+    (app) => (app as { admin?: boolean })?.admin === true
+  );
+
+  // JWT-based check (what the database RPCs use). This can lag behind user.app_metadata
+  // if the admin flag was added after login.
+  const { data: isClaimsAdminJwt } = await isClaimsAdmin(supabase);
+
+  // If the user record says they're a claims admin but the JWT doesn't, force a refresh
+  // so DB RPCs won't fail with "access denied".
+  if (isGlobalAdmin && !isClaimsAdminJwt) {
+    redirect('/refresh-session');
+  }
+
+  // Extra safety (middleware should already enforce this)
+  if (!isGlobalAdmin && !isAppAdmin) {
+    redirect('/access-denied');
+  }
 
   return (
     <div className="min-h-screen bg-background">
       <DashboardNav
         email={email}
         logoutAction={handleLogout}
-        showApps={isAdmin || false}
+        showApps={isGlobalAdmin || isAppAdmin}
       />
 
       <main className="container mx-auto space-y-8 p-4 py-8">
@@ -55,7 +74,7 @@ export default async function DashboardPage() {
             </p>
           </div>
           <div className="flex gap-2">
-            {isAdmin && (
+            {(isGlobalAdmin || isAppAdmin) && (
               <Link href="/apps">
                 <Button variant="outline">
                   <AppWindow className="mr-2 h-4 w-4" />
@@ -72,8 +91,15 @@ export default async function DashboardPage() {
           </div>
         </div>
 
-        {/* Client component handles data fetching with loading states */}
-        <DashboardStats />
+        {/* Claims-admin-only stats (these rely on JWT claims for DB RPC access) */}
+        {isClaimsAdminJwt ? (
+          <DashboardStats />
+        ) : (
+          <div className="rounded-lg border p-6 text-sm text-muted-foreground">
+            Dashboard stats are only available to <code className="rounded bg-muted px-1 py-0.5">claims_admin</code>{' '}
+            users.
+          </div>
+        )}
       </main>
     </div>
   );

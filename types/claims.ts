@@ -8,6 +8,42 @@ export interface User {
   email_confirmed_at?: string;
 }
 
+// =============================================================================
+// Connected Accounts Types
+// =============================================================================
+
+/**
+ * Telegram account data stored in user's app_metadata.telegram
+ *
+ * @example
+ * ```json
+ * {
+ *   "telegram": {
+ *     "id": 123456789,
+ *     "username": "johndoe",
+ *     "first_name": "John",
+ *     "last_name": "Doe",
+ *     "linked_at": "2024-01-15T10:30:00.000Z"
+ *   }
+ * }
+ * ```
+ *
+ * @see linkTelegramAction - Server action to link Telegram
+ * @see unlinkTelegramAction - Server action to unlink Telegram
+ */
+export interface TelegramData {
+  /** Unique Telegram user ID (permanent numeric identifier) */
+  id: number;
+  /** Telegram username without @ (optional, not all users have one) */
+  username?: string;
+  /** User's first name on Telegram */
+  first_name?: string;
+  /** User's last name on Telegram */
+  last_name?: string;
+  /** ISO 8601 timestamp when the account was linked */
+  linked_at: string;
+}
+
 export interface ClaimOperation {
   uid: string;
   claim: string;

@@ -5,6 +5,7 @@ import { createClient } from '@/lib/supabase/client';
 import { UserStatsCards } from '@/components/users/UserStatsCards';
 import { UserActivityList } from '@/components/users/UserActivityList';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
 import { SkeletonStatsGrid } from '@/components/ui/skeleton-stats';
 import { SkeletonCard } from '@/components/ui/skeleton-card';
 import { ErrorBoundary } from '@/components/ErrorBoundary';
@@ -16,6 +17,7 @@ function DashboardStatsContent() {
   const [claimDistribution, setClaimDistribution] = useState<ClaimDistribution[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadData() {
@@ -29,7 +31,9 @@ function DashboardStatsContent() {
           supabase.rpc('get_claim_distribution', { limit_count: 10 }),
         ]);
 
-        if (statsResult.error) throw statsResult.error;
+        if (statsResult.error) throw new Error(statsResult.error.message);
+        if (recentUsersResult.error) throw new Error(recentUsersResult.error.message);
+        if (claimDistResult.error) throw new Error(claimDistResult.error.message);
 
         const statsData = statsResult.data as {
           totalUsers: number;
@@ -58,8 +62,15 @@ function DashboardStatsContent() {
         setRecentUsers(recentUsersData);
         setClaimDistribution(claimDistData);
       } catch (err) {
-        console.error('Failed to load dashboard data:', err);
+        const message =
+          err instanceof Error
+            ? err.message
+            : typeof err === 'string'
+              ? err
+              : JSON.stringify(err);
+        console.error('Failed to load dashboard data:', message);
         setError('Failed to load dashboard data');
+        setErrorDetail(message);
       } finally {
         setLoading(false);
       }
@@ -85,6 +96,21 @@ function DashboardStatsContent() {
       <Card>
         <CardContent className="pt-6">
           <p className="text-destructive text-center">{error || 'Failed to load data'}</p>
+          {errorDetail && (
+            <p className="mt-2 text-xs text-muted-foreground text-center break-words">
+              {errorDetail}
+            </p>
+          )}
+          {errorDetail?.includes('only claims admins') && (
+            <div className="mt-4 flex justify-center">
+              <Button
+                variant="outline"
+                onClick={() => (window.location.href = '/refresh-session')}
+              >
+                Refresh session
+              </Button>
+            </div>
+          )}
         </CardContent>
       </Card>
     );

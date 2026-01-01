@@ -10,9 +10,36 @@ import {
   deleteRoleFromDb,
   isClaimsAdmin,
 } from '@/lib/claims';
-import { refreshCache } from '@/lib/apps-service';
+import { refreshCache, getApps } from '@/lib/apps-service';
 import { revalidatePath } from 'next/cache';
-import type { CreateAppData, UpdateAppData, CreateRoleData, UpdateRoleData } from '@/types/claims';
+import type { CreateAppData, UpdateAppData, CreateRoleData, UpdateRoleData, AppConfig } from '@/types/claims';
+
+// ============================================================================
+// App Query Actions
+// ============================================================================
+
+export async function getAppsAction(): Promise<{ data: AppConfig[] | null; error: string | null }> {
+  try {
+    const apps = await getApps();
+    return { data: apps, error: null };
+  } catch (error) {
+    const err = error as Error;
+    return { data: null, error: err.message || 'Failed to fetch apps' };
+  }
+}
+
+export async function getUsedColorsAction(): Promise<{ data: string[] | null; error: string | null }> {
+  try {
+    const apps = await getApps();
+    const usedColors = apps
+      .map((app) => app.color)
+      .filter((color): color is string => color !== null && color !== undefined);
+    return { data: usedColors, error: null };
+  } catch (error) {
+    const err = error as Error;
+    return { data: null, error: err.message || 'Failed to fetch used colors' };
+  }
+}
 
 // ============================================================================
 // App Management Actions
