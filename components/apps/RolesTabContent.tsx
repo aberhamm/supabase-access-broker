@@ -100,7 +100,7 @@ export function RolesTabContent({ appId }: RolesTabContentProps) {
                 <Shield className="mx-auto h-12 w-12 mb-4 opacity-50" />
                 <p className="font-medium">No app-specific roles yet</p>
                 <p className="text-sm mt-1">
-                  Create roles tailored to this application's needs
+                  Create roles tailored to this application&apos;s needs
                 </p>
                 <Button
                   variant="outline"
