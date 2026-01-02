@@ -57,8 +57,16 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 # Set this to your production domain to ensure magic links and password resets work correctly
 NEXT_PUBLIC_APP_URL=https://admin.yourdomain.com
 
+# Optional: enable additional login methods gradually
+NEXT_PUBLIC_AUTH_PASSKEYS=false
+NEXT_PUBLIC_AUTH_GOOGLE=false
+NEXT_PUBLIC_AUTH_GITHUB=false
+NEXT_PUBLIC_AUTH_EMAIL_OTP=false
+NEXT_PUBLIC_AUTH_PASSWORD=false
+NEXT_PUBLIC_AUTH_MAGIC_LINK=true
+
 NODE_ENV=production
-PORT=3000
+PORT=3050
 HOSTNAME=0.0.0.0
 ```
 
@@ -78,8 +86,8 @@ docker-compose ps
 ### 4. Access the Application
 
 Open your browser to:
-- **Application:** http://localhost:3000
-- **Health Check:** http://localhost:3000/api/health
+- **Application:** http://localhost:3050
+- **Health Check:** http://localhost:3050/api/health
 
 ## Configuration
 
@@ -105,14 +113,14 @@ Open your browser to:
 | `SUPABASE_SERVICE_ROLE_KEY` | Yes | Supabase service role key (SECRET) |
 | `NEXT_PUBLIC_APP_URL` | **Yes (Prod)** | Production domain for auth redirects (e.g., `https://admin.yourdomain.com`) - **CRITICAL for magic links** |
 | `NODE_ENV` | Yes | Set to `production` |
-| `PORT` | No | Port to run on (default: 3000) |
+| `PORT` | No | Port to run on (default: 3050) |
 | `HOSTNAME` | No | Hostname to bind (default: 0.0.0.0) |
 
 ## Deployment Options
 
 ### Option 1: Basic Deployment (Recommended for Testing)
 
-Uses `docker-compose.yml` - exposes the Next.js app directly on port 3000.
+Uses `docker-compose.yml` - exposes the Next.js app directly on port 3050.
 
 ```bash
 # Build and start
@@ -205,7 +213,7 @@ NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 NODE_ENV=production
-PORT=3000
+PORT=3050
 HOSTNAME=0.0.0.0
 NEXT_PUBLIC_APP_URL=https://yourdomain.com
 EOF
@@ -327,7 +335,7 @@ The application includes built-in health checks:
 
 ```bash
 # Check application health
-curl http://localhost:3000/api/health
+curl http://localhost:3050/api/health
 
 # Expected response
 {
@@ -437,7 +445,7 @@ docker-compose logs app
 # 3. Build errors
 
 # Check if port is in use
-lsof -i :3000
+lsof -i :3050
 
 # Try rebuilding
 docker-compose build --no-cache
@@ -446,7 +454,7 @@ docker-compose up
 
 ### Can't Connect to Application
 
-**Problem:** Unable to access http://localhost:3000
+**Problem:** Unable to access http://localhost:3050
 
 **Solution:**
 ```bash
@@ -463,7 +471,7 @@ sudo ufw status
 docker-compose -f docker-compose.prod.yml logs nginx
 
 # 5. Test from inside container
-docker-compose exec app wget -O- http://localhost:3000/api/health
+docker-compose exec app wget -O- http://localhost:3050/api/health
 ```
 
 ### Health Check Failing
@@ -476,7 +484,7 @@ docker-compose exec app wget -O- http://localhost:3000/api/health
 docker inspect claims-admin-dashboard | grep -A 10 Health
 
 # Test health endpoint manually
-docker-compose exec app node -e "require('http').get('http://localhost:3000/api/health', (r) => {console.log(r.statusCode)})"
+docker-compose exec app node -e "require('http').get('http://localhost:3050/api/health', (r) => {console.log(r.statusCode)})"
 
 # View detailed logs
 docker-compose logs --tail=50 app

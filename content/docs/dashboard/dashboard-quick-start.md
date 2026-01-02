@@ -47,7 +47,7 @@ select set_claim('your-user-id-here', 'claims_admin', 'true');
 pnpm dev
 ```
 
-Open `http://localhost:3000` and sign in.
+Open `http://localhost:3050` and sign in.
 
 ---
 

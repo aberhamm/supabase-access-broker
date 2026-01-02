@@ -40,6 +40,14 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 # Optional for development (auto-detects localhost)
 # Required for production to ensure magic links work correctly
 # NEXT_PUBLIC_APP_URL=https://your-production-domain.com
+
+# Optional: enable additional login methods gradually
+NEXT_PUBLIC_AUTH_PASSKEYS=false
+NEXT_PUBLIC_AUTH_GOOGLE=false
+NEXT_PUBLIC_AUTH_GITHUB=false
+NEXT_PUBLIC_AUTH_EMAIL_OTP=false
+NEXT_PUBLIC_AUTH_PASSWORD=false
+NEXT_PUBLIC_AUTH_MAGIC_LINK=true
 ```
 
 **Where to find these values:**
@@ -85,7 +93,7 @@ select set_claim('YOUR-USER-ID', 'claims_admin', 'true');
 pnpm dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) and sign in with your email.
+Open [http://localhost:3050](http://localhost:3050) and sign in with your email.
 
 ## Troubleshooting
 

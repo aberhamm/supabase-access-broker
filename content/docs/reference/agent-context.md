@@ -10,6 +10,9 @@ order: 1
 
 Use this page when you are an AI agent helping a developer integrate the system into a **Next.js App Router** application.
 
+If you are working specifically on the **central auth portal** (SSO + passkeys), use:
+- **[Agent Instructions: Auth Portal](/docs/auth-portal-agent-instructions)**
+
 ## System overview (2–3 sentences)
 
 This system uses **Supabase Auth** for authentication, and **custom claims stored in `auth.users.raw_app_meta_data`** for authorization. Claims are surfaced to applications as `user.app_metadata` and are embedded into JWTs, enabling fast role/permission checks and RLS policies without extra DB reads.
@@ -290,18 +293,11 @@ using (
 
 ---
 
-## What’s Next
-
-- **Start here:** [Getting Started Overview](/docs/overview) → [Quick Start](/docs/quick-start)
-- **Full walkthrough:** [Complete Integration Guide](/docs/complete-integration-guide)
-
-
----
-
 ## What's Next
 
-- **Docs home:** [/docs](/docs)
-- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
-- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
-- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
-- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)
+- **Auth Portal / SSO / Passkeys:** [Agent Instructions: Auth Portal](/docs/auth-portal-agent-instructions) — for implementing SSO in client apps
+- **Getting Started:** [Overview](/docs/overview) → [Quick Start](/docs/quick-start)
+- **Full walkthrough:** [Complete Integration Guide](/docs/complete-integration-guide)
+- **Auth patterns:** [Authentication Guide](/docs/authentication-guide)
+- **Authorization patterns:** [Authorization Patterns](/docs/authorization-patterns)
+- **Environment config:** [Environment Configuration](/docs/environment-configuration)

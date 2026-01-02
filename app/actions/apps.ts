@@ -1,5 +1,6 @@
 'use server';
 
+import { createHash, randomBytes } from 'crypto';
 import { createClient } from '@/lib/supabase/server';
 import {
   createAppInDb,
@@ -112,6 +113,105 @@ export async function deleteAppAction(id: string) {
   revalidatePath('/users');
 
   return { data: result, error: null };
+}
+
+// ============================================================================
+// SSO Management Actions
+// ============================================================================
+
+function normalizeCallbackUrls(urls: string[]): string[] {
+  const cleaned = urls
+    .map((u) => u.trim())
+    .filter(Boolean);
+
+  // Validate by parsing; also normalizes (e.g. removes trailing spaces)
+  const normalized = cleaned.map((u) => new URL(u).toString());
+
+  // De-dupe while preserving order
+  return Array.from(new Set(normalized));
+}
+
+export async function updateAppSSOSettingsAction(
+  appId: string,
+  data: { allowed_callback_urls: string[] }
+): Promise<{ data: { ok: true } | null; error: string | null }> {
+  try {
+    const supabase = await createClient();
+
+    const { data: isAdmin } = await isClaimsAdmin(supabase);
+    if (!isAdmin) {
+      return { data: null, error: 'Unauthorized: You must be a claims_admin' };
+    }
+
+    const allowed_callback_urls = normalizeCallbackUrls(data.allowed_callback_urls);
+
+    const { error } = await supabase
+      .from('apps')
+      .update({ allowed_callback_urls })
+      .eq('id', appId);
+
+    if (error) {
+      if (error.code === '42703') {
+        return {
+          data: null,
+          error:
+            'SSO settings columns are missing in your database. Apply migrations/007_auth_and_passkeys.sql (or run `pnpm migrate`) to add allowed_callback_urls and sso_client_secret_hash.',
+        };
+      }
+      return { data: null, error: error.message || 'Failed to update SSO settings' };
+    }
+
+    refreshCache();
+    revalidatePath('/apps');
+    revalidatePath(`/apps/${appId}`);
+
+    return { data: { ok: true }, error: null };
+  } catch (e) {
+    const err = e as Error;
+    return { data: null, error: err.message || 'Failed to update SSO settings' };
+  }
+}
+
+export async function generateAppSecretAction(
+  appId: string
+): Promise<{ data: { secret: string } | null; error: string | null }> {
+  try {
+    const supabase = await createClient();
+
+    const { data: isAdmin } = await isClaimsAdmin(supabase);
+    if (!isAdmin) {
+      return { data: null, error: 'Unauthorized: You must be a claims_admin' };
+    }
+
+    // 32 bytes -> 64 hex chars; copy/paste friendly.
+    const secret = randomBytes(32).toString('hex');
+    const sso_client_secret_hash = createHash('sha256').update(secret, 'utf8').digest('hex');
+
+    const { error } = await supabase
+      .from('apps')
+      .update({ sso_client_secret_hash })
+      .eq('id', appId);
+
+    if (error) {
+      if (error.code === '42703') {
+        return {
+          data: null,
+          error:
+            'SSO settings columns are missing in your database. Apply migrations/007_auth_and_passkeys.sql (or run `pnpm migrate`) to add allowed_callback_urls and sso_client_secret_hash.',
+        };
+      }
+      return { data: null, error: error.message || 'Failed to generate app secret' };
+    }
+
+    refreshCache();
+    revalidatePath('/apps');
+    revalidatePath(`/apps/${appId}`);
+
+    return { data: { secret }, error: null };
+  } catch (e) {
+    const err = e as Error;
+    return { data: null, error: err.message || 'Failed to generate app secret' };
+  }
 }
 
 // ============================================================================

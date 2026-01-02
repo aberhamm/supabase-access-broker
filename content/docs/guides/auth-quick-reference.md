@@ -46,6 +46,21 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
+### Auth portal feature flags (this repo)
+
+If you use this repo as your central auth portal, you can enable methods gradually:
+
+```env
+NEXT_PUBLIC_AUTH_PASSKEYS=false
+NEXT_PUBLIC_AUTH_GOOGLE=false
+NEXT_PUBLIC_AUTH_GITHUB=false
+NEXT_PUBLIC_AUTH_EMAIL_OTP=false
+NEXT_PUBLIC_AUTH_PASSWORD=false
+NEXT_PUBLIC_AUTH_MAGIC_LINK=true
+```
+
+See: **[Auth Portal (SSO + Passkeys)](/docs/auth-portal-sso-passkeys)**.
+
 ### Supabase Client (Client-Side)
 
 **File:** `lib/supabase/client.ts`
@@ -78,7 +93,7 @@ export function getAppUrl(): string {
     return window.location.origin;
   }
 
-  return 'http://localhost:3000';
+  return 'http://localhost:3050';
 }
 ```
 
@@ -179,6 +194,32 @@ const { error } = await supabase.auth.signInWithOtp({
     shouldCreateUser: false, // Security: Only existing users
   },
 });
+```
+
+### SSO (Central Auth Portal) – client app redirect + exchange
+
+Redirect users to the portal:
+
+```ts
+// app-side (client): send user to portal login
+const portalUrl = 'https://auth.yourdomain.com';
+const appId = 'app1';
+const redirectUri = 'https://app1.com/auth/callback';
+
+window.location.href =
+  `${portalUrl}/login?app_id=${encodeURIComponent(appId)}&redirect_uri=${encodeURIComponent(redirectUri)}`;
+```
+
+Then exchange the returned code:
+
+```ts
+// app-side (server): exchange code for user info + app claims
+const res = await fetch('https://auth.yourdomain.com/api/auth/exchange', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({ code, app_id: 'app1', app_secret: process.env.SSO_APP_SECRET }),
+});
+const payload = await res.json();
 ```
 
 **User-Facing App (Allow New Users):**

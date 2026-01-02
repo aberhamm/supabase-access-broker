@@ -7,15 +7,6 @@ function toInt(value: string | undefined): number | undefined {
   return Number.isFinite(n) ? n : undefined;
 }
 
-function hashString(input: string): number {
-  // Simple deterministic hash (djb2-ish)
-  let hash = 5381;
-  for (let i = 0; i < input.length; i++) {
-    hash = (hash * 33) ^ input.charCodeAt(i);
-  }
-  return Math.abs(hash) >>> 0;
-}
-
 function isPortFree(port: number, host = '127.0.0.1'): Promise<boolean> {
   return new Promise((resolve) => {
     const server = net.createServer();
@@ -41,15 +32,12 @@ async function pickPort(basePort: number): Promise<number> {
 }
 
 async function main() {
-  const cwd = process.cwd();
-
   // Priority:
   // 1) DEV_PORT (explicit)
   // 2) PORT (explicit)
-  // 3) Stable per-project base in 3100-3599
+  // 3) Default to 3050, increment if unavailable
   const explicit = toInt(process.env.DEV_PORT) ?? toInt(process.env.PORT);
-  const stableBase = 3100 + (hashString(cwd) % 500);
-  const basePort = explicit ?? stableBase;
+  const basePort = explicit ?? 3050;
 
   const port = await pickPort(basePort);
 
@@ -67,7 +55,7 @@ async function main() {
   // Helpful log without being noisy
   // eslint-disable-next-line no-console
   console.log(
-    `[dev] Starting Next.js on http://localhost:${port} (base=${basePort}${explicit ? ', explicit' : ', stable'})`
+    `[dev] Starting Next.js on http://localhost:${port} (base=${basePort}${explicit ? ', explicit' : port !== basePort ? ', incremented' : ''})`
   );
 
   const child = spawn('next', nextArgs, {

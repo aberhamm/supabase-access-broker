@@ -20,6 +20,74 @@ import { dirname } from 'path';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
+const PROJECT_ROOT = path.join(__dirname, '..');
+
+// ----------------------------------------------------------------------------
+// Minimal .env loader (so migrations work without requiring the shell to export)
+// ----------------------------------------------------------------------------
+
+function parseDotEnv(contents: string): Record<string, string> {
+  const out: Record<string, string> = {};
+  const lines = contents.split(/\r?\n/);
+
+  for (const rawLine of lines) {
+    const line = rawLine.trim();
+    if (!line || line.startsWith('#')) continue;
+
+    // Support: export KEY=VALUE
+    const normalized = line.startsWith('export ') ? line.slice('export '.length).trim() : line;
+
+    const eqIdx = normalized.indexOf('=');
+    if (eqIdx <= 0) continue;
+
+    const key = normalized.slice(0, eqIdx).trim();
+    let value = normalized.slice(eqIdx + 1).trim();
+
+    // Remove surrounding quotes
+    if (
+      (value.startsWith('"') && value.endsWith('"')) ||
+      (value.startsWith("'") && value.endsWith("'"))
+    ) {
+      value = value.slice(1, -1);
+    }
+
+    if (key) out[key] = value;
+  }
+
+  return out;
+}
+
+function tryLoadEnvFile(filePath: string): void {
+  if (!fs.existsSync(filePath)) return;
+
+  try {
+    const contents = fs.readFileSync(filePath, 'utf-8');
+    const parsed = parseDotEnv(contents);
+    for (const [k, v] of Object.entries(parsed)) {
+      // Do not override values already provided by the shell/CI.
+      if (process.env[k] === undefined) process.env[k] = v;
+    }
+  } catch (e) {
+    // Best-effort: migration runner should still be able to proceed if env loading fails.
+    const err = e as Error;
+    log.warning(`Failed to load env file at ${filePath}: ${err.message}`);
+  }
+}
+
+function loadEnvFromRepoFiles(): void {
+  // Priority order: most specific -> least specific
+  const candidates = [
+    path.join(PROJECT_ROOT, '.env.local'),
+    path.join(PROJECT_ROOT, '.env'),
+    path.join(PROJECT_ROOT, '.env.production'),
+    path.join(PROJECT_ROOT, 'env.local'),
+    path.join(PROJECT_ROOT, 'env.example'),
+  ];
+
+  for (const p of candidates) {
+    tryLoadEnvFile(p);
+  }
+}
 
 // Type for Supabase client (using any for Database type to avoid complex generics)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -60,6 +128,9 @@ interface AppliedMigration {
 
 // Initialize Supabase client
 function getSupabaseClient() {
+  // Load env from repo files if the shell hasn't exported them
+  loadEnvFromRepoFiles();
+
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const key = process.env.SUPABASE_SERVICE_ROLE_KEY;
 

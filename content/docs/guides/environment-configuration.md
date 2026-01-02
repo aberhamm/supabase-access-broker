@@ -66,7 +66,7 @@ The dashboard requires different environment variables depending on where it's r
 - **Description:** The full URL where your app is accessible
 - **Why it's critical:** Without this, magic links and password reset emails will redirect to `localhost` or internal addresses like `0.0.0.0`
 - **Examples:**
-  - Development: `http://localhost:3000` (auto-detected)
+  - Development: `http://localhost:3050` (auto-detected)
   - Production: `https://admin.yourdomain.com`
   - Docker local: `http://localhost:3050`
 
@@ -88,7 +88,7 @@ NEXT_PUBLIC_APP_URL=https://claims-admin.home.arpa
 ### Optional Variables
 
 #### `PORT`
-- **Default:** `3000` (development), `3050` (Docker)
+- **Default:** `3050` (development), `3050` (Docker)
 - **Description:** Port the app runs on
 
 #### `HOSTNAME`
@@ -113,7 +113,20 @@ NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 
 # Optional: Only needed if localhost auto-detection doesn't work
-# NEXT_PUBLIC_APP_URL=http://localhost:3000
+# NEXT_PUBLIC_APP_URL=http://localhost:3050
+
+# Optional: Auth portal feature flags (default OFF; enable as you test)
+NEXT_PUBLIC_AUTH_PASSKEYS=false
+NEXT_PUBLIC_AUTH_GOOGLE=false
+NEXT_PUBLIC_AUTH_GITHUB=false
+NEXT_PUBLIC_AUTH_EMAIL_OTP=false
+NEXT_PUBLIC_AUTH_PASSWORD=false
+NEXT_PUBLIC_AUTH_MAGIC_LINK=true
+
+# Optional: Passkeys configuration
+# - In production, NEXT_PUBLIC_APP_URL should be HTTPS
+# - Passkeys (WebAuthn) are bound to an RP ID / origin
+# NEXT_PUBLIC_AUTH_PASSKEY_RP_ID=auth.yourdomain.com
 ```
 
 ### Start Development Server
@@ -122,7 +135,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 pnpm dev
 ```
 
-The app will run on `http://localhost:3000` by default.
+The app will run on `http://localhost:3050` by default.
 
 ### Development with Custom Port
 
@@ -150,7 +163,7 @@ NEXT_PUBLIC_APP_URL=https://admin.yourdomain.com
 
 # Node Configuration
 NODE_ENV=production
-PORT=3000
+PORT=3050
 HOSTNAME=0.0.0.0
 ```
 
@@ -260,8 +273,8 @@ Add **ALL** environments where your app runs:
 
 **Development:**
 ```
-http://localhost:3000/auth/callback
-http://localhost:3000/**
+http://localhost:3050/auth/callback
+http://localhost:3050/**
 ```
 
 **Docker Local:**
@@ -278,11 +291,21 @@ https://admin.yourdomain.com/**
 
 **Multiple Environments Example:**
 ```
-✅ http://localhost:3000/**
+✅ http://localhost:3050/**
 ✅ http://localhost:3050/**
 ✅ https://staging.yourdomain.com/**
 ✅ https://admin.yourdomain.com/**
 ```
+
+### Auth Portal (SSO) configuration (this repo)
+
+If you're using this dashboard as a central **auth portal** for other apps:
+
+- **Database migration**: apply `migrations/007_auth_and_passkeys.sql`
+- **Register allowed callback URLs** per app: `public.apps.allowed_callback_urls`
+- (Optional) require an app secret by setting: `public.apps.sso_client_secret_hash`
+
+See: **[Auth Portal (SSO + Passkeys)](/docs/auth-portal-sso-passkeys)**.
 
 ### Why Wildcards (`/**`) Are Important
 
@@ -297,7 +320,7 @@ Without the wildcard, only exact matches work.
 
 ### Issue 1: Magic Link Redirects to Localhost in Production
 
-**Symptom:** Email link shows correct domain but redirects to `http://localhost:3000` or `https://0.0.0.0:3050`
+**Symptom:** Email link shows correct domain but redirects to `http://localhost:3050` or `https://0.0.0.0:3050`
 
 **Cause:** `NEXT_PUBLIC_APP_URL` not set
 
@@ -397,7 +420,7 @@ pnpm start
 Each can have different `NEXT_PUBLIC_APP_URL`:
 ```env
 # .env.local
-NEXT_PUBLIC_APP_URL=http://localhost:3000
+NEXT_PUBLIC_APP_URL=http://localhost:3050
 
 # .env.production
 NEXT_PUBLIC_APP_URL=https://admin.yourdomain.com

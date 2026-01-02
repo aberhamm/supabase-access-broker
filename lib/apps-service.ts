@@ -3,7 +3,7 @@ import { AppConfig, RoleConfig } from '@/types/claims';
 import { APPS as FALLBACK_APPS, COMMON_ROLES } from '@/lib/apps-config';
 
 // Cache configuration
-const CACHE_TTL = parseInt(process.env.APP_CACHE_TTL || '300000'); // 5 minutes default
+const CACHE_TTL = parseInt(process.env.APP_CACHE_TTL || '305000'); // 5 minutes default
 const USE_FALLBACK = process.env.USE_FALLBACK_CONFIG !== 'false'; // true by default
 
 // In-memory cache
@@ -67,11 +67,30 @@ async function fetchAppsFromDb(forceRefresh = false): Promise<AppConfig[]> {
 
   try {
     const supabase = await createClient();
-    const { data, error } = await supabase.rpc('get_all_apps', {
-      enabled_only: true,
-    });
+    // Prefer direct table select so we can include SSO columns without requiring RPC signature changes.
+    const { data, error } = await supabase
+      .from('apps')
+      .select(
+        'id,name,description,color,icon,enabled,allowed_callback_urls,sso_client_secret_hash,created_at,updated_at'
+      )
+      .order('name', { ascending: true });
 
     if (error) {
+      // If SSO columns are missing (older DB), fall back to the base app columns so the dashboard still works.
+      // Postgres undefined_column is 42703.
+      if (error.code === '42703') {
+        const { data: baseData, error: baseError } = await supabase
+          .from('apps')
+          .select('id,name,description,color,icon,enabled,created_at,updated_at')
+          .order('name', { ascending: true });
+
+        if (!baseError) {
+          appsCache = baseData as AppConfig[];
+          lastFetch = Date.now();
+          return appsCache;
+        }
+      }
+
       console.error('Error fetching apps from database:', error);
       // Fall back to TypeScript config
       if (USE_FALLBACK) {

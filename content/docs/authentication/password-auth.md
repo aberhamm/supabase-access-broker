@@ -8,6 +8,9 @@ order: 6
 
 # Password Authentication
 
+> Note: In this repo’s dashboard/auth-portal, password login is available behind a feature flag (`NEXT_PUBLIC_AUTH_PASSWORD=true`).
+> For SSO across multiple apps and passkeys, see **[Auth Portal (SSO + Passkeys)](/docs/auth-portal-sso-passkeys)**.
+
 **Context:** This guide shows you how to implement password-based authentication using Supabase Auth, including sign-up, sign-in, password reset, and user management flows.
 
 **Technology Stack:** Next.js 14+ App Router, Supabase Auth, TypeScript, React Server Components

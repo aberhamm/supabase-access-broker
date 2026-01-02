@@ -8,6 +8,9 @@ order: 5
 
 # Passwordless Authentication (Magic Links)
 
+> Note: This repository’s **dashboard login** supports multiple sign-in methods (magic link, email OTP code, OAuth, password, passkeys) behind feature flags.
+> For cross-domain SSO + passkeys, see **[Auth Portal (SSO + Passkeys)](/docs/auth-portal-sso-passkeys)**.
+
 **Context:** This guide shows you how to implement passwordless authentication using Supabase Auth's magic link (OTP) feature. Users receive an email with a one-time link to sign in without a password.
 
 **Technology Stack:** Next.js 14+ App Router, Supabase Auth, TypeScript, React Server Components
@@ -97,8 +100,6 @@ Passwordless authentication eliminates the need for users to remember passwords.
                 └──────────────┘
 ```
 
-### Security Model
-
 ## Environment Setup
 
 **⚠️ CRITICAL:** Before implementing magic links, you MUST configure your environment variables and Supabase redirect URLs. Skipping this will cause magic links to redirect to `localhost` in production.
@@ -124,8 +125,8 @@ Go to **Supabase Dashboard → Authentication → URL Configuration** and add:
 
 **Development:**
 ```
-http://localhost:3000/auth/callback
-http://localhost:3000/**
+http://localhost:3050/auth/callback
+http://localhost:3050/**
 ```
 
 **Production:**
@@ -154,15 +155,13 @@ export function getAppUrl(): string {
     return window.location.origin;
   }
 
-  return 'http://localhost:3000';
+  return 'http://localhost:3050';
 }
 ```
 
 Now you're ready to implement magic links!
 
-## Implementation
-
-### Security Model
+## Security Model
 
 - Magic links expire after **1 hour** (Supabase default, configurable)
 - Each link can only be used **once**
@@ -487,9 +486,9 @@ See [Authorization Patterns](/docs/authorization-patterns) for comprehensive acc
 
 Navigate to **Authentication → URL Configuration**:
 
-- **Site URL**: `http://localhost:3000` (dev) or `https://yourdomain.com` (prod)
+- **Site URL**: `http://localhost:3050` (dev) or `https://yourdomain.com` (prod)
 - **Redirect URLs**: Add your callback URLs
-  - `http://localhost:3000/auth/callback`
+  - `http://localhost:3050/auth/callback`
   - `https://yourdomain.com/auth/callback`
 
 **2. Email Templates (Optional)**

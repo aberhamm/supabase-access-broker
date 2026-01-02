@@ -22,5 +22,5 @@ export function getAppUrl(): string {
   }
 
   // Server-side fallback (should not happen in client components)
-  return 'http://localhost:3000';
+  return 'http://localhost:3050';
 }

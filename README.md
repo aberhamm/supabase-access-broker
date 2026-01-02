@@ -45,6 +45,27 @@ This project provides:
 - **[API Documentation](./docs/EXTERNAL_API_CONTRACT.md)** - RPC function reference
 - **[Session Management](./content/docs/integration/session-management.md)** - Working with sessions
 
+## Auth Portal & SSO Integration
+
+**🔐 The dashboard can act as a central authentication portal for all your applications.**
+
+Instead of building login UI for each app, redirect users to the auth portal where they sign in once and gain access to all apps.
+
+**Features:**
+- ✅ Single Sign-On (SSO) across multiple applications
+- ✅ Passkeys (Face ID / Touch ID)
+- ✅ Social login (Google, GitHub)
+- ✅ Email OTP codes
+- ✅ Traditional password login
+- ✅ Magic links
+- ✅ All methods behind feature flags for controlled rollout
+
+**Get Started:**
+- **[Try the Demo](./DEMO_GUIDE.md)** - Test the SSO flow locally with the included demo page
+- **[SSO Integration Guide](./content/docs/guides/sso-integration-guide.md)** - Simple 3-step integration
+- **[Auth Portal Technical Spec](./content/docs/authentication/auth-portal-sso-passkeys.md)** - API contracts & DB schema
+- **[Agent Instructions](./content/docs/reference/auth-portal-agent-instructions.md)** - Copy/paste tasks for AI agents
+
 ## Installation (For Your Supabase Project)
 
 ### Step 1: Install SQL Functions
@@ -61,7 +82,7 @@ cd supabase-claims-admin-dashboard
 pnpm install
 
 # Set up environment
-cp .env.example .env.local
+cp env.example .env.local
 # Edit .env.local with your Supabase credentials
 
 # Run migrations
@@ -213,9 +234,12 @@ The editor validates JSON and shows the detected type.
 
 ### Access Control
 
-- Only users with `claims_admin: true` can access the dashboard
-- Non-admin users are redirected to an access denied page
-- All routes are protected by middleware
+- **Admin dashboard routes** require admin access (global `claims_admin: true` or app-specific `apps.{app_id}.admin: true`)
+- **Auth portal routes** (for SSO + account passkeys) are available to any authenticated user:
+  - `/login`
+  - `/account` (manage passkeys)
+  - `/sso/*` (SSO redirect completion)
+  - `/api/auth/*` (SSO code exchange + passkey endpoints)
 
 ### Best Practices
 
@@ -239,7 +263,7 @@ cp .env.docker.example .env.production
 # 2. Build and deploy
 docker-compose up -d
 
-# 3. Access at http://localhost:3000
+# 3. Access at http://localhost:3050
 ```
 
 #### Production with Nginx + SSL
@@ -315,6 +339,7 @@ pnpm migrate:force 001_multi_app_support
 - `003_api_keys` - API key management system
 - `004_external_key_sources` - External key source integration
 - `006_performance_optimizations` - Database performance improvements
+- `007_auth_and_passkeys` - Auth portal SSO + passkeys (WebAuthn) support
 
 📚 **See [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) for complete migration documentation.**
 

@@ -96,14 +96,15 @@ The authentication system works with the custom claims functionality to:
 
 **Purpose:** Admin interface for managing users, apps, and claims
 **Location:** Separate codebase (this repo)
-**Users:** Only claims admins can access
-**Authentication:** Uses magic link by default
+**Users:** Admin dashboard routes are admin-only, but the repo can also act as a central **auth portal** for SSO
+**Authentication:** Supports magic link, email OTP (code), password, OAuth, and passkeys (all feature-flagged)
 
 **What it does:**
 - Manage user claims and roles
 - Create and configure apps
 - View all users
 - Assign app access to users
+ - Optionally: act as an auth portal for other apps (cross-domain SSO)
 
 ### Your Applications (Separate Codebases)
 
@@ -117,6 +118,12 @@ The authentication system works with the custom claims functionality to:
 - Implement their own sign up/sign in flows
 - Check claims to control access
 - Display different features based on user roles
+
+### Auth Portal (Optional)
+
+If your apps are on different domains and you want a single passkey/login surface, this repo can be your **central auth portal**.
+
+See: **[Auth Portal (SSO + Passkeys)](/docs/auth-portal-sso-passkeys)**.
 
 ### How They Work Together
 
@@ -196,8 +203,8 @@ https://your-domain.com/**
 
 **Development:**
 ```
-http://localhost:3000/auth/callback
-http://localhost:3000/**
+http://localhost:3050/auth/callback
+http://localhost:3050/**
 ```
 
 ### Create URL Helper
@@ -214,7 +221,7 @@ export function getAppUrl(): string {
     return window.location.origin;
   }
 
-  return 'http://localhost:3000';
+  return 'http://localhost:3050';
 }
 ```
 
@@ -248,7 +255,7 @@ Customize authentication emails:
 1. Go to **Authentication → URL Configuration**
 2. Set your Site URL: `https://yourdomain.com`
 3. Add Redirect URLs for development:
-   - `http://localhost:3000/**`
+   - `http://localhost:3050/**`
    - Add any other domains you'll use
 
 ### 4. Configure Security Settings
@@ -335,7 +342,7 @@ export async function createClient() {
 
 **Important:** This is the same app ID you'll use in the dashboard to manage user access.
 
-### Step-by-Step Implementation
+### Sign Up: Step-by-Step
 
 #### 1. Create the Sign Up Page
 
@@ -635,7 +642,7 @@ export default function CheckEmailPage() {
 
 **Context:** This section shows the COMPLETE flow for implementing sign in with proper app access checking in YOUR separate application.
 
-### Step-by-Step Implementation
+### Sign In: Step-by-Step
 
 #### 1. Create the Sign In Page
 

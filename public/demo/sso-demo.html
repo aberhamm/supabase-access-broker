@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>SSO Integration Demo</title>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+    }
+    .container {
+      background: white;
+      border-radius: 16px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      max-width: 600px;
+      width: 100%;
+      padding: 40px;
+    }
+    h1 {
+      color: #1a202c;
+      margin-bottom: 10px;
+      font-size: 28px;
+    }
+    .subtitle {
+      color: #718096;
+      margin-bottom: 30px;
+      font-size: 14px;
+    }
+    .status {
+      background: #f7fafc;
+      border-left: 4px solid #667eea;
+      padding: 16px;
+      margin-bottom: 20px;
+      border-radius: 4px;
+    }
+    .status.success { border-color: #48bb78; background: #f0fff4; }
+    .status.error { border-color: #f56565; background: #fff5f5; }
+    .status-title {
+      font-weight: 600;
+      margin-bottom: 8px;
+      color: #2d3748;
+    }
+    .status-text {
+      color: #4a5568;
+      font-size: 14px;
+      font-family: 'Courier New', monospace;
+      white-space: pre-wrap;
+      word-break: break-all;
+    }
+    button {
+      background: #667eea;
+      color: white;
+      border: none;
+      padding: 14px 28px;
+      border-radius: 8px;
+      font-size: 16px;
+      font-weight: 600;
+      cursor: pointer;
+      transition: all 0.2s;
+      width: 100%;
+      margin-bottom: 10px;
+    }
+    button:hover {
+      background: #5a67d8;
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+    }
+    button:disabled {
+      background: #cbd5e0;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .config {
+      background: #edf2f7;
+      padding: 16px;
+      border-radius: 8px;
+      margin: 20px 0;
+      font-size: 13px;
+    }
+    .config-item {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+    }
+    .config-label {
+      font-weight: 600;
+      color: #2d3748;
+      min-width: 120px;
+    }
+    .config-value {
+      color: #4a5568;
+      font-family: 'Courier New', monospace;
+      word-break: break-all;
+    }
+    pre {
+      background: #1a202c;
+      color: #e2e8f0;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 13px;
+      margin-top: 12px;
+    }
+    .user-info {
+      background: #f7fafc;
+      padding: 16px;
+      border-radius: 8px;
+      margin-top: 20px;
+    }
+    .user-info h3 {
+      margin-bottom: 12px;
+      color: #2d3748;
+      font-size: 16px;
+    }
+    .user-detail {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      font-size: 14px;
+    }
+    .user-label {
+      font-weight: 600;
+      color: #4a5568;
+      min-width: 100px;
+    }
+    .user-value {
+      color: #2d3748;
+    }
+    .badge {
+      display: inline-block;
+      padding: 4px 12px;
+      border-radius: 12px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .badge.success {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+    .badge.error {
+      background: #fed7d7;
+      color: #742a2a;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔐 SSO Integration Demo</h1>
+    <p class="subtitle">Test the Auth Portal SSO flow</p>
+
+    <div class="config">
+      <div class="config-item">
+        <span class="config-label">Portal URL:</span>
+        <span class="config-value" id="portal-url">http://localhost:3050</span>
+      </div>
+      <div class="config-item">
+        <span class="config-label">App ID:</span>
+        <span class="config-value">demo-app</span>
+      </div>
+      <div class="config-item">
+        <span class="config-label">Callback:</span>
+        <span class="config-value" id="callback-url">Current page</span>
+      </div>
+    </div>
+
+    <div id="status" style="display: none;" class="status">
+      <div class="status-title"></div>
+      <div class="status-text"></div>
+    </div>
+
+    <div id="user-info" style="display: none;" class="user-info">
+      <h3>✅ User Information</h3>
+      <div class="user-detail">
+        <span class="user-label">Email:</span>
+        <span class="user-value" id="user-email">—</span>
+      </div>
+      <div class="user-detail">
+        <span class="user-label">User ID:</span>
+        <span class="user-value" id="user-id">—</span>
+      </div>
+      <div class="user-detail">
+        <span class="user-label">Access:</span>
+        <span id="access-badge">—</span>
+      </div>
+      <div class="user-detail">
+        <span class="user-label">Role:</span>
+        <span class="user-value" id="user-role">—</span>
+      </div>
+      <pre id="payload"></pre>
+    </div>
+
+    <button id="login-btn" onclick="login()">
+      Sign In with Auth Portal
+    </button>
+
+    <button id="logout-btn" style="display: none; background: #e53e3e;" onclick="logout()">
+      Clear Session
+    </button>
+  </div>
+
+  <script>
+    const PORTAL_URL = 'http://localhost:3050';
+    const APP_ID = 'demo-app';
+
+    // Update display
+    document.getElementById('portal-url').textContent = PORTAL_URL;
+    document.getElementById('callback-url').textContent = window.location.href.split('?')[0];
+
+    function showStatus(title, text, type = 'info') {
+      const status = document.getElementById('status');
+      status.style.display = 'block';
+      status.className = `status ${type}`;
+      status.querySelector('.status-title').textContent = title;
+      status.querySelector('.status-text').textContent = text;
+    }
+
+    function login() {
+      const state = crypto.randomUUID();
+      sessionStorage.setItem('sso_state', state);
+
+      const url = new URL(`${PORTAL_URL}/login`);
+      url.searchParams.set('app_id', APP_ID);
+      url.searchParams.set('redirect_uri', window.location.href.split('?')[0]);
+      url.searchParams.set('state', state);
+
+      showStatus('Redirecting...', 'Taking you to the auth portal');
+      setTimeout(() => {
+        window.location.href = url.toString();
+      }, 500);
+    }
+
+    async function exchangeCode(code, state) {
+      showStatus('Exchanging code...', 'Validating with auth portal');
+
+      try {
+        const response = await fetch(`${PORTAL_URL}/api/auth/exchange`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            code,
+            app_id: APP_ID,
+          }),
+        });
+
+        if (!response.ok) {
+          const error = await response.text();
+          throw new Error(`Exchange failed: ${response.status} ${error}`);
+        }
+
+        const payload = await response.json();
+
+        // Store in session
+        sessionStorage.setItem('sso_user', JSON.stringify(payload));
+
+        // Display user info
+        displayUserInfo(payload);
+
+        // Clean URL
+        window.history.replaceState({}, document.title, window.location.pathname);
+
+      } catch (error) {
+        showStatus('❌ Error', error.message, 'error');
+      }
+    }
+
+    function displayUserInfo(payload) {
+      const userInfo = document.getElementById('user-info');
+      userInfo.style.display = 'block';
+
+      document.getElementById('user-email').textContent = payload.user.email;
+      document.getElementById('user-id').textContent = payload.user.id;
+      document.getElementById('user-role').textContent = payload.app_claims?.role || 'none';
+
+      const hasAccess = payload.app_claims?.enabled === true;
+      const accessBadge = document.getElementById('access-badge');
+      accessBadge.innerHTML = `<span class="badge ${hasAccess ? 'success' : 'error'}">${hasAccess ? 'Granted' : 'Denied'}</span>`;
+
+      document.getElementById('payload').textContent = JSON.stringify(payload, null, 2);
+
+      document.getElementById('login-btn').style.display = 'none';
+      document.getElementById('logout-btn').style.display = 'block';
+      document.getElementById('status').style.display = 'none';
+
+      if (!hasAccess) {
+        showStatus('⚠️ Access Denied', 'User does not have access to this app (app_claims.enabled !== true)', 'error');
+      }
+    }
+
+    function logout() {
+      sessionStorage.removeItem('sso_user');
+      sessionStorage.removeItem('sso_state');
+      document.getElementById('user-info').style.display = 'none';
+      document.getElementById('status').style.display = 'none';
+      document.getElementById('login-btn').style.display = 'block';
+      document.getElementById('logout-btn').style.display = 'none';
+    }
+
+    // On page load, check for code in URL
+    window.addEventListener('DOMContentLoaded', () => {
+      const params = new URLSearchParams(window.location.search);
+      const code = params.get('code');
+      const state = params.get('state');
+      const storedState = sessionStorage.getItem('sso_state');
+
+      if (code) {
+        if (state !== storedState) {
+          showStatus('❌ Security Error', 'State parameter mismatch (CSRF protection)', 'error');
+          return;
+        }
+        exchangeCode(code, state);
+      } else {
+        // Check if we have a stored session
+        const storedUser = sessionStorage.getItem('sso_user');
+        if (storedUser) {
+          try {
+            displayUserInfo(JSON.parse(storedUser));
+          } catch (e) {
+            logout();
+          }
+        }
+      }
+    });
+  </script>
+</body>
+</html>

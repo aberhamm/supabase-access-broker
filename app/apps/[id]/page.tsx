@@ -3,7 +3,6 @@ export const dynamic = 'force-dynamic';
 import { createClient } from '@/lib/supabase/server';
 import { getAppById } from '@/lib/apps-service';
 import { DashboardNav } from '@/components/layout/DashboardNav';
-import Link from 'next/link';
 import { redirect, notFound } from 'next/navigation';
 import { isClaimsAdmin } from '@/lib/claims';
 import {

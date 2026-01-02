@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { LogOut, LayoutDashboard, Users, AppWindow, BookOpen } from 'lucide-react';
+import { LogOut, LayoutDashboard, Users, AppWindow, BookOpen, Link2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/theme-toggle';
 
@@ -37,6 +37,13 @@ export function DashboardNav({ email, logoutAction, showApps = true }: Dashboard
       label: 'Apps',
       icon: AppWindow,
       active: pathname?.startsWith('/apps'),
+    });
+
+    navItems.push({
+      href: '/sso-settings',
+      label: 'SSO',
+      icon: Link2,
+      active: pathname?.startsWith('/sso-settings'),
     });
   }
 

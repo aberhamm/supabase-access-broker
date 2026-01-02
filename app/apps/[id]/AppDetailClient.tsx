@@ -1,16 +1,17 @@
 'use client';
 
-import { useState } from 'react';
-import { useRouter } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Key, Shield, LayoutDashboard, Settings } from 'lucide-react';
+import { Key, Shield, LayoutDashboard, Settings, Link2 } from 'lucide-react';
 import { RolesTabContent } from '@/components/apps/RolesTabContent';
 import { ApiKeysTabContent } from '@/components/apps/ApiKeysTabContent';
 import { OverviewTabContent } from '@/components/apps/OverviewTabContent';
 import { AppFormDialog } from '@/components/apps/AppFormDialog';
+import { SSOSettingsCard } from '@/components/apps/SSOSettingsCard';
 import type { AppConfig } from '@/types/claims';
 
 interface AppDetailClientProps {
@@ -19,8 +20,17 @@ interface AppDetailClientProps {
 
 export function AppDetailClient({ app }: AppDetailClientProps) {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState('overview');
   const [isEditOpen, setIsEditOpen] = useState(false);
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'overview' || tab === 'roles' || tab === 'api-keys' || tab === 'sso') {
+      setActiveTab(tab);
+    }
+    // Only respond to query changes (e.g. coming from /sso-settings links)
+  }, [searchParams]);
 
   const handleAppUpdated = () => {
     // Refresh the page to get updated app data
@@ -61,7 +71,7 @@ export function AppDetailClient({ app }: AppDetailClientProps) {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-        <TabsList className="grid w-full max-w-md grid-cols-3">
+        <TabsList className="grid w-full max-w-2xl grid-cols-4">
           <TabsTrigger value="overview" className="gap-2">
             <LayoutDashboard className="h-4 w-4" />
             <span className="hidden sm:inline">Overview</span>
@@ -73,6 +83,10 @@ export function AppDetailClient({ app }: AppDetailClientProps) {
           <TabsTrigger value="api-keys" className="gap-2">
             <Key className="h-4 w-4" />
             <span className="hidden sm:inline">API Keys</span>
+          </TabsTrigger>
+          <TabsTrigger value="sso" className="gap-2">
+            <Link2 className="h-4 w-4" />
+            <span className="hidden sm:inline">SSO</span>
           </TabsTrigger>
         </TabsList>
 
@@ -90,6 +104,10 @@ export function AppDetailClient({ app }: AppDetailClientProps) {
               <ApiKeysTabContent appId={app.id} />
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="sso">
+          <SSOSettingsCard app={app} onUpdated={handleAppUpdated} />
         </TabsContent>
       </Tabs>
 

@@ -16,10 +16,13 @@ This documentation is aimed at **implementing our Supabase Auth + Custom Claims 
   Start here: [Getting Started Overview](./getting-started/overview.md) → [Quick Start](./getting-started/quick-start.md) → [Installation](./getting-started/installation.md)
 
 - **I’m an agent helping a developer**
-  Use: [Agent Context](./reference/agent-context.md)
+  Use: [Agent Context](./reference/agent-context.md) → **[Agent Instructions: Auth Portal](./reference/auth-portal-agent-instructions.md)**
 
-- **I want to run the admin dashboard (admins only)**
-  Start here: [Dashboard Quick Start](./dashboard/dashboard-quick-start.md) → [Dashboard Setup](./dashboard/setup.md)
+- **I want to integrate my app with the auth portal (SSO)**
+  Start here: **[SSO Integration Guide](./guides/sso-integration-guide.md)** — simple 3-step integration
+
+- **I want to run the admin dashboard + auth portal**
+  Start here: [Dashboard Quick Start](./dashboard/dashboard-quick-start.md) → [Dashboard Setup](./dashboard/setup.md) → **[Auth Portal (SSO + Passkeys)](./authentication/auth-portal-sso-passkeys.md)**
 
 ## Core implementation docs (recommended reading order)
 
@@ -35,6 +38,12 @@ This documentation is aimed at **implementing our Supabase Auth + Custom Claims 
 
 - **[Auth Quick Reference](./guides/auth-quick-reference.md)**
 - **[Agent Context](./reference/agent-context.md)**
+
+## SSO & Auth Portal
+
+- **[SSO Integration Guide](./guides/sso-integration-guide.md)** — integrate your app with the central auth portal (simple)
+- **[Auth Portal (SSO + Passkeys)](./authentication/auth-portal-sso-passkeys.md)** — technical spec (API, DB schema)
+- **[Agent Instructions: Auth Portal](./reference/auth-portal-agent-instructions.md)** — copy/paste tasks for AI agents
 
 ## Advanced topics
 

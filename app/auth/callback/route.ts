@@ -47,13 +47,27 @@ export async function GET(request: Request) {
         return NextResponse.redirect(new URL('/reset-password', baseUrl));
       }
 
-      // Get the user to check claims_admin
+      // If this is an SSO/portal flow, do NOT enforce claims_admin.
+      // These routes are for all authenticated users.
+      const isPortalNext =
+        next.startsWith('/sso/') ||
+        next.startsWith('/account');
+
+      if (isPortalNext) {
+        return NextResponse.redirect(new URL(next, baseUrl));
+      }
+
+      // Get the user to check admin access
       const { data: { user } } = await supabase.auth.getUser();
 
-      // Check if user has claims_admin access
-      const isClaimsAdmin = user?.app_metadata?.claims_admin === true;
+      const isGlobalAdmin = user?.app_metadata?.claims_admin === true;
+      const apps = user?.app_metadata?.apps || {};
+      const isAppAdmin = Object.values(apps).some(
+        (app) => (app as { admin?: boolean })?.admin === true
+      );
+      const hasAdminAccess = isGlobalAdmin || isAppAdmin;
 
-      if (!isClaimsAdmin) {
+      if (!hasAdminAccess) {
         // Redirect to access denied if not a claims admin
         return NextResponse.redirect(new URL('/access-denied', baseUrl));
       }

@@ -2,7 +2,9 @@
 	help \
 	install dev dev-port build-local start-local lint typecheck \
 	build up down logs restart clean rebuild health test \
-	prod-up prod-down prod-logs prod-restart prod-rebuild deploy \
+	prod-up prod-down prod-logs prod-restart prod-rebuild \
+	deploy deploy-remote deploy-init deploy-build deploy-push deploy-start \
+	deploy-restart deploy-sync-env deploy-sync-config deploy-logs deploy-status deploy-ssh \
 	shell nginx-shell nginx-test ps stats backup-env \
 	migrate migrate-status migrate-force
 
@@ -13,12 +15,13 @@ help:
 	@echo "Local (non-Docker) commands:"
 	@echo "  make install      - Install dependencies (pnpm)"
 	@echo "  make dev          - Start Next.js dev server (auto-picks a free port)"
-	@echo "  make dev-port PORT=3000 - Start dev server on a specific port"
+	@echo "  make dev-port PORT=3050 - Start dev server on a specific port"
 	@echo "  make lint         - Run eslint"
 	@echo "  make typecheck    - Run TypeScript typecheck"
 	@echo "  make build-local  - Build Next.js"
 	@echo "  make start-local  - Start Next.js (requires build)"
 	@echo ""
+	@echo "Local Docker commands:"
 	@echo "  make build        - Build Docker images"
 	@echo "  make up           - Start containers"
 	@echo "  make down         - Stop containers"
@@ -34,12 +37,25 @@ help:
 	@echo "  make migrate-status       - Show migration status"
 	@echo "  make migrate-force NAME=  - Force re-run a migration"
 	@echo ""
-	@echo "Production commands:"
-	@echo "  make prod-up      - Start production stack"
-	@echo "  make prod-down    - Stop production stack"
-	@echo "  make prod-logs    - View production logs"
-	@echo "  make prod-restart - Restart production stack"
-	@echo "  make deploy       - Alias for prod-up"
+	@echo "Remote Deployment commands (configure .env.deploy first):"
+	@echo "  make deploy             - Full deploy: build locally, push, start"
+	@echo "  make deploy-remote      - Full deploy: build on server (slower upload, faster build)"
+	@echo "  make deploy-init        - First-time server setup"
+	@echo "  make deploy-build       - Build image locally only"
+	@echo "  make deploy-push        - Push image to server only"
+	@echo "  make deploy-start       - Start containers on server"
+	@echo "  make deploy-restart     - Quick restart without rebuilding"
+	@echo "  make deploy-sync-env    - Sync .env.production to server"
+	@echo "  make deploy-sync-config - Sync docker-compose and nginx config"
+	@echo "  make deploy-logs        - View remote logs (SERVICE=app|nginx)"
+	@echo "  make deploy-status      - Check remote container status"
+	@echo "  make deploy-ssh         - SSH into the remote server"
+	@echo ""
+	@echo "Local Production commands:"
+	@echo "  make prod-up      - Start production stack locally"
+	@echo "  make prod-down    - Stop production stack locally"
+	@echo "  make prod-logs    - View production logs locally"
+	@echo "  make prod-restart - Restart production stack locally"
 
 # Local (non-Docker) commands
 install:
@@ -51,7 +67,7 @@ dev:
 dev-port:
 	@if [ -z "$(PORT)" ]; then \
 		echo "Error: Please specify PORT=<port>"; \
-		echo "Example: make dev-port PORT=3000"; \
+		echo "Example: make dev-port PORT=3050"; \
 		exit 1; \
 	fi
 	DEV_PORT=$(PORT) pnpm dev
@@ -125,7 +141,42 @@ prod-rebuild:
 	docker-compose -f docker-compose.prod.yml up -d
 	@echo "Production stack rebuilt and restarted"
 
-deploy: prod-up
+# Remote Deployment commands
+deploy:
+	@./scripts/deploy.sh deploy
+
+deploy-remote:
+	@./scripts/deploy.sh deploy-remote
+
+deploy-init:
+	@./scripts/deploy.sh init
+
+deploy-build:
+	@./scripts/deploy.sh build
+
+deploy-push:
+	@./scripts/deploy.sh push
+
+deploy-start:
+	@./scripts/deploy.sh start
+
+deploy-restart:
+	@./scripts/deploy.sh restart
+
+deploy-sync-env:
+	@./scripts/deploy.sh sync-env
+
+deploy-sync-config:
+	@./scripts/deploy.sh sync-config
+
+deploy-logs:
+	@./scripts/deploy.sh logs $(SERVICE)
+
+deploy-status:
+	@./scripts/deploy.sh status
+
+deploy-ssh:
+	@./scripts/deploy.sh ssh
 
 # Utility commands
 shell:

@@ -51,7 +51,7 @@ export async function inviteUserWithEmail(params: InviteUserParams) {
     const supabase = await createAdminClient();
 
     // Get the origin for the redirect URL
-    const origin = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const origin = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3050';
 
     // Create user without password and send invite email
     const { data, error } = await supabase.auth.admin.createUser({
@@ -95,7 +95,7 @@ export async function triggerPasswordReset(userEmail: string) {
     const supabase = await createAdminClient();
 
     // Get the origin for the redirect URL
-    const origin = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000';
+    const origin = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3050';
 
     // Generate and send password recovery email
     const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {

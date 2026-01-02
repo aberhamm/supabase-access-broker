@@ -42,8 +42,8 @@ In **Supabase Dashboard → Authentication → URL Configuration**:
 - **Redirect URLs**: allow both dev and prod callback URLs, e.g.
 
 ```
-http://localhost:3000/auth/callback
-http://localhost:3000/**
+http://localhost:3050/auth/callback
+http://localhost:3050/**
 https://app.example.com/auth/callback
 https://app.example.com/**
 ```

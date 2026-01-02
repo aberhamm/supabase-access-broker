@@ -104,6 +104,9 @@ export interface AppConfig {
   color?: string | null;
   icon?: string | null;
   enabled: boolean;
+  // SSO settings (Auth Portal)
+  allowed_callback_urls?: string[] | null;
+  sso_client_secret_hash?: string | null;
   created_at: string;
   updated_at: string;
 }

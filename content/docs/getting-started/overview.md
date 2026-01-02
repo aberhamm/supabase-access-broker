@@ -65,19 +65,11 @@ Do **not** rely on “user exists” or “user is authenticated” alone.
 
 ---
 
-## What’s Next
-
-- **Next:** [5-Minute Quick Start](/docs/quick-start) — implement sign-up/sign-in + app access checks end-to-end.
-- **Then:** [Complete Integration Guide](/docs/complete-integration-guide) — deeper walkthrough and patterns.
-- **Reference:** [Agent Context](/docs/agent-context) — single-page “everything an agent needs” reference.
-
-
----
-
 ## What's Next
 
-- **Docs home:** [/docs](/docs)
-- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
-- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
-- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
-- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)
+- **Next:** [5-Minute Quick Start](/docs/quick-start) — implement sign-up/sign-in + app access checks end-to-end
+- **Then:** [Complete Integration Guide](/docs/complete-integration-guide) — deeper walkthrough and patterns
+- **Reference:** [Agent Context](/docs/agent-context) — single-page "everything an agent needs" reference
+- **Auth patterns:** [Authentication Guide](/docs/authentication-guide)
+- **Authorization patterns:** [Authorization Patterns](/docs/authorization-patterns)
+- **Production config:** [Environment Configuration](/docs/environment-configuration)
