@@ -111,7 +111,7 @@ rebuild:
 
 clean:
 	docker-compose down -v
-	docker rmi supabase-claims-admin-dashboard-app 2>/dev/null || true
+	docker rmi supabase-access-broker-app 2>/dev/null || true
 	@echo "Cleaned up containers and images"
 
 health:
@@ -203,7 +203,7 @@ ps:
 	docker-compose ps
 
 stats:
-	docker stats claims-admin-dashboard
+	docker stats supabase-access-broker
 
 backup-env:
 	cp .env.production .env.production.backup-$$(date +%Y%m%d-%H%M%S)

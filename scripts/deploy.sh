@@ -28,7 +28,7 @@ source "$CONFIG_FILE"
 DEPLOY_PORT="${DEPLOY_PORT:-22}"
 
 # Image name
-IMAGE_NAME="${IMAGE_NAME:-claims-admin-dashboard}"
+IMAGE_NAME="${IMAGE_NAME:-supabase-access-broker}"
 
 # Build SSH command
 SSH_OPTS="-o StrictHostKeyChecking=accept-new -p ${DEPLOY_PORT}"

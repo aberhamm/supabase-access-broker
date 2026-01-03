@@ -1186,6 +1186,7 @@ export async function POST(request: Request) {
 
 import { useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
+import { getAppUrl } from '@/lib/app-url';
 
 export default function AdminLoginPage() {
   const [email, setEmail] = useState('');
@@ -1404,6 +1405,7 @@ export default function LoginPage() {
 'use client';
 
 import { createClient } from '@/lib/supabase/client';
+import { getAppUrl } from '@/lib/app-url';
 
 export default function OAuthLogin() {
   const supabase = createClient();
@@ -2023,6 +2025,47 @@ export default async function DashboardPage() {
    - Implement proper sign out
    - Handle session expiration
    - Refresh tokens when needed
+
+## User Account Self-Service
+
+The Access Broker includes a user account page (`/account`) where authenticated users can manage their own security settings without admin intervention.
+
+### Available Features
+
+| Feature | Description |
+|---------|-------------|
+| **Profile Management** | Edit email, phone, and display name |
+| **Password Changes** | Update password (requires current password) |
+| **MFA Enrollment** | Add TOTP authenticator apps (Google Authenticator, 1Password, etc.) |
+| **Passkey Management** | Register and manage WebAuthn passkeys |
+
+### MFA (Two-Factor Authentication)
+
+Users can enroll TOTP authenticator apps from the account page:
+
+1. Navigate to `/account`
+2. In the **Security** section, click **Add Authenticator**
+3. Name the authenticator (optional, e.g., "Google Authenticator")
+4. Scan the QR code with an authenticator app
+5. Enter the 6-digit verification code
+6. MFA is now enabled
+
+**Supported Apps:** Any TOTP-compatible authenticator (Google Authenticator, Authy, 1Password, Microsoft Authenticator, etc.)
+
+### Passkeys (WebAuthn)
+
+Users can register passkeys for passwordless authentication:
+
+1. Navigate to `/account`
+2. In the **Passkeys** section, click **Add Passkey**
+3. Follow browser/device prompts (Face ID, Touch ID, Windows Hello, or security key)
+4. Name the passkey for identification
+
+**Note:** Passkeys require HTTPS in production and WebAuthn-compatible browsers.
+
+### Accessing the Account Page
+
+The `/account` route is accessible to any authenticated user. It displays only their own data and security settings.
 
 ## Related Documentation
 

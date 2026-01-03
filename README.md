@@ -2,6 +2,33 @@
 
 **A unified identity and access management platform for Supabase applications.**
 
+## Is this for you?
+
+| Use Case | Is this project for you? |
+|----------|--------------------------|
+| I need basic auth (sign up, sign in) for one app | **No** — use [Supabase Auth](https://supabase.com/docs/guides/auth) directly |
+| I need custom claims/roles in my JWT tokens | **Yes** — install the SQL functions |
+| I have multiple apps sharing one Supabase project | **Yes** — use the full platform |
+| I want a central login portal (SSO) for my apps | **Yes** — deploy the auth portal |
+| I need an admin UI to manage users and permissions | **Yes** — deploy the dashboard |
+
+**TL;DR:** If you have ONE app and just need auth, use Supabase Auth directly. Come back when you need custom JWT claims, multi-app support, or an admin dashboard.
+
+---
+
+## What this project provides
+
+| Component | Description | Use it when... |
+|-----------|-------------|----------------|
+| **SQL Functions** | `set_claim()`, `set_app_claim()`, etc. | You need custom claims in JWT tokens |
+| **Admin Dashboard** | Web UI for user/app/role management | You want a GUI to manage access |
+| **Auth Portal** | SSO hub with passkeys, OAuth, MFA | You have multiple apps on different domains |
+| **TypeScript Helpers** | Type-safe claim utilities | You're building with Next.js/TypeScript |
+
+You can use these **independently** — just the SQL functions, or the full platform.
+
+---
+
 ## Overview
 
 Supabase Access Broker provides centralized authentication, authorization, and user management for single or multi-application environments. It combines:
@@ -84,7 +111,17 @@ cp env.example .env.local
 pnpm migrate
 ```
 
-Or manually run [install.sql](./install.sql) in the Supabase SQL Editor.
+**Alternative:** Run [install.sql](./install.sql) manually in the Supabase SQL Editor.
+
+> **Which method should I use?**
+> | Scenario | Method |
+> |----------|--------|
+> | Fresh installation (new project) | Either works — `pnpm migrate` is recommended |
+> | Upgrading an existing installation | Use `pnpm migrate` (runs only new migrations) |
+> | Quick setup without CLI | Use `install.sql` in SQL Editor |
+> | CI/CD pipelines | Use `pnpm migrate` for tracking |
+>
+> **Note:** Don't mix methods. If you started with `install.sql`, continue with manual SQL. If you use the migration runner, it tracks applied migrations automatically.
 
 ### 2. Grant Admin Access
 

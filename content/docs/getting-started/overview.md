@@ -10,6 +10,35 @@ order: 1
 
 This documentation covers **Supabase Access Broker** — a unified identity and access management platform for Supabase applications.
 
+## Prerequisites
+
+Before you start, make sure you have:
+
+| Requirement | Why |
+|-------------|-----|
+| **Supabase project** | This builds on top of Supabase Auth |
+| **Supabase URL + keys** | Found in Project Settings → API |
+| **Basic Supabase knowledge** | Understanding of `supabase.auth` methods |
+| **Next.js experience** | Examples use Next.js App Router (adaptable to other frameworks) |
+
+**New to Supabase?** Start with the [Supabase Quick Start](https://supabase.com/docs/guides/getting-started/quickstarts/nextjs) first.
+
+## Do I need this project?
+
+**Quick check:**
+
+| Scenario | Recommendation |
+|----------|----------------|
+| Single app, basic auth (sign up/in) | Use Supabase Auth directly — [docs](https://supabase.com/docs/guides/auth) |
+| Single app + roles/permissions in JWT | **Use this** — install SQL functions only |
+| Multiple apps, one Supabase project | **Use this** — full platform |
+| Need SSO across different domains | **Use this** — deploy auth portal |
+| Need admin UI to manage users | **Use this** — deploy dashboard |
+
+If you answered "Use Supabase Auth directly," you don't need this project yet. But the patterns here still apply when you're ready to add custom claims.
+
+---
+
 ## What you get
 
 - **Authentication Portal** — SSO hub with passkeys, OAuth, MFA, and passwordless options

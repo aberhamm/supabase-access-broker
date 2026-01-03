@@ -73,16 +73,16 @@ The dashboard requires different environment variables depending on where it's r
 **Common Production Values:**
 ```bash
 # Vercel
-NEXT_PUBLIC_APP_URL=https://claims-admin.vercel.app
+NEXT_PUBLIC_APP_URL=https://access-broker.vercel.app
 
 # Custom domain
 NEXT_PUBLIC_APP_URL=https://admin.yourdomain.com
 
 # Docker with nginx
-NEXT_PUBLIC_APP_URL=https://claims.company.com
+NEXT_PUBLIC_APP_URL=https://auth.company.com
 
 # Internal network
-NEXT_PUBLIC_APP_URL=https://claims-admin.home.arpa
+NEXT_PUBLIC_APP_URL=https://access-broker.home.arpa
 ```
 
 ### Optional Variables
@@ -495,7 +495,7 @@ Use ConfigMaps and Secrets:
 apiVersion: v1
 kind: ConfigMap
 metadata:
-  name: claims-admin-config
+  name: access-broker-config
 data:
   NEXT_PUBLIC_SUPABASE_URL: "https://your-project.supabase.co"
   NEXT_PUBLIC_SUPABASE_ANON_KEY: "your-anon-key"
@@ -505,7 +505,7 @@ data:
 apiVersion: v1
 kind: Secret
 metadata:
-  name: claims-admin-secrets
+  name: access-broker-secrets
 type: Opaque
 stringData:
   SUPABASE_SERVICE_ROLE_KEY: "your-service-role-key"

@@ -2,7 +2,7 @@
 /**
  * Database Migration Runner
  *
- * This script manages database migrations for the Supabase Claims Admin Dashboard.
+ * This script manages database migrations for Supabase Access Broker.
  * It tracks which migrations have been applied and runs pending migrations in order.
  *
  * Usage:

@@ -16,8 +16,8 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Supabase Claims Admin Dashboard",
-  description: "Manage users and custom claims for your Supabase project",
+  title: "Supabase Access Broker",
+  description: "Unified identity and access management for Supabase applications",
 };
 
 export default function RootLayout({

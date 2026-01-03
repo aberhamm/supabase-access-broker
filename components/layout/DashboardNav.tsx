@@ -60,7 +60,7 @@ export function DashboardNav({ email, showApps = true }: DashboardNavProps) {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-8">
           <div>
-            <h1 className="text-xl font-bold">Claims Admin Dashboard</h1>
+            <h1 className="text-xl font-bold">Supabase Access Broker</h1>
             <p className="text-sm text-muted-foreground">{email}</p>
           </div>
 

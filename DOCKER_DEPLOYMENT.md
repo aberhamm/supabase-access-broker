@@ -89,6 +89,14 @@ Open your browser to:
 - **Application:** http://localhost:3050
 - **Health Check:** http://localhost:3050/api/health
 
+> **Port Reference:**
+> | Deployment Type | Access URL | Internal Port |
+> |-----------------|------------|---------------|
+> | Basic (`docker-compose.yml`) | `http://localhost:3050` | 3050 |
+> | Production with Nginx (`docker-compose.prod.yml`) | `http://localhost` (port 80) or `https://yourdomain.com` (port 443) | 3050 (proxied) |
+>
+> The app always runs on port 3050 internally. With Nginx, external traffic on 80/443 is proxied to the app.
+
 ## Configuration
 
 ### Docker Files Overview
@@ -324,7 +332,7 @@ docker stats
 docker-compose exec app sh
 
 # View container details
-docker inspect claims-admin-dashboard
+docker inspect supabase-access-broker
 ```
 
 ## Monitoring and Maintenance
@@ -420,7 +428,7 @@ docker-compose -f docker-compose.prod.yml up -d --build
 
 4. **Monitor container security:**
    ```bash
-   docker scan claims-admin-dashboard
+   docker scan supabase-access-broker
    ```
 
 5. **Use secrets management** (for advanced deployments):
@@ -462,7 +470,7 @@ docker-compose up
 docker-compose ps
 
 # 2. Check port mapping
-docker port claims-admin-dashboard
+docker port supabase-access-broker
 
 # 3. Check firewall rules
 sudo ufw status
@@ -481,7 +489,7 @@ docker-compose exec app wget -O- http://localhost:3050/api/health
 **Solution:**
 ```bash
 # Check health status
-docker inspect claims-admin-dashboard | grep -A 10 Health
+docker inspect supabase-access-broker | grep -A 10 Health
 
 # Test health endpoint manually
 docker-compose exec app node -e "require('http').get('http://localhost:3050/api/health', (r) => {console.log(r.statusCode)})"
@@ -516,7 +524,7 @@ docker build -t test-build .
 **Solution:**
 ```bash
 # Check memory usage
-docker stats claims-admin-dashboard
+docker stats supabase-access-broker
 
 # Limit memory in docker-compose.yml:
 services:

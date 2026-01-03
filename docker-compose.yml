@@ -1,7 +1,7 @@
 services:
   # Next.js Application
   app:
-    image: claims-admin-dashboard:latest
+    image: supabase-access-broker:latest
     build:
       context: .
       dockerfile: Dockerfile
@@ -9,7 +9,7 @@ services:
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
         NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
-    container_name: claims-admin-dashboard
+    container_name: supabase-access-broker
     restart: unless-stopped
     ports:
       - '127.0.0.1:3050:3050'
@@ -31,7 +31,7 @@ services:
     env_file:
       - .env
     networks:
-      - claims-network
+      - access-broker-network
     healthcheck:
       test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:3050/api/health']
       interval: 30s
@@ -39,9 +39,9 @@ services:
       retries: 3
       start_period: 40s
     labels:
-      - 'com.claims-admin.description=Supabase Claims Admin Dashboard'
-      - 'com.claims-admin.version=1.0.0'
+      - 'com.supabase-access-broker.description=Supabase Access Broker'
+      - 'com.supabase-access-broker.version=1.0.0'
 
 networks:
-  claims-network:
+  access-broker-network:
     driver: bridge

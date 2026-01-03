@@ -15,8 +15,8 @@ import {
 } from '@/components/ui/breadcrumb';
 
 export const metadata: Metadata = {
-  title: 'Documentation | Claims Admin Dashboard',
-  description: 'Complete documentation for setting up authentication and custom claims',
+  title: 'Documentation | Supabase Access Broker',
+  description: 'Complete documentation for authentication, authorization, and custom claims',
 };
 
 const iconMap: Record<string, LucideIcon> = {
@@ -94,8 +94,8 @@ const categoryInfo: Record<string, { title: string; description: string }> = {
     description: 'High-signal reference docs (including AI/agent context)',
   },
   dashboard: {
-    title: 'Admin Dashboard',
-    description: 'Run and configure the Claims Admin Dashboard',
+    title: 'Access Broker',
+    description: 'Deploy and configure Supabase Access Broker',
   },
   contributing: {
     title: 'Contributing',
