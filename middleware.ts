@@ -90,7 +90,8 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/login') ||
     pathname.startsWith('/auth/callback') ||
     pathname.startsWith('/reset-password') ||
-    pathname.startsWith('/api/auth/');
+    pathname.startsWith('/api/auth/') ||
+    pathname.startsWith('/demo/'); // Demo pages for SSO testing
 
   // Authenticated-but-not-admin routes (SSO portal features)
   const isPortalRoute =

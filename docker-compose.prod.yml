@@ -41,8 +41,8 @@ services:
     container_name: claims-admin-nginx
     restart: always
     ports:
-      - "80:80"
-      - "443:443"
+      - "3050:80"
+      - "3443:443"
     volumes:
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
       - ./nginx/ssl:/etc/nginx/ssl:ro
