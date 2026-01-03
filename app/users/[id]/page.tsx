@@ -31,12 +31,7 @@ async function getUserEmail() {
   return user?.email || '';
 }
 
-async function handleLogout() {
-  'use server';
-  const supabase = await createClient();
-  await supabase.auth.signOut();
-  redirect('/login');
-}
+// Logout is now handled by /auth/logout route for reliable cookie clearing
 
 async function getUserDetails(userId: string) {
   const adminSupabase = await createAdminClient();
@@ -85,7 +80,6 @@ export default async function UserDetailPage({
     <div className="min-h-screen bg-background">
       <DashboardNav
         email={email}
-        logoutAction={handleLogout}
         showApps={isAdminCheck || false}
       />
 

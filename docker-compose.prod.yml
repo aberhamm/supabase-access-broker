@@ -2,6 +2,7 @@
 services:
   # Next.js Application
   app:
+    image: claims-admin-dashboard:latest
     build:
       context: .
       dockerfile: Dockerfile

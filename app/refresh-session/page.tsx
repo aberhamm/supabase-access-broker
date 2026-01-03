@@ -5,13 +5,36 @@ import { createClient } from '@/lib/supabase/client';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { RefreshCw, CheckCircle2, XCircle } from 'lucide-react';
+import { RefreshCw, CheckCircle2, XCircle, AlertTriangle, Copy, User, LogOut } from 'lucide-react';
+import { toast } from 'sonner';
+
+type RefreshStatus = 'idle' | 'refreshing' | 'success' | 'no_access' | 'error';
+
+interface AppMetadata {
+  claims_admin?: boolean;
+  apps?: Record<string, { admin?: boolean; enabled?: boolean }>;
+  [key: string]: unknown;
+}
+
+/** Check if user has admin access (global or per-app) */
+function hasAdminAccess(appMetadata: AppMetadata | null): boolean {
+  if (!appMetadata) return false;
+
+  // Global admin
+  if (appMetadata.claims_admin === true) return true;
+
+  // Per-app admin
+  const apps = appMetadata.apps || {};
+  return Object.values(apps).some((app) => app?.admin === true);
+}
 
 export default function RefreshSessionPage() {
   const router = useRouter();
-  const [status, setStatus] = useState<'idle' | 'refreshing' | 'success' | 'error'>('idle');
+  const [status, setStatus] = useState<RefreshStatus>('idle');
   const [errorMessage, setErrorMessage] = useState('');
-  const [claims, setClaims] = useState<Record<string, unknown> | null>(null);
+  const [claims, setClaims] = useState<AppMetadata | null>(null);
+  const [userId, setUserId] = useState<string | null>(null);
+  const [userEmail, setUserEmail] = useState<string | null>(null);
 
   const refreshSession = async () => {
     setStatus('refreshing');
@@ -30,17 +53,50 @@ export default function RefreshSessionPage() {
       }
 
       if (data.session?.user) {
-        setClaims(data.session.user.app_metadata);
-        setStatus('success');
+        const appMetadata = (data.session.user.app_metadata || {}) as AppMetadata;
+        setClaims(appMetadata);
+        setUserId(data.session.user.id);
+        setUserEmail(data.session.user.email || null);
 
-        // Auto-redirect to dashboard after 2 seconds
-        setTimeout(() => {
-          router.push('/');
-        }, 2000);
+        // Check if user now has admin access
+        if (hasAdminAccess(appMetadata)) {
+          setStatus('success');
+          // Auto-redirect to dashboard after 2 seconds
+          setTimeout(() => {
+            router.push('/');
+          }, 2000);
+        } else {
+          // User still doesn't have admin access
+          setStatus('no_access');
+        }
+      } else {
+        setStatus('error');
+        setErrorMessage('No session found. Please log in again.');
       }
     } catch (err) {
       setStatus('error');
       setErrorMessage(err instanceof Error ? err.message : 'Failed to refresh session');
+    }
+  };
+
+  const handleLogout = async () => {
+    const supabase = createClient();
+    await supabase.auth.signOut();
+    router.push('/login');
+  };
+
+  const copyUserId = () => {
+    if (userId) {
+      navigator.clipboard.writeText(userId);
+      toast.success('User ID copied to clipboard');
+    }
+  };
+
+  const copySqlCommand = () => {
+    if (userId) {
+      const sql = `UPDATE auth.users SET raw_app_meta_data = raw_app_meta_data || '{"claims_admin": true}'::jsonb WHERE id = '${userId}'::uuid;`;
+      navigator.clipboard.writeText(sql);
+      toast.success('SQL command copied to clipboard');
     }
   };
 
@@ -54,9 +110,13 @@ export default function RefreshSessionPage() {
     <div className="container mx-auto py-10 max-w-2xl">
       <Card>
         <CardHeader>
-          <CardTitle>Refreshing Session</CardTitle>
+          <CardTitle>
+            {status === 'no_access' ? 'Still No Access' : 'Refreshing Session'}
+          </CardTitle>
           <CardDescription>
-            Updating your JWT token with the latest claims and permissions
+            {status === 'no_access'
+              ? 'Your session was refreshed, but you still lack admin access'
+              : 'Updating your JWT token with the latest claims and permissions'}
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -90,6 +150,89 @@ export default function RefreshSessionPage() {
               <Button onClick={() => router.push('/')} className="w-full">
                 Go to Dashboard Now
               </Button>
+            </div>
+          )}
+
+          {status === 'no_access' && (
+            <div className="space-y-4">
+              <div className="flex items-center gap-3 text-amber-600">
+                <AlertTriangle className="h-5 w-5" />
+                <span className="font-medium">
+                  You still don&apos;t have admin access
+                </span>
+              </div>
+
+              <p className="text-sm text-muted-foreground">
+                Your session was refreshed successfully, but your account still lacks the
+                required <code className="bg-muted px-1 py-0.5 rounded">claims_admin</code>{' '}
+                permission or app-level admin role.
+              </p>
+
+              {userId && (
+                <div className="bg-muted p-4 rounded-lg space-y-3">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">Your User ID:</p>
+                    <Button onClick={copyUserId} variant="ghost" size="sm">
+                      <Copy className="h-4 w-4 mr-1" />
+                      Copy
+                    </Button>
+                  </div>
+                  <code className="text-xs block break-all">{userId}</code>
+                  {userEmail && (
+                    <p className="text-xs text-muted-foreground">{userEmail}</p>
+                  )}
+                </div>
+              )}
+
+              {claims && (
+                <div className="bg-muted p-4 rounded-lg space-y-2">
+                  <p className="text-sm font-medium">Your Current Claims:</p>
+                  <pre className="text-xs overflow-auto max-h-32 bg-background p-2 rounded border">
+                    {JSON.stringify(claims, null, 2)}
+                  </pre>
+                </div>
+              )}
+
+              <div className="space-y-2">
+                <p className="text-sm font-medium">What to do next:</p>
+                <ol className="text-sm text-muted-foreground list-decimal list-inside space-y-1">
+                  <li>Contact your administrator to request access</li>
+                  <li>Or, if you have database access, run the SQL below</li>
+                  <li>Then click &quot;Try Again&quot; to refresh</li>
+                </ol>
+              </div>
+
+              {userId && (
+                <div className="bg-muted p-4 rounded-lg space-y-2">
+                  <div className="flex items-center justify-between">
+                    <p className="text-sm font-medium">SQL Command:</p>
+                    <Button onClick={copySqlCommand} variant="ghost" size="sm">
+                      <Copy className="h-4 w-4 mr-1" />
+                      Copy
+                    </Button>
+                  </div>
+                  <pre className="text-xs overflow-auto bg-background p-2 rounded border">
+{`UPDATE auth.users
+SET raw_app_meta_data = raw_app_meta_data || '{"claims_admin": true}'::jsonb
+WHERE id = '${userId}'::uuid;`}
+                  </pre>
+                </div>
+              )}
+
+              <div className="flex flex-col gap-2">
+                <Button onClick={refreshSession} className="w-full">
+                  <RefreshCw className="h-4 w-4 mr-2" />
+                  Try Again
+                </Button>
+                <Button onClick={() => router.push('/account')} variant="outline" className="w-full">
+                  <User className="h-4 w-4 mr-2" />
+                  Go to Account
+                </Button>
+                <Button onClick={handleLogout} variant="ghost" className="w-full">
+                  <LogOut className="h-4 w-4 mr-2" />
+                  Sign Out
+                </Button>
+              </div>
             </div>
           )}
 

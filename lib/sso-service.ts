@@ -6,6 +6,50 @@ function isAllowedInsecureRedirect(url: URL): boolean {
   return host === 'localhost' || host === '127.0.0.1';
 }
 
+/**
+ * Check if a redirect_uri is allowed for an app WITHOUT throwing errors.
+ * Used to determine whether we can safely redirect back to the client on error.
+ * Returns true only if the URI is valid, parseable, uses https (or localhost http),
+ * and is in the app's allowed_callback_urls list.
+ */
+export async function isRedirectUriAllowed(params: {
+  appId: string;
+  redirectUri: string;
+}): Promise<boolean> {
+  const { appId, redirectUri } = params;
+
+  // Check if redirect_uri is a valid URL
+  let url: URL;
+  try {
+    url = new URL(redirectUri);
+  } catch {
+    return false;
+  }
+
+  // Check protocol (https required, except localhost)
+  if (url.protocol !== 'https:' && !(url.protocol === 'http:' && isAllowedInsecureRedirect(url))) {
+    return false;
+  }
+
+  try {
+    const supabase = await createAdminClient();
+    const { data, error } = await supabase
+      .from('apps')
+      .select('id,enabled,allowed_callback_urls')
+      .eq('id', appId)
+      .maybeSingle();
+
+    if (error || !data?.id || data.enabled === false) {
+      return false;
+    }
+
+    const allowed = (data.allowed_callback_urls || []) as string[];
+    return allowed.includes(redirectUri);
+  } catch {
+    return false;
+  }
+}
+
 export async function validateRedirectUri(params: {
   appId: string;
   redirectUri: string;

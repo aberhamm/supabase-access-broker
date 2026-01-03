@@ -1,7 +1,7 @@
 .PHONY: \
 	help \
 	install dev dev-port build-local start-local lint typecheck \
-	build up down logs restart clean rebuild health test \
+	build up down logs restart clean rebuild health test sync-env-local \
 	prod-up prod-down prod-logs prod-restart prod-rebuild \
 	deploy deploy-remote deploy-init deploy-build deploy-push deploy-start \
 	deploy-restart deploy-sync-env deploy-sync-config deploy-logs deploy-status deploy-ssh \
@@ -21,7 +21,7 @@ help:
 	@echo "  make build-local  - Build Next.js"
 	@echo "  make start-local  - Start Next.js (requires build)"
 	@echo ""
-	@echo "Local Docker commands:"
+	@echo "Local Docker commands (uses .env):"
 	@echo "  make build        - Build Docker images"
 	@echo "  make up           - Start containers"
 	@echo "  make down         - Stop containers"
@@ -31,6 +31,7 @@ help:
 	@echo "  make clean        - Remove containers and images"
 	@echo "  make health       - Check application health"
 	@echo "  make test         - Run tests"
+	@echo "  make sync-env-local - Copy .env.production to .env for local Docker"
 	@echo ""
 	@echo "Database Migration commands:"
 	@echo "  make migrate              - Run all pending migrations"
@@ -51,7 +52,7 @@ help:
 	@echo "  make deploy-status      - Check remote container status"
 	@echo "  make deploy-ssh         - SSH into the remote server"
 	@echo ""
-	@echo "Local Production commands:"
+	@echo "Local Production commands (uses .env.production):"
 	@echo "  make prod-up      - Start production stack locally"
 	@echo "  make prod-down    - Stop production stack locally"
 	@echo "  make prod-logs    - View production logs locally"
@@ -177,6 +178,16 @@ deploy-status:
 
 deploy-ssh:
 	@./scripts/deploy.sh ssh
+
+# Sync .env.production to .env for local Docker testing
+sync-env-local:
+	@if [ -f .env.production ]; then \
+		cp .env.production .env; \
+		echo "Copied .env.production to .env"; \
+	else \
+		echo "Error: .env.production not found"; \
+		exit 1; \
+	fi
 
 # Utility commands
 shell:

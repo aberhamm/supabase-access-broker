@@ -35,10 +35,10 @@ export default function AccessDeniedPage() {
     loadUserInfo();
   }, [supabase.auth]);
 
-  const handleLogout = async () => {
-    console.log('🚪 [ACCESS DENIED] Logging out...');
-    await supabase.auth.signOut();
-    router.push('/login');
+  const handleLogout = () => {
+    console.log('🚪 [ACCESS DENIED] Logging out via /auth/logout...');
+    // Use the centralized logout route for reliable cookie clearing
+    router.push('/auth/logout');
   };
 
   const copyUserId = () => {

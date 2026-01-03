@@ -140,11 +140,42 @@ No environment variables needed for session configuration. All settings are:
 - In Supabase dashboard (JWT expiry)
 - Hardcoded in TypeScript files (cookie settings)
 
+## Logout
+
+### Centralized Logout Route
+
+All logout actions go through a centralized route handler at `/auth/logout` for reliable cookie clearing:
+
+```tsx
+// To log out a user, redirect to:
+router.push('/auth/logout');
+
+// Or with a custom redirect destination:
+router.push('/auth/logout?next=/login');
+```
+
+**Why a route handler?**
+- Server actions in Server Components may silently fail to clear cookies due to Next.js's cookie handling
+- The route handler guarantees cookies are cleared in the HTTP response
+- It also explicitly clears Supabase auth cookies as a fallback
+
+### Cross-Tab Session Sync
+
+The dashboard includes a `SessionSync` component (in `app/layout.tsx`) that:
+
+1. Listens for Supabase `onAuthStateChange` events
+2. Watches for localStorage changes (for cross-tab sync)
+3. Redirects to `/login` if the user signs out in another tab
+
+This prevents the confusing state where a user is logged out in one tab but appears logged in on another.
+
 ## Related Files
 
 - `lib/supabase/client.ts` - Client-side session config
 - `lib/supabase/server.ts` - Server-side session config
 - `middleware.ts` - Middleware session handling
+- `app/auth/logout/route.ts` - Centralized logout route
+- `components/auth/SessionSync.tsx` - Cross-tab session sync
 
 ## Questions?
 

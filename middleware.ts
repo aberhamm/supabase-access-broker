@@ -89,8 +89,10 @@ export async function middleware(request: NextRequest) {
   const isPublicRoute =
     pathname.startsWith('/login') ||
     pathname.startsWith('/auth/callback') ||
+    pathname.startsWith('/auth/logout') ||
     pathname.startsWith('/reset-password') ||
     pathname.startsWith('/api/auth/') ||
+    pathname.startsWith('/api/health') ||
     pathname.startsWith('/demo/'); // Demo pages for SSO testing
 
   // Authenticated-but-not-admin routes (SSO portal features)

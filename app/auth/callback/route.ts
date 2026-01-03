@@ -1,5 +1,6 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
+import { safeNextPath, isPortalPath } from '@/lib/safe-redirect';
 
 // Get the base URL for redirects
 // Prioritizes: NEXT_PUBLIC_APP_URL > X-Forwarded-Host > Host header > request URL
@@ -30,8 +31,11 @@ function getBaseUrl(request: Request): string {
 export async function GET(request: Request) {
   const requestUrl = new URL(request.url);
   const code = requestUrl.searchParams.get('code');
-  const next = requestUrl.searchParams.get('next') ?? '/';
+  const rawNext = requestUrl.searchParams.get('next');
   const type = requestUrl.searchParams.get('type');
+
+  // Sanitize the next parameter to prevent open redirects
+  const next = safeNextPath(rawNext, '/');
 
   // Get the proper base URL for redirects
   const baseUrl = getBaseUrl(request);
@@ -49,11 +53,7 @@ export async function GET(request: Request) {
 
       // If this is an SSO/portal flow, do NOT enforce claims_admin.
       // These routes are for all authenticated users.
-      const isPortalNext =
-        next.startsWith('/sso/') ||
-        next.startsWith('/account');
-
-      if (isPortalNext) {
+      if (isPortalPath(next)) {
         return NextResponse.redirect(new URL(next, baseUrl));
       }
 

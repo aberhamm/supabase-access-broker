@@ -87,6 +87,16 @@ NEXT_PUBLIC_APP_URL=https://claims-admin.home.arpa
 
 ### Optional Variables
 
+#### `NEXT_PUBLIC_AUTH_PORTAL_URL`
+- **Default:** Falls back to `NEXT_PUBLIC_APP_URL`
+- **Type:** Public (client-side accessible)
+- **Description:** The public-facing URL of the auth portal for SSO integrations
+- **When to use:** Set this if the auth portal should be accessed via a different URL than the app itself (e.g., behind a reverse proxy with a dedicated `auth.` subdomain)
+- **Examples:**
+  - `https://auth.yourdomain.com` (dedicated auth subdomain)
+  - `https://sso.company.com` (company SSO portal)
+- **Where it's used:** Displayed on the SSO Settings page for external apps to use
+
 #### `PORT`
 - **Default:** `3050` (development), `3050` (Docker)
 - **Description:** Port the app runs on
@@ -304,6 +314,7 @@ If you're using this dashboard as a central **auth portal** for other apps:
 - **Database migration**: apply `migrations/007_auth_and_passkeys.sql`
 - **Register allowed callback URLs** per app: `public.apps.allowed_callback_urls`
 - (Optional) require an app secret by setting: `public.apps.sso_client_secret_hash`
+- (Optional) set `NEXT_PUBLIC_AUTH_PORTAL_URL` if external apps should use a different URL than `NEXT_PUBLIC_APP_URL` (e.g., `https://auth.yourdomain.com`)
 
 See: **[Auth Portal (SSO + Passkeys)](/docs/auth-portal-sso-passkeys)**.
 

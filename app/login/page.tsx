@@ -18,6 +18,7 @@ import { AUTH_FEATURES } from '@/lib/auth-config';
 import { PasskeyButton } from '@/components/auth/PasskeyButton';
 import { SocialButtons } from '@/components/auth/SocialButtons';
 import { OTPInput } from '@/components/auth/OTPInput';
+import { safeNextPath } from '@/lib/safe-redirect';
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -36,11 +37,12 @@ export default function LoginPage() {
   const nextPath = useMemo(() => {
     if (typeof window === 'undefined') return '/';
     const params = new URLSearchParams(window.location.search);
-    const next = params.get('next');
+    const rawNext = params.get('next');
     const appId = params.get('app_id');
     const redirectUri = params.get('redirect_uri');
     const state = params.get('state');
 
+    // SSO flow takes priority - build the SSO complete URL
     if (appId && redirectUri) {
       const sso = new URLSearchParams();
       sso.set('app_id', appId);
@@ -49,7 +51,8 @@ export default function LoginPage() {
       return `/sso/complete?${sso.toString()}`;
     }
 
-    return next || '/';
+    // Sanitize the next parameter to prevent open redirects
+    return safeNextPath(rawNext, '/');
   }, []);
 
   const handleMagicLinkLogin = async (e: React.FormEvent) => {

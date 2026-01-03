@@ -272,6 +272,79 @@ if (receivedState !== expectedState) {
 }
 ```
 
+## Error Handling
+
+The auth portal uses **implicit consent** — if a user is logged in, the authorization code is issued automatically. No explicit "Approve" screen is shown.
+
+### Error Response Behavior
+
+When an error occurs during the SSO flow, the portal handles it safely:
+
+1. **If `redirect_uri` is valid and allowlisted**: The user is redirected back to your app with error parameters in the query string.
+2. **If `redirect_uri` is invalid or not allowlisted**: The user sees a portal error page with recovery options (no redirect to prevent open redirect attacks).
+
+### Error Parameters (Redirected to Your App)
+
+When redirected back with an error, your callback URL will receive:
+
+```
+https://yourapp.com/auth/callback?error=ERROR_CODE&error_description=Human+readable+message&state=original_state
+```
+
+| Error Code | Description |
+|------------|-------------|
+| `invalid_request` | Missing required parameters or malformed request |
+| `unauthorized_client` | Unknown `app_id` or app is disabled |
+| `invalid_redirect_uri` | The `redirect_uri` is not in the allowlist |
+| `access_denied` | User lacks permission to access the app |
+| `temporarily_unavailable` | Service temporarily unavailable |
+| `server_error` | Unexpected error occurred |
+
+### Handling Errors in Your Callback
+
+```ts
+// app/auth/callback/route.ts
+export async function GET(request: Request) {
+  const url = new URL(request.url);
+
+  // Check for error response FIRST
+  const error = url.searchParams.get('error');
+  if (error) {
+    const errorDescription = url.searchParams.get('error_description') || 'Authentication failed';
+    console.error('[SSO Callback] Error:', error, errorDescription);
+
+    // Don't retry infinitely - show an error page or redirect to login
+    return NextResponse.redirect(
+      new URL(`/login?error=${encodeURIComponent(error)}`, url.origin)
+    );
+  }
+
+  const code = url.searchParams.get('code');
+  // ... rest of normal flow
+}
+```
+
+### Preventing Retry Loops
+
+If your app receives an error, **do not automatically retry**. Instead:
+
+1. Log the error for debugging
+2. Show the user an error message
+3. Provide a "Try Again" button that starts a fresh login flow
+
+```ts
+// BAD: Automatic retry loop
+if (!response.ok) {
+  window.location.href = `${PORTAL_URL}/login?app_id=${APP_ID}&...`; // ❌ Causes loop!
+}
+
+// GOOD: Show error state
+if (!response.ok) {
+  setErrorMessage('Login failed. Please try again.');
+  setShowRetryButton(true); // User clicks to retry
+}
+```
+
 ## Common Issues
 
 ### Issue: Redirect Loop
@@ -284,17 +357,18 @@ if (receivedState !== expectedState) {
 
 ```ts
 // app/auth/callback/route.ts
-// 1. Exchange code ✓
-// 2. Validate app_claims.enabled ✓
-// 3. CREATE YOUR APP'S SESSION HERE (this is YOUR responsibility, not the portal's)
-// 4. Then redirect ✓
+// 1. Check for error params FIRST ✓
+// 2. Exchange code ✓
+// 3. Validate app_claims.enabled ✓
+// 4. CREATE YOUR APP'S SESSION HERE (this is YOUR responsibility, not the portal's)
+// 5. Then redirect ✓
 ```
 
 > **Note:** The auth portal authenticates users and provides their info, but **your app** must manage its own sessions. The portal doesn't set cookies or JWTs in your domain.
 
 ### Issue: "Callback URL not allowed"
 
-**Symptom:** Portal rejects the redirect with an error.
+**Symptom:** Portal rejects the redirect with an error (you'll see this on the portal's error page, not your app).
 
 **Cause:** Your `redirect_uri` is not allowlisted in `public.apps.allowed_callback_urls`.
 
@@ -306,16 +380,19 @@ SET allowed_callback_urls = array_append(allowed_callback_urls, 'https://yourapp
 WHERE id = 'your-app-id';
 ```
 
+**Note:** The URL must match exactly — check for trailing slashes, protocol (http vs https), and port numbers.
+
 ### Issue: Code already used / expired
 
-**Symptom:** Exchange endpoint returns `401` or `400`.
+**Symptom:** Exchange endpoint returns `401` or `400` with `error: "Invalid or expired code"`.
 
 **Cause:** Auth codes are single-use and expire after 5 minutes.
 
 **Fix:**
-- Don't refresh the callback page (code is consumed)
-- Ensure your server clock is correct
-- Start a fresh login flow
+- Don't refresh the callback page (code is consumed on first use)
+- Ensure your server clock is synchronized (use NTP)
+- Start a fresh login flow if the code fails
+- Check server logs for timing issues
 
 ## What's Next
 

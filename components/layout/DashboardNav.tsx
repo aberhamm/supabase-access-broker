@@ -9,11 +9,12 @@ import { ThemeToggle } from '@/components/theme-toggle';
 
 interface DashboardNavProps {
   email: string;
-  logoutAction: () => Promise<void>;
+  /** @deprecated Use the centralized /auth/logout route instead */
+  logoutAction?: () => Promise<void>;
   showApps?: boolean;
 }
 
-export function DashboardNav({ email, logoutAction, showApps = true }: DashboardNavProps) {
+export function DashboardNav({ email, showApps = true }: DashboardNavProps) {
   const pathname = usePathname();
 
   const navItems = [
@@ -87,12 +88,12 @@ export function DashboardNav({ email, logoutAction, showApps = true }: Dashboard
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <form action={logoutAction}>
-            <Button variant="ghost" size="sm" type="submit">
+          <Link href="/auth/logout">
+            <Button variant="ghost" size="sm">
               <LogOut className="mr-2 h-4 w-4" />
               Sign Out
             </Button>
-          </form>
+          </Link>
         </div>
       </div>
     </header>

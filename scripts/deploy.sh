@@ -61,19 +61,33 @@ build_image() {
     # Read build args from .env.production if it exists
     local build_args=""
     if [[ -f "${SCRIPT_DIR}/.env.production" ]]; then
-        local supabase_url=$(grep -E '^NEXT_PUBLIC_SUPABASE_URL=' "${SCRIPT_DIR}/.env.production" | cut -d'=' -f2-)
-        local supabase_anon=$(grep -E '^NEXT_PUBLIC_SUPABASE_ANON_KEY=' "${SCRIPT_DIR}/.env.production" | cut -d'=' -f2-)
-        local app_url=$(grep -E '^NEXT_PUBLIC_APP_URL=' "${SCRIPT_DIR}/.env.production" | cut -d'=' -f2-)
+        local supabase_url=$(grep -E '^NEXT_PUBLIC_SUPABASE_URL=' "${SCRIPT_DIR}/.env.production" | cut -d'=' -f2- | tr -d '"' | tr -d "'")
+        local supabase_anon=$(grep -E '^NEXT_PUBLIC_SUPABASE_ANON_KEY=' "${SCRIPT_DIR}/.env.production" | cut -d'=' -f2- | tr -d '"' | tr -d "'")
+        local app_url=$(grep -E '^NEXT_PUBLIC_APP_URL=' "${SCRIPT_DIR}/.env.production" | cut -d'=' -f2- | tr -d '"' | tr -d "'")
 
-        [[ -n "$supabase_url" ]] && build_args="$build_args --build-arg NEXT_PUBLIC_SUPABASE_URL=$supabase_url"
-        [[ -n "$supabase_anon" ]] && build_args="$build_args --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=$supabase_anon"
+        # Validate values are not placeholders
+        if [[ -z "$supabase_url" ]] || [[ "$supabase_url" == *"placeholder"* ]] || [[ "$supabase_url" == *"YOUR-PROJECT"* ]]; then
+            error "NEXT_PUBLIC_SUPABASE_URL is not set correctly in .env.production (found: ${supabase_url:-empty})"
+            exit 1
+        fi
+        if [[ -z "$supabase_anon" ]] || [[ "$supabase_anon" == *"placeholder"* ]] || [[ "$supabase_anon" == *"YOUR_ANON_KEY"* ]]; then
+            error "NEXT_PUBLIC_SUPABASE_ANON_KEY is not set correctly in .env.production"
+            exit 1
+        fi
+
+        build_args="$build_args --build-arg NEXT_PUBLIC_SUPABASE_URL=$supabase_url"
+        build_args="$build_args --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=$supabase_anon"
         [[ -n "$app_url" ]] && build_args="$build_args --build-arg NEXT_PUBLIC_APP_URL=$app_url"
 
-        log "Building with NEXT_PUBLIC_APP_URL=${app_url:-not set}"
+        log "Building with:"
+        log "  NEXT_PUBLIC_SUPABASE_URL=${supabase_url:0:30}..."
+        log "  NEXT_PUBLIC_APP_URL=${app_url:-not set}"
     else
-        warn "No .env.production found - building without NEXT_PUBLIC_* vars"
+        error ".env.production not found - cannot build without NEXT_PUBLIC_* vars"
+        exit 1
     fi
 
+    log "Running docker build..."
     docker build -t "$IMAGE_NAME" $build_args .
 
     success "Image built successfully"
@@ -130,15 +144,30 @@ cd ${DEPLOY_PATH}
 # Read build args from .env.production
 BUILD_ARGS=""
 if [[ -f ".env.production" ]]; then
-    SUPABASE_URL=\$(grep -E '^NEXT_PUBLIC_SUPABASE_URL=' .env.production | cut -d'=' -f2- || true)
-    SUPABASE_ANON=\$(grep -E '^NEXT_PUBLIC_SUPABASE_ANON_KEY=' .env.production | cut -d'=' -f2- || true)
-    APP_URL=\$(grep -E '^NEXT_PUBLIC_APP_URL=' .env.production | cut -d'=' -f2- || true)
+    SUPABASE_URL=\$(grep -E '^NEXT_PUBLIC_SUPABASE_URL=' .env.production | cut -d'=' -f2- | tr -d '"' | tr -d "'" || true)
+    SUPABASE_ANON=\$(grep -E '^NEXT_PUBLIC_SUPABASE_ANON_KEY=' .env.production | cut -d'=' -f2- | tr -d '"' | tr -d "'" || true)
+    APP_URL=\$(grep -E '^NEXT_PUBLIC_APP_URL=' .env.production | cut -d'=' -f2- | tr -d '"' | tr -d "'" || true)
 
-    [[ -n "\$SUPABASE_URL" ]] && BUILD_ARGS="\$BUILD_ARGS --build-arg NEXT_PUBLIC_SUPABASE_URL=\$SUPABASE_URL"
-    [[ -n "\$SUPABASE_ANON" ]] && BUILD_ARGS="\$BUILD_ARGS --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=\$SUPABASE_ANON"
+    # Validate values are not placeholders
+    if [[ -z "\$SUPABASE_URL" ]] || [[ "\$SUPABASE_URL" == *"placeholder"* ]] || [[ "\$SUPABASE_URL" == *"YOUR-PROJECT"* ]]; then
+        echo "ERROR: NEXT_PUBLIC_SUPABASE_URL is not set correctly in .env.production" >&2
+        exit 1
+    fi
+    if [[ -z "\$SUPABASE_ANON" ]] || [[ "\$SUPABASE_ANON" == *"placeholder"* ]] || [[ "\$SUPABASE_ANON" == *"YOUR_ANON_KEY"* ]]; then
+        echo "ERROR: NEXT_PUBLIC_SUPABASE_ANON_KEY is not set correctly in .env.production" >&2
+        exit 1
+    fi
+
+    BUILD_ARGS="\$BUILD_ARGS --build-arg NEXT_PUBLIC_SUPABASE_URL=\$SUPABASE_URL"
+    BUILD_ARGS="\$BUILD_ARGS --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=\$SUPABASE_ANON"
     [[ -n "\$APP_URL" ]] && BUILD_ARGS="\$BUILD_ARGS --build-arg NEXT_PUBLIC_APP_URL=\$APP_URL"
 
-    echo "Building with NEXT_PUBLIC_APP_URL=\${APP_URL:-not set}"
+    echo "Building with:"
+    echo "  NEXT_PUBLIC_SUPABASE_URL=\${SUPABASE_URL:0:30}..."
+    echo "  NEXT_PUBLIC_APP_URL=\${APP_URL:-not set}"
+else
+    echo "ERROR: .env.production not found - cannot build without NEXT_PUBLIC_* vars" >&2
+    exit 1
 fi
 
 echo "Building Docker image..."
@@ -241,6 +270,13 @@ start_containers() {
 set -e
 cd ${DEPLOY_PATH}
 
+# Load environment variables from .env.production for docker-compose substitution
+if [[ -f ".env.production" ]]; then
+    set -a
+    source .env.production
+    set +a
+fi
+
 echo "Stopping old containers..."
 docker compose -f docker-compose.prod.yml down --timeout 30 || true
 
@@ -260,7 +296,7 @@ EOF
 
     success "Deployment complete!"
     echo ""
-    log "Your app should be available at: http://${DEPLOY_HOST}"
+    log "Your app should be available at: http://${DEPLOY_HOST}:3050"
 }
 
 # Quick restart (no rebuild)
@@ -270,6 +306,14 @@ quick_restart() {
     $SSH_CMD bash << EOF
 set -e
 cd ${DEPLOY_PATH}
+
+# Load environment variables from .env.production for docker-compose substitution
+if [[ -f ".env.production" ]]; then
+    set -a
+    source .env.production
+    set +a
+fi
+
 docker compose -f docker-compose.prod.yml restart
 docker compose -f docker-compose.prod.yml ps
 EOF

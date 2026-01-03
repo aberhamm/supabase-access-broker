@@ -32,12 +32,23 @@ ARG NEXT_PUBLIC_SUPABASE_URL
 ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
 ARG NEXT_PUBLIC_APP_URL
 
+# Validate that required build args are provided
+RUN if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ "$NEXT_PUBLIC_SUPABASE_URL" = "https://placeholder.supabase.co" ]; then \
+        echo "ERROR: NEXT_PUBLIC_SUPABASE_URL must be set and cannot be placeholder" >&2; \
+        exit 1; \
+    fi && \
+    if [ -z "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ] || [ "$NEXT_PUBLIC_SUPABASE_ANON_KEY" = "placeholder-anon-key" ]; then \
+        echo "ERROR: NEXT_PUBLIC_SUPABASE_ANON_KEY must be set and cannot be placeholder" >&2; \
+        exit 1; \
+    fi
+
 ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
 ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 ENV NEXT_TELEMETRY_DISABLED=1
 
 # Build the application
+# ENV vars are already set above, which will override package.json defaults
 RUN pnpm build
 
 # Production stage

@@ -21,12 +21,7 @@ async function getUserEmail() {
   return user?.email || '';
 }
 
-async function handleLogout() {
-  'use server';
-  const supabase = await createClient();
-  await supabase.auth.signOut();
-  redirect('/login');
-}
+// Logout is now handled by /auth/logout route for reliable cookie clearing
 
 async function checkAdmin() {
   const supabase = await createClient();
@@ -35,7 +30,8 @@ async function checkAdmin() {
 }
 
 function getPortalUrl(): string {
-  return process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3050';
+  // Use dedicated auth portal URL if set, otherwise fall back to app URL
+  return process.env.NEXT_PUBLIC_AUTH_PORTAL_URL || process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3050';
 }
 
 export default async function SSOSettingsPage() {
@@ -50,7 +46,7 @@ export default async function SSOSettingsPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <DashboardNav email={email} logoutAction={handleLogout} showApps={true} />
+      <DashboardNav email={email} showApps={true} />
 
       <main className="container mx-auto space-y-8 p-4 py-8">
         <div className="flex items-start justify-between gap-4">

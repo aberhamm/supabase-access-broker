@@ -2,6 +2,7 @@ import crypto from 'crypto';
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { consumeAuthCode } from '@/lib/sso-service';
+import { logSSOEvent, extractClientIP } from '@/lib/audit-service';
 
 function sha256Hex(input: string): string {
   return crypto.createHash('sha256').update(input, 'utf8').digest('hex');
@@ -19,6 +20,12 @@ function timingSafeEqualHex(a: string, b: string): boolean {
 }
 
 export async function POST(request: Request) {
+  // Common audit context
+  const auditContext = {
+    ipAddress: extractClientIP(request) || undefined,
+    userAgent: request.headers.get('user-agent') || undefined,
+  };
+
   try {
     const body = await request.json().catch(() => ({}));
     const code = typeof body?.code === 'string' ? body.code : null;
@@ -26,6 +33,13 @@ export async function POST(request: Request) {
     const appSecret = typeof body?.app_secret === 'string' ? body.app_secret : null;
 
     if (!code || !appId) {
+      logSSOEvent({
+        eventType: 'token_exchange_error',
+        appId: appId || undefined,
+        errorCode: 'invalid_request',
+        ...auditContext,
+        metadata: { reason: 'missing_code_or_app_id' },
+      });
       return NextResponse.json({ error: 'Missing code or app_id' }, { status: 400 });
     }
 
@@ -35,18 +49,52 @@ export async function POST(request: Request) {
       .select('id,enabled,sso_client_secret_hash')
       .eq('id', appId)
       .maybeSingle();
+
     if (appErr) throw appErr;
-    if (!appRow?.id) return NextResponse.json({ error: 'Unknown app_id' }, { status: 400 });
-    if (appRow.enabled === false) return NextResponse.json({ error: 'App is disabled' }, { status: 403 });
+
+    if (!appRow?.id) {
+      logSSOEvent({
+        eventType: 'token_exchange_error',
+        appId,
+        errorCode: 'unknown_app',
+        ...auditContext,
+      });
+      return NextResponse.json({ error: 'Unknown app_id' }, { status: 400 });
+    }
+
+    if (appRow.enabled === false) {
+      logSSOEvent({
+        eventType: 'token_exchange_error',
+        appId,
+        errorCode: 'app_disabled',
+        ...auditContext,
+      });
+      return NextResponse.json({ error: 'App is disabled' }, { status: 403 });
+    }
 
     // If a secret hash is configured, require and verify it.
     if (appRow.sso_client_secret_hash) {
       if (!appSecret) {
+        logSSOEvent({
+          eventType: 'token_exchange_error',
+          appId,
+          errorCode: 'missing_secret',
+          ...auditContext,
+        });
         return NextResponse.json({ error: 'Missing app_secret' }, { status: 401 });
       }
       const computed = sha256Hex(appSecret);
       const ok = timingSafeEqualHex(computed, appRow.sso_client_secret_hash);
-      if (!ok) return NextResponse.json({ error: 'Invalid app_secret' }, { status: 401 });
+      if (!ok) {
+        logSSOEvent({
+          eventType: 'token_exchange_error',
+          appId,
+          errorCode: 'invalid_secret',
+          ...auditContext,
+          metadata: { reason: 'secret_mismatch' },
+        });
+        return NextResponse.json({ error: 'Invalid app_secret' }, { status: 401 });
+      }
     }
 
     const { userId } = await consumeAuthCode({ code, appId });
@@ -55,7 +103,16 @@ export async function POST(request: Request) {
     if (userErr) throw userErr;
 
     const user = userData.user;
-    if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    if (!user) {
+      logSSOEvent({
+        eventType: 'token_exchange_error',
+        appId,
+        userId,
+        errorCode: 'user_not_found',
+        ...auditContext,
+      });
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
 
     const appMetadata = user.app_metadata as unknown;
     const apps =
@@ -67,6 +124,14 @@ export async function POST(request: Request) {
         ? ((apps as Record<string, unknown>)[appId] ?? null)
         : null;
 
+    // Log successful exchange
+    logSSOEvent({
+      eventType: 'token_exchange_success',
+      appId,
+      userId: user.id,
+      ...auditContext,
+    });
+
     return NextResponse.json({
       user: { id: user.id, email: user.email },
       app_id: appId,
@@ -75,6 +140,20 @@ export async function POST(request: Request) {
     });
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Unknown error';
+
+    // Determine error code from message
+    let errorCode = 'server_error';
+    if (message.includes('expired') || message.includes('Invalid')) {
+      errorCode = 'invalid_code';
+    }
+
+    logSSOEvent({
+      eventType: 'token_exchange_error',
+      errorCode,
+      ...auditContext,
+      metadata: { error_message: message },
+    });
+
     return NextResponse.json({ error: message }, { status: 400 });
   }
 }
