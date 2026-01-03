@@ -97,7 +97,7 @@ test.describe('SSO Integration - Simplified E2E', () => {
 
     // Create an auth code manually
     const code = `test-code-${Date.now()}`;
-    const { error: insertError } = await supabase.from('auth_codes').insert({
+    const { error: insertError } = await supabase.from('access_broker_app.auth_codes').insert({
       code,
       user_id: testUserId,
       app_id: TEST_APP.id,
@@ -164,7 +164,7 @@ test.describe('SSO Integration - Simplified E2E', () => {
     );
 
     const code = `test-code-reuse-${Date.now()}`;
-    await supabase.from('auth_codes').insert({
+    await supabase.from('access_broker_app.auth_codes').insert({
       code,
       user_id: testUserId,
       app_id: TEST_APP.id,

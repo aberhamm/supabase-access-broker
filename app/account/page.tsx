@@ -34,7 +34,7 @@ export default async function AccountPage() {
   // Fetch passkeys and MFA factors in parallel
   const [passkeysResult, mfaResult] = await Promise.all([
     supabase
-      .from('passkey_credentials')
+      .from('access_broker_app.passkey_credentials')
       .select('id,name,created_at,last_used_at,device_type')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),

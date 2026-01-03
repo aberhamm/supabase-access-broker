@@ -53,7 +53,7 @@ async function storeChallenge(params: {
   userId?: string | null;
 }): Promise<void> {
   const supabase = await createAdminClient();
-  const { error } = await supabase.from('passkey_challenges').insert({
+  const { error } = await supabase.from('access_broker_app.passkey_challenges').insert({
     challenge: params.challenge,
     type: params.type,
     user_id: params.userId ?? null,
@@ -75,7 +75,7 @@ async function loadChallenge(params: {
   console.log('[Passkey] Loading challenge:', { type: params.type, userId: params.userId, now: new Date().toISOString() });
 
   let q = supabase
-    .from('passkey_challenges')
+    .from('access_broker_app.passkey_challenges')
     .select('id,challenge,user_id,expires_at,created_at,type')
     .eq('type', params.type)
     .gt('expires_at', new Date().toISOString())
@@ -95,13 +95,13 @@ async function loadChallenge(params: {
 
 async function deleteChallenge(id: string): Promise<void> {
   const supabase = await createAdminClient();
-  await supabase.from('passkey_challenges').delete().eq('id', id);
+  await supabase.from('access_broker_app.passkey_challenges').delete().eq('id', id);
 }
 
 export async function getUserPasskeys(userId: string): Promise<PasskeyCredentialRow[]> {
   const supabase = await createAdminClient();
   const { data, error } = await supabase
-    .from('passkey_credentials')
+    .from('access_broker_app.passkey_credentials')
     .select('*')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
@@ -180,7 +180,7 @@ export async function verifyRegistrationForCurrentUser(params: {
     const { credential, credentialDeviceType, credentialBackedUp } = verification.registrationInfo;
 
     const supabaseAdmin = await createAdminClient();
-    const insert = await supabaseAdmin.from('passkey_credentials').insert({
+    const insert = await supabaseAdmin.from('access_broker_app.passkey_credentials').insert({
       user_id: user.id,
       credential_id: credential.id,
       public_key: toBase64Url(credential.publicKey),
@@ -231,7 +231,7 @@ export async function verifyAuthentication(params: {
 
   const supabaseAdmin = await createAdminClient();
   const { data: keyRow, error: keyErr } = await supabaseAdmin
-    .from('passkey_credentials')
+    .from('access_broker_app.passkey_credentials')
     .select('*')
     .eq('credential_id', credentialIdB64Url)
     .maybeSingle();
@@ -262,7 +262,7 @@ export async function verifyAuthentication(params: {
   if (verification.verified) {
     const newCounter = verification.authenticationInfo.newCounter;
     await supabaseAdmin
-      .from('passkey_credentials')
+      .from('access_broker_app.passkey_credentials')
       .update({ counter: newCounter, last_used_at: new Date().toISOString() })
       .eq('id', keyRow.id);
   }

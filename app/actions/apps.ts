@@ -146,7 +146,7 @@ export async function updateAppSSOSettingsAction(
     const allowed_callback_urls = normalizeCallbackUrls(data.allowed_callback_urls);
 
     const { error } = await supabase
-      .from('apps')
+      .from('access_broker_app.apps')
       .update({ allowed_callback_urls })
       .eq('id', appId);
 
@@ -188,7 +188,7 @@ export async function generateAppSecretAction(
     const sso_client_secret_hash = createHash('sha256').update(secret, 'utf8').digest('hex');
 
     const { error } = await supabase
-      .from('apps')
+      .from('access_broker_app.apps')
       .update({ sso_client_secret_hash })
       .eq('id', appId);
 

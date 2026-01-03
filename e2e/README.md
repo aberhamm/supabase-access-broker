@@ -105,3 +105,102 @@ Verify `SUPABASE_SERVICE_ROLE_KEY` is set in `.env.local`.
 ### Tests pass locally but fail in CI
 
 Check that all environment variables are set in your CI environment.
+
+## CI/CD Integration Example
+
+### GitHub Actions
+
+Add this workflow file at `.github/workflows/e2e.yml`:
+
+```yaml
+name: E2E Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  e2e:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v2
+        with:
+          version: 9
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'pnpm'
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Install Playwright browsers
+        run: pnpm exec playwright install --with-deps chromium
+
+      - name: Run E2E tests
+        run: pnpm test:e2e
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_APP_URL: http://localhost:3050
+
+      - name: Upload test report
+        uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: playwright-report
+          path: playwright-report/
+          retention-days: 7
+```
+
+### Required Secrets
+
+Add these secrets in GitHub repository settings:
+
+| Secret | Description |
+|--------|-------------|
+| `SUPABASE_URL` | Your Supabase project URL |
+| `SUPABASE_ANON_KEY` | Supabase anonymous/public key |
+| `SUPABASE_SERVICE_ROLE_KEY` | Supabase service role key |
+
+## Writing New Tests
+
+### Test File Structure
+
+```typescript
+import { test, expect } from '@playwright/test';
+import { createTestUser, deleteTestUser } from './utils/test-helpers';
+
+test.describe('Feature Name', () => {
+  let testUserId: string;
+
+  test.beforeAll(async () => {
+    // Create test data
+    testUserId = await createTestUser('test@example.com');
+  });
+
+  test.afterAll(async () => {
+    // Cleanup test data
+    await deleteTestUser(testUserId);
+  });
+
+  test('should do something', async ({ page }) => {
+    await page.goto('/');
+    await expect(page).toHaveTitle(/Expected Title/);
+  });
+});
+```
+
+### Best Practices
+
+1. **Isolate test data** — Create unique test users/apps per test suite
+2. **Clean up after tests** — Delete test data in `afterAll` hooks
+3. **Use test helpers** — Leverage `e2e/utils/test-helpers.ts` for common operations
+4. **Wait for elements** — Use `await expect(locator).toBeVisible()` instead of fixed waits
+5. **Test real flows** — Focus on user journeys, not implementation details

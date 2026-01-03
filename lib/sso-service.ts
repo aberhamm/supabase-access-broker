@@ -34,7 +34,7 @@ export async function isRedirectUriAllowed(params: {
   try {
     const supabase = await createAdminClient();
     const { data, error } = await supabase
-      .from('apps')
+      .from('access_broker_app.apps')
       .select('id,enabled,allowed_callback_urls')
       .eq('id', appId)
       .maybeSingle();
@@ -69,7 +69,7 @@ export async function validateRedirectUri(params: {
 
   const supabase = await createAdminClient();
   const { data, error } = await supabase
-    .from('apps')
+    .from('access_broker_app.apps')
     .select('id,enabled,allowed_callback_urls')
     .eq('id', appId)
     .maybeSingle();
@@ -92,7 +92,7 @@ export async function createAuthCode(params: {
   const code = crypto.randomBytes(32).toString('base64url');
 
   const supabase = await createAdminClient();
-  const { error } = await supabase.from('auth_codes').insert({
+  const { error } = await supabase.from('access_broker_app.auth_codes').insert({
     code,
     user_id: params.userId,
     app_id: params.appId,
@@ -110,7 +110,7 @@ export async function consumeAuthCode(params: {
   const supabase = await createAdminClient();
 
   const { data, error } = await supabase
-    .from('auth_codes')
+    .from('access_broker_app.auth_codes')
     .select('id,code,user_id,app_id,redirect_uri,expires_at,used_at')
     .eq('code', params.code)
     .eq('app_id', params.appId)
@@ -122,7 +122,7 @@ export async function consumeAuthCode(params: {
   if (!data?.id) throw new Error('Invalid or expired code');
 
   const { error: updateError } = await supabase
-    .from('auth_codes')
+    .from('access_broker_app.auth_codes')
     .update({ used_at: new Date().toISOString() })
     .eq('id', data.id);
   if (updateError) throw updateError;
