@@ -53,11 +53,16 @@ async function storeChallenge(params: {
   userId?: string | null;
 }): Promise<void> {
   const supabase = await createAdminClient();
-  await supabase.from('passkey_challenges').insert({
+  const { error } = await supabase.from('passkey_challenges').insert({
     challenge: params.challenge,
     type: params.type,
     user_id: params.userId ?? null,
   });
+  if (error) {
+    console.error('[Passkey] Failed to store challenge:', error);
+    throw error;
+  }
+  console.log('[Passkey] Challenge stored for user:', params.userId, 'type:', params.type);
 }
 
 async function loadChallenge(params: {
@@ -66,6 +71,8 @@ async function loadChallenge(params: {
   challenge?: string | null;
 }): Promise<{ id: string; challenge: string; user_id: string | null } | null> {
   const supabase = await createAdminClient();
+
+  console.log('[Passkey] Loading challenge:', { type: params.type, userId: params.userId, now: new Date().toISOString() });
 
   let q = supabase
     .from('passkey_challenges')
@@ -78,7 +85,11 @@ async function loadChallenge(params: {
   if (params.userId) q = q.eq('user_id', params.userId);
   if (params.challenge) q = q.eq('challenge', params.challenge);
 
-  const { data } = await q.maybeSingle();
+  const { data, error } = await q.maybeSingle();
+  if (error) {
+    console.error('[Passkey] Failed to load challenge:', error);
+  }
+  console.log('[Passkey] Challenge lookup result:', data ? { id: data.id, expires_at: data.expires_at } : 'not found');
   return data ? { id: data.id, challenge: data.challenge, user_id: data.user_id } : null;
 }
 

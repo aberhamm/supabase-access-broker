@@ -75,9 +75,9 @@ CREATE TABLE IF NOT EXISTS public.passkey_challenges (
 CREATE INDEX IF NOT EXISTS idx_passkey_challenge_expires ON public.passkey_challenges(expires_at);
 CREATE INDEX IF NOT EXISTS idx_passkey_challenge_user_type ON public.passkey_challenges(user_id, type);
 
-ALTER TABLE public.passkey_challenges ENABLE ROW LEVEL SECURITY;
-
--- No policies: only service role can access
+-- Disable RLS for passkey_challenges - this table is only accessed by server-side code
+-- and the @supabase/ssr client doesn't automatically bypass RLS even with service role
+ALTER TABLE public.passkey_challenges DISABLE ROW LEVEL SECURITY;
 
 -- ============================================================================
 -- SSO auth codes (short-lived, single-use)

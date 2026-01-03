@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { LogOut, LayoutDashboard, Users, AppWindow, BookOpen, Link2 } from 'lucide-react';
+import { LogOut, LayoutDashboard, Users, AppWindow, BookOpen, Link2, UserCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/theme-toggle';
 
@@ -88,6 +88,12 @@ export function DashboardNav({ email, showApps = true }: DashboardNavProps) {
 
         <div className="flex items-center gap-2">
           <ThemeToggle />
+          <Link href="/account">
+            <Button variant="ghost" size="sm">
+              <UserCircle className="mr-2 h-4 w-4" />
+              My Account
+            </Button>
+          </Link>
           <Link href="/auth/logout">
             <Button variant="ghost" size="sm">
               <LogOut className="mr-2 h-4 w-4" />

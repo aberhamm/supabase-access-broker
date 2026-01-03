@@ -225,7 +225,7 @@ export async function listUserMFAFactors(userId: string): Promise<{
       status: f.status as 'verified' | 'unverified',
       created_at: f.created_at,
       updated_at: f.updated_at,
-      phone: f.phone,
+      phone: (f as { phone?: string }).phone,
     }));
 
     return { success: true, factors };

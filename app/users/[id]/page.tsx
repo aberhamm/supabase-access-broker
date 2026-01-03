@@ -199,7 +199,7 @@ export default async function UserDetailPage({
               userId={id}
               userEmail={user.email || ''}
               emailConfirmedAt={user.email_confirmed_at}
-              bannedUntil={user.banned_until}
+              bannedUntil={(user as { banned_until?: string | null }).banned_until}
             />
 
             <Card>

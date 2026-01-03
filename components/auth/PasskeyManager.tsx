@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { startRegistration } from '@simplewebauthn/browser';
 import type { PublicKeyCredentialCreationOptionsJSON } from '@simplewebauthn/browser';
 import { toast } from 'sonner';
@@ -23,13 +24,29 @@ type PasskeyManagerProps = {
 };
 
 export function PasskeyManager({ initialPasskeys, onDelete }: PasskeyManagerProps) {
+  const router = useRouter();
   const [passkeys, setPasskeys] = useState<PasskeyItem[]>(initialPasskeys);
   const [adding, setAdding] = useState(false);
   const [deviceName, setDeviceName] = useState('');
 
+  // Sync state when props change (e.g., after router.refresh())
+  useEffect(() => {
+    setPasskeys(initialPasskeys);
+  }, [initialPasskeys]);
+
   const handleAdd = async () => {
     try {
       setAdding(true);
+      console.log('[Passkey] Starting registration...');
+
+      // Check WebAuthn support
+      if (!window.PublicKeyCredential) {
+        throw new Error('WebAuthn is not supported in this browser');
+      }
+
+      // Check if platform authenticator is available (Touch ID, Face ID, Windows Hello)
+      const platformAvailable = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
+      console.log('[Passkey] Platform authenticator available:', platformAvailable);
 
       const optsRes = await fetch('/api/auth/passkey/register/options', { method: 'GET' });
       if (!optsRes.ok) {
@@ -38,7 +55,18 @@ export function PasskeyManager({ initialPasskeys, onDelete }: PasskeyManagerProp
       }
 
       const { options } = (await optsRes.json()) as { options: PublicKeyCredentialCreationOptionsJSON };
-      const regResponse = await startRegistration({ optionsJSON: options });
+      console.log('[Passkey] Got options, calling startRegistration...', { rpId: options.rp.id, origin: window.location.origin });
+
+      // Add timeout to detect if WebAuthn hangs
+      const timeoutPromise = new Promise<never>((_, reject) => {
+        setTimeout(() => reject(new Error('WebAuthn timed out - no authenticator response')), 120000);
+      });
+
+      const regResponse = await Promise.race([
+        startRegistration({ optionsJSON: options }),
+        timeoutPromise,
+      ]);
+      console.log('[Passkey] Registration response received');
 
       const verifyRes = await fetch('/api/auth/passkey/register/verify', {
         method: 'POST',
@@ -55,9 +83,10 @@ export function PasskeyManager({ initialPasskeys, onDelete }: PasskeyManagerProp
       if (!payload.verified) throw new Error('Passkey registration failed');
 
       toast.success('Passkey added');
-      toast.message('Refresh the page to see it listed.');
       setDeviceName('');
+      router.refresh();
     } catch (e) {
+      console.error('[Passkey] Error:', e);
       const message = e instanceof Error ? e.message : 'Failed to add passkey';
       toast.error(message);
     } finally {
