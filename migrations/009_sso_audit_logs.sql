@@ -105,3 +105,4 @@ COMMENT ON TABLE public.sso_audit_logs IS 'Audit log for SSO authentication even
 COMMENT ON COLUMN public.sso_audit_logs.event_type IS 'Event classification: sso_complete_success, sso_complete_error, token_exchange_success, token_exchange_error';
 COMMENT ON COLUMN public.sso_audit_logs.redirect_uri_host IS 'Hostname from redirect_uri (sanitized, not full URI)';
 COMMENT ON COLUMN public.sso_audit_logs.metadata IS 'Additional context in JSON format (e.g., error details, request params)';
+

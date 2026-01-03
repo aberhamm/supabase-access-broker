@@ -19,3 +19,4 @@ COMMENT ON COLUMN public.apps.allowed_callback_urls IS 'Allowlist of callback UR
 COMMENT ON COLUMN public.apps.sso_client_secret_hash IS 'Bcrypt-hashed client secret for SSO code exchange. NULL means no secret required.';
 
 NOTIFY pgrst, 'reload schema';
+

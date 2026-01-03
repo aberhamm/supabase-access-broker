@@ -45,6 +45,9 @@ export const TEST_APP = {
   color: '#06b6d4',
 };
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3050';
+const DEMO_CALLBACK = `${APP_URL}/demo/sso-demo.html`;
+
 /**
  * Get or ensure test user exists
  * Uses existing user if available, only creates if needed
@@ -131,7 +134,7 @@ export async function createTestApp() {
       .from('apps')
       .update({
         enabled: true,
-        allowed_callback_urls: ['http://localhost:3050/demo/sso-demo.html'],
+        allowed_callback_urls: [DEMO_CALLBACK],
       })
       .eq('id', TEST_APP.id);
 
@@ -146,7 +149,7 @@ export async function createTestApp() {
     description: TEST_APP.description,
     color: TEST_APP.color,
     enabled: true,
-    allowed_callback_urls: ['http://localhost:3050/demo/sso-demo.html'],
+    allowed_callback_urls: [DEMO_CALLBACK],
   }).select().single();
 
   if (error) {

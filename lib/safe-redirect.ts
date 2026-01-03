@@ -86,3 +86,4 @@ export function isPortalPath(path: string): boolean {
   const safePath = safeNextPath(path);
   return PORTAL_PATHS.some((prefix) => safePath.startsWith(prefix));
 }
+

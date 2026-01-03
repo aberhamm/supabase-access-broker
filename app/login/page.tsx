@@ -216,13 +216,14 @@ export default function LoginPage() {
               <Input
                 ref={emailInputRef}
                 id="email"
+                name="email"
                 type="email"
                 placeholder="admin@example.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 disabled={loading}
                 required
-                autoComplete="email"
+                autoComplete="username email"
                 autoFocus
               />
             </div>
@@ -232,6 +233,7 @@ export default function LoginPage() {
                 <Label htmlFor="password">Password</Label>
                 <Input
                   id="password"
+                  name="password"
                   type="password"
                   placeholder="••••••••"
                   value={password}
@@ -294,7 +296,7 @@ export default function LoginPage() {
 
           {(AUTH_FEATURES.EMAIL_OTP || AUTH_FEATURES.MAGIC_LINK || AUTH_FEATURES.PASSWORD_LOGIN) && (
             <div className="mt-3 flex justify-center gap-3 text-xs text-muted-foreground">
-              {AUTH_FEATURES.PASSWORD_LOGIN && (
+              {AUTH_FEATURES.PASSWORD_LOGIN && mode !== 'password' && (
                 <button
                   type="button"
                   className="hover:text-foreground"
@@ -308,7 +310,7 @@ export default function LoginPage() {
                   Use password
                 </button>
               )}
-              {AUTH_FEATURES.EMAIL_OTP && (
+              {AUTH_FEATURES.EMAIL_OTP && mode !== 'otp' && (
                 <button
                   type="button"
                   className="hover:text-foreground"
@@ -322,7 +324,7 @@ export default function LoginPage() {
                   Use code
                 </button>
               )}
-              {AUTH_FEATURES.MAGIC_LINK && (
+              {AUTH_FEATURES.MAGIC_LINK && mode !== 'magic' && (
                 <button
                   type="button"
                   className="hover:text-foreground"

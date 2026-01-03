@@ -5,7 +5,6 @@ import { isClaimsAdmin } from '@/lib/claims';
 import { UserTable } from '@/components/users/UserTable';
 import { CreateUserDialog } from '@/components/users/CreateUserDialog';
 import { DashboardNav } from '@/components/layout/DashboardNav';
-import { redirect } from 'next/navigation';
 
 async function getUserEmail() {
   const supabase = await createClient();

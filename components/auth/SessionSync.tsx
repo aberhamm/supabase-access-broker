@@ -77,3 +77,4 @@ export function SessionSync() {
   // This component doesn't render anything
   return null;
 }
+

@@ -4,6 +4,10 @@ import dotenv from 'dotenv';
 // Load environment variables from .env.local
 dotenv.config({ path: '.env.local' });
 
+// Force port 3050 for E2E tests to avoid conflicts with dev server on 3000
+process.env.PORT = '3050';
+process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3050';
+
 /**
  * See https://playwright.dev/docs/test-configuration.
  */
@@ -31,7 +35,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3050',
+    baseURL: 'http://localhost:3050',
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -54,5 +58,9 @@ export default defineConfig({
     url: 'http://localhost:3050',
     reuseExistingServer: !process.env.CI,
     timeout: 120 * 1000,
+    env: {
+      PORT: '3050',
+      NEXT_PUBLIC_APP_URL: 'http://localhost:3050',
+    },
   },
 });

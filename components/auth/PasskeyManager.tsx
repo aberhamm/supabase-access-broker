@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { startRegistration } from '@simplewebauthn/browser';
+import type { PublicKeyCredentialCreationOptionsJSON } from '@simplewebauthn/browser';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -36,8 +37,8 @@ export function PasskeyManager({ initialPasskeys, onDelete }: PasskeyManagerProp
         throw new Error(err?.error || 'Failed to start passkey registration');
       }
 
-      const { options } = (await optsRes.json()) as { options: Parameters<typeof startRegistration>[0] };
-      const regResponse = await startRegistration(options);
+      const { options } = (await optsRes.json()) as { options: PublicKeyCredentialCreationOptionsJSON };
+      const regResponse = await startRegistration({ optionsJSON: options });
 
       const verifyRes = await fetch('/api/auth/passkey/register/verify', {
         method: 'POST',

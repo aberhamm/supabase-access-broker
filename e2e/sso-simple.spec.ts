@@ -8,6 +8,9 @@ import {
   TEST_APP,
 } from './utils/test-helpers';
 
+const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3050';
+const DEMO_CALLBACK = `${APP_URL}/demo/sso-demo.html`;
+
 /**
  * Simplified SSO E2E tests that work with any auth method
  * These tests verify the SSO redirect flow and code exchange
@@ -98,14 +101,14 @@ test.describe('SSO Integration - Simplified E2E', () => {
       code,
       user_id: testUserId,
       app_id: TEST_APP.id,
-      redirect_uri: 'http://localhost:3050/demo/sso-demo.html',
+      redirect_uri: DEMO_CALLBACK,
       expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(), // 5 minutes from now
     });
 
     expect(insertError).toBeNull();
 
     // Exchange the code via API
-    const response = await request.post(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3050'}/api/auth/exchange`, {
+    const response = await request.post(`${APP_URL}/api/auth/exchange`, {
       data: {
         code,
         app_id: TEST_APP.id,
@@ -147,7 +150,9 @@ test.describe('SSO Integration - Simplified E2E', () => {
     expect(finalDomain).toMatch(/localhost|127\.0\.0\.1/);
 
     // Verify we're on a safe page (not the malicious callback)
-    expect(finalUrl).toMatch(/localhost:3050\/(login|access-denied|$)/);
+    const appHost = new URL(APP_URL).host;
+    const expectedPattern = new RegExp(`${appHost.replace('.', '\\.')}\\/(login|access-denied|$)`);
+    expect(finalUrl).toMatch(expectedPattern);
   });
 
   test('API: should reject reused auth codes', async ({ request }) => {
@@ -163,12 +168,12 @@ test.describe('SSO Integration - Simplified E2E', () => {
       code,
       user_id: testUserId,
       app_id: TEST_APP.id,
-      redirect_uri: 'http://localhost:3050/demo/sso-demo.html',
+      redirect_uri: DEMO_CALLBACK,
       expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
     });
 
     // Use the code once
-    const firstResponse = await request.post(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3050'}/api/auth/exchange`, {
+    const firstResponse = await request.post(`${APP_URL}/api/auth/exchange`, {
       data: {
         code,
         app_id: TEST_APP.id,
@@ -178,7 +183,7 @@ test.describe('SSO Integration - Simplified E2E', () => {
     expect(firstResponse.status()).toBe(200);
 
     // Try to reuse the same code
-    const secondResponse = await request.post(`${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3050'}/api/auth/exchange`, {
+    const secondResponse = await request.post(`${APP_URL}/api/auth/exchange`, {
       data: {
         code,
         app_id: TEST_APP.id,
