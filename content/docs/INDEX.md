@@ -1,28 +1,28 @@
 ---
 title: "Documentation"
-description: "Implement Supabase Auth + Custom Claims (roles/permissions in JWT) in your Next.js app"
+description: "Supabase Access Broker — unified identity and access management for Supabase applications"
 category: "getting-started"
 audience: "all"
 order: 0
 ---
 
-# Documentation
+# Supabase Access Broker Documentation
 
-This documentation is aimed at **implementing our Supabase Auth + Custom Claims framework in your Next.js application** (Auth0/Supabase style), with an optional admin dashboard to manage users/claims centrally.
+Supabase Access Broker provides centralized authentication, authorization, and user management for single or multi-application environments built on Supabase.
 
 ## Choose your path
 
-- **I want to integrate auth + claims into my app (recommended)**
+- **I want to integrate auth + claims into my app**
   Start here: [Getting Started Overview](./getting-started/overview.md) → [Quick Start](./getting-started/quick-start.md) → [Installation](./getting-started/installation.md)
 
-- **I’m an agent helping a developer**
-  Use: [Agent Context](./reference/agent-context.md) → **[Agent Instructions: Auth Portal](./reference/auth-portal-agent-instructions.md)**
-
-- **I want to integrate my app with the auth portal (SSO)**
+- **I want to connect my app to the Access Broker (SSO)**
   Start here: **[SSO Integration Guide](./guides/sso-integration-guide.md)** — simple 3-step integration
 
-- **I want to run the admin dashboard + auth portal**
+- **I want to deploy the Access Broker**
   Start here: [Dashboard Quick Start](./dashboard/dashboard-quick-start.md) → [Dashboard Setup](./dashboard/setup.md) → **[Auth Portal (SSO + Passkeys)](./authentication/auth-portal-sso-passkeys.md)**
+
+- **I'm an AI agent helping a developer**
+  Use: [Agent Context](./reference/agent-context.md) → **[Agent Instructions: Auth Portal](./reference/auth-portal-agent-instructions.md)**
 
 ## Core implementation docs (recommended reading order)
 

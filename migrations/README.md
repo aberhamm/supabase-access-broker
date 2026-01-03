@@ -1,6 +1,6 @@
 # Database Migrations
 
-This directory contains database migrations for the Supabase Claims Admin Dashboard.
+This directory contains database migrations for Supabase Access Broker.
 
 ## 🚀 Quick Start
 

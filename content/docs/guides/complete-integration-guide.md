@@ -1,6 +1,6 @@
 ---
 title: "Complete App Integration Guide"
-description: "Everything you need to integrate claims-based authentication into your application"
+description: "Everything you need to integrate Supabase Access Broker into your application"
 category: "guides"
 audience: "app-developer"
 order: 1
@@ -8,9 +8,9 @@ order: 1
 
 # Complete App Integration Guide
 
-**Purpose:** This guide provides complete, step-by-step instructions for integrating the Supabase Claims Admin Dashboard authentication system into your separate application. After following this guide, you'll be able to register users to your app, authenticate them, and manage their claims.
+**Purpose:** This guide provides complete, step-by-step instructions for integrating Supabase Access Broker into your application. After following this guide, you'll be able to register users to your app, authenticate them via SSO, and manage their claims.
 
-**Target Audience:** Developers integrating this authentication system into their own applications (not the dashboard itself)
+**Target Audience:** Developers integrating their applications with Access Broker (not deploying the broker itself)
 
 **Technology Stack:** Next.js 14+ App Router, Supabase Auth, TypeScript, PostgreSQL
 

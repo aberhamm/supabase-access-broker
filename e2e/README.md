@@ -1,6 +1,6 @@
 # E2E Tests
 
-Automated end-to-end tests for the Claims Admin Dashboard SSO flow.
+Automated end-to-end tests for the Supabase Access Broker SSO flow.
 
 ## Setup
 

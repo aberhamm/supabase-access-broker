@@ -1,14 +1,14 @@
 ---
-title: "Dashboard Quick Start"
-description: "Get the admin dashboard running in 5 minutes"
+title: "Access Broker Quick Start"
+description: "Get Supabase Access Broker running in 5 minutes"
 category: "dashboard"
 audience: "dashboard-admin"
 order: 1
 ---
 
-# Dashboard Quick Start
+# Access Broker Quick Start
 
-This guide is for **deploying/running the Claims Admin Dashboard** (the admin UI), not for integrating claims into your user-facing app.
+This guide is for **deploying Supabase Access Broker** (the admin console + auth portal), not for integrating claims into your user-facing app.
 
 ## Get Started in 5 Minutes
 

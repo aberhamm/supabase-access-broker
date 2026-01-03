@@ -1,6 +1,6 @@
 ---
 title: "Getting Started Overview"
-description: "What this auth + custom claims system is, how it works, and when to use it."
+description: "What Supabase Access Broker is, how it works, and when to use it."
 category: "getting-started"
 audience: "app-developer"
 order: 1
@@ -8,19 +8,19 @@ order: 1
 
 # Getting Started Overview
 
-This documentation is for **implementing our Supabase-based auth + custom-claims framework into your own Next.js App Router application**.
+This documentation covers **Supabase Access Broker** — a unified identity and access management platform for Supabase applications.
 
 ## What you get
 
-- **Authentication** via Supabase Auth (email/password, magic links, OAuth)
-- **Authorization** via **custom claims stored in `app_metadata`**, embedded in the user’s JWT
-- **Multi-app support**: one Supabase project can serve multiple apps, with per-app roles/permissions
-- **Admin dashboard (optional)** to manage users, apps, roles, API keys, and claims centrally
+- **Authentication Portal** — SSO hub with passkeys, OAuth, MFA, and passwordless options
+- **Authorization Engine** — JWT claims-based permissions embedded in tokens
+- **Multi-app support** — one Supabase project serves multiple apps with per-app roles/permissions
+- **Admin Console** — manage users, apps, roles, API keys, and claims centrally
 
-## Mental model (Dashboard vs Your App)
+## Mental model (Access Broker vs Your App)
 
-- **Your App**: user-facing app where users sign up/sign in and you enforce access control.
-- **Admin Dashboard (this repo)**: admin-only tool that can manage access/claims for users across apps.
+- **Your App**: user-facing application where users sign in (via SSO redirect) and you enforce access control.
+- **Access Broker (this repo)**: central auth portal + admin console that manages access/claims for users across apps.
 - **Supabase**: shared auth + database, where claims live in `auth.users.raw_app_meta_data` and are surfaced to apps as `user.app_metadata`.
 
 ## Claims structure (what you’ll read in your app)

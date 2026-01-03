@@ -1,6 +1,6 @@
 # Docker Deployment Guide
 
-Complete guide for deploying the Supabase Claims Admin Dashboard using Docker and Docker Compose.
+Complete guide for deploying Supabase Access Broker using Docker and Docker Compose.
 
 ## Table of Contents
 
@@ -35,7 +35,7 @@ docker-compose --version
 ```bash
 # Clone the repository
 git clone <your-repo-url>
-cd supabase-claims-admin-dashboard
+cd supabase-access-broker
 
 # Copy Docker environment file
 cp .env.docker.example .env.production

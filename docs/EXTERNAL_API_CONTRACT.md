@@ -1,6 +1,6 @@
 # External API Key Contract
 
-This document defines the API contract that external systems (n8n, Django scraper, etc.) should implement to allow the Claims Admin Dashboard to fetch and display their API keys.
+This document defines the API contract that external systems (n8n, Django, etc.) should implement to allow Supabase Access Broker to fetch and display their API keys.
 
 ## Overview
 

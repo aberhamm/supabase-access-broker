@@ -8,7 +8,7 @@ order: 2
 
 # App-Based Authentication Integration Guide
 
-**Context:** This guide is part of the Supabase Claims Admin Dashboard documentation. It provides practical, production-ready patterns for integrating app-based roles and permissions into your authentication flow.
+**Context:** This guide is part of the Supabase Access Broker documentation. It provides practical, production-ready patterns for integrating app-based roles and permissions into your authentication flow.
 
 **Technology Stack:** Next.js 14+ App Router, Supabase Auth, TypeScript, PostgreSQL
 

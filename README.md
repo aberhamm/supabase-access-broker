@@ -1,87 +1,82 @@
-# Supabase Custom Claims System
+# Supabase Access Broker
 
-**A complete system for implementing flexible, scalable user authorization in your Supabase applications.**
+**A unified identity and access management platform for Supabase applications.**
 
-## What This Is
+## Overview
 
-This project provides:
+Supabase Access Broker provides centralized authentication, authorization, and user management for single or multi-application environments. It combines:
 
-1. **Custom Claims System** - Add flexible user attributes (roles, permissions, metadata) to your Supabase users that are embedded in JWT tokens for high-performance authorization
-2. **Admin Dashboard** - A Next.js application to manage users and their claims
-3. **Integration Guides** - Complete documentation for implementing claims-based authorization in YOUR applications
+- **Authentication Portal** — SSO hub with passkeys, OAuth, MFA, and passwordless options
+- **Authorization Engine** — JWT claims-based permissions embedded in tokens
+- **User Management Console** — Admin interface for user lifecycle operations
+- **Multi-App Access Control** — Per-application roles, permissions, and API keys
 
-## Why Use Custom Claims?
+## Core Capabilities
 
-✅ **High Performance** - Claims are in the JWT token, no database queries needed
-✅ **Flexible Authorization** - Define any roles, permissions, or attributes you need
-✅ **Multi-App Support** - One user can have different roles in different apps
-✅ **Works with RLS** - Integrate with Supabase Row Level Security policies
-✅ **Type-Safe** - Full TypeScript support
+### Authentication Portal (SSO)
 
-## Quick Start for Implementers
+A central authentication service that your applications redirect to for sign-in:
 
-**Want to add claims to YOUR application?**
+| Method | Description |
+|--------|-------------|
+| **Passkeys** | WebAuthn biometric auth (Face ID, Touch ID, Windows Hello) |
+| **OAuth** | Google, GitHub (extensible) |
+| **Email OTP** | 6-digit verification codes |
+| **Magic Links** | One-click email authentication |
+| **Password** | Traditional email/password |
+| **MFA** | TOTP authenticator apps, phone factors |
 
-1. **Understand Claims:** Read the [Claims Guide](./content/docs/core/claims-guide.md)
-2. **Set Up the System:** Install the SQL functions (see below)
-3. **Integrate into Your App:** Follow the [Integration Guide](./content/docs/integration/complete-integration-guide.md)
-4. **Optional:** Deploy the admin dashboard to manage claims
+All methods are feature-flagged for controlled rollout.
 
-## For Application Developers
+### Authorization Engine
 
-**📚 [Start Here: Complete Integration Guide](./content/docs/integration/complete-integration-guide.md)**
+JWT claims embedded directly in tokens for high-performance authorization:
 
-### Essential Reading
+```typescript
+// Claims available instantly from the JWT — no database queries
+const user = await supabase.auth.getUser();
+const isAdmin = user.app_metadata?.claims_admin;
+const appRole = user.app_metadata?.apps?.['my-app']?.role;
+const permissions = user.app_metadata?.apps?.['my-app']?.permissions;
+```
 
-1. **[Claims Guide](./content/docs/core/claims-guide.md)** - What are custom claims and how they work
-2. **[Complete Integration Guide](./content/docs/integration/complete-integration-guide.md)** - Step-by-step implementation
-3. **[Authentication Guide](./content/docs/integration/authentication-guide.md)** - Implementing auth with claims
-4. **[Authorization Patterns](./content/docs/integration/authorization-patterns.md)** - Role-based access control
-5. **[Environment Configuration](./content/docs/integration/environment-configuration.md)** - Production deployment
+- Global claims (user-level attributes)
+- App-specific claims (per-application roles/permissions)
+- Full RLS policy integration
+- Type-safe TypeScript support
 
-### Quick Reference
+### User Management Console
 
-- **[Auth Quick Reference](./content/docs/integration/auth-quick-reference.md)** - Copy-paste code snippets
-- **[API Documentation](./docs/EXTERNAL_API_CONTRACT.md)** - RPC function reference
-- **[Session Management](./content/docs/integration/session-management.md)** - Working with sessions
+Administrative interface for user lifecycle operations:
 
-## Auth Portal & SSO Integration
+- **User CRUD** — Create users directly or via email invite
+- **Profile Management** — Email, phone, display name, metadata
+- **Access Control** — Grant/revoke admin status, app access
+- **Security Operations** — Password resets, ban/unban with durations
+- **Activity Monitoring** — Last sign-in, account creation dates
+- **External Accounts** — Link/unlink OAuth and third-party identities
 
-**🔐 The dashboard can act as a central authentication portal for all your applications.**
+### Multi-App Access Control
 
-Instead of building login UI for each app, redirect users to the auth portal where they sign in once and gain access to all apps.
+Manage multiple applications from a single broker:
 
-**Features:**
-- ✅ Single Sign-On (SSO) across multiple applications
-- ✅ Passkeys (Face ID / Touch ID)
-- ✅ Social login (Google, GitHub)
-- ✅ Email OTP codes
-- ✅ Traditional password login
-- ✅ Magic links
-- ✅ All methods behind feature flags for controlled rollout
+- **App Registry** — Register applications with metadata (name, color, icon)
+- **Role Definitions** — Create roles per application
+- **Permission Assignment** — Assign users to apps with specific roles
+- **API Key Infrastructure** — Generate, validate, and track API keys per app
+- **SSO Configuration** — Allowed callback URLs per application
 
-**Get Started:**
-- **[Try the Demo](./DEMO_GUIDE.md)** - Test the SSO flow locally with the included demo page
-- **[SSO Integration Guide](./content/docs/guides/sso-integration-guide.md)** - Simple 3-step integration
-- **[Auth Portal Technical Spec](./content/docs/authentication/auth-portal-sso-passkeys.md)** - API contracts & DB schema
-- **[Agent Instructions](./content/docs/reference/auth-portal-agent-instructions.md)** - Copy/paste tasks for AI agents
+## Quick Start
 
-## Installation (For Your Supabase Project)
+### 1. Install SQL Functions
 
-### Step 1: Install SQL Functions
-
-The custom claims system requires PostgreSQL functions in your Supabase project.
-
-**Option A - Automated (Recommended):**
 ```bash
-# Clone this repo
+# Clone and install
 git clone <repo-url>
-cd supabase-claims-admin-dashboard
-
-# Install dependencies
+cd supabase-access-broker
 pnpm install
 
-# Set up environment
+# Configure environment
 cp env.example .env.local
 # Edit .env.local with your Supabase credentials
 
@@ -89,345 +84,180 @@ cp env.example .env.local
 pnpm migrate
 ```
 
-**Option B - Manual:**
-1. Open your [Supabase SQL Editor](https://app.supabase.com/project/_/sql)
-2. Copy and run the contents of [install.sql](./install.sql)
-3. This creates the PostgreSQL functions for managing claims
+Or manually run [install.sql](./install.sql) in the Supabase SQL Editor.
 
-**What gets installed:**
-- `set_claim(user_id, claim, value)` - Set a user claim
-- `get_claim(user_id, claim)` - Get a user claim
-- `delete_claim(user_id, claim)` - Delete a user claim
-- `set_app_claim(user_id, app_id, claim, value)` - Set app-specific claim
-- And more... see [API Documentation](./docs/EXTERNAL_API_CONTRACT.md)
+### 2. Grant Admin Access
 
-### Step 2: Start Using Claims in Your App
-
-See the [Complete Integration Guide](./content/docs/integration/complete-integration-guide.md) for step-by-step instructions.
-
-**Quick Example:**
-
-```typescript
-// In your Next.js app
-import { createClient } from '@supabase/supabase-js';
-
-// After user signs in
-const { data: { user } } = await supabase.auth.getUser();
-
-// Access claims from JWT
-const userRole = user?.app_metadata?.role;
-const hasAccess = user?.app_metadata?.apps?.['my-app']?.enabled;
-
-// Use for authorization
-if (userRole === 'admin') {
-  // Show admin features
-}
+```sql
+-- In Supabase SQL Editor
+SELECT set_claim('your-user-id', 'claims_admin', 'true');
 ```
 
-### Step 3: (Optional) Deploy Admin Dashboard
+### 3. Start the Broker
 
-The admin dashboard provides a UI for managing users and claims.
-
-**Quick Setup:**
 ```bash
-# Install dependencies
-pnpm install
-
-# Configure environment
-cp .env.example .env.local
-# Edit with your credentials
-
-# Start dev server
 pnpm dev
 ```
 
-**Production Deployment:**
-- See [Docker Deployment Guide](./DOCKER_DEPLOYMENT.md) for Docker
-- See [Environment Configuration](./content/docs/integration/environment-configuration.md) for all platforms
+Access the console at `http://localhost:3000`
 
-**Grant yourself admin access:**
-```sql
--- In Supabase SQL Editor
-select set_claim('your-user-id', 'claims_admin', 'true');
+## Integration
+
+### For Client Applications
+
+Redirect users to the Access Broker for authentication:
+
+```typescript
+// Redirect to SSO
+const ssoUrl = new URL('/login', BROKER_URL);
+ssoUrl.searchParams.set('redirect_uri', 'https://myapp.com/auth/callback');
+ssoUrl.searchParams.set('app_id', 'my-app');
+window.location.href = ssoUrl.toString();
 ```
 
-## Project Structure
+After authentication, users are redirected back with an auth code to exchange for a session.
 
-```
-supabase-claims-admin-dashboard/
-├── app/
-│   ├── layout.tsx              # Root layout with Toaster
-│   ├── page.tsx                # Dashboard home page
-│   ├── login/
-│   │   └── page.tsx            # Login page
-│   ├── access-denied/
-│   │   └── page.tsx            # Access denied page
-│   ├── users/
-│   │   ├── page.tsx            # Users list page
-│   │   └── [id]/
-│   │       └── page.tsx        # User detail page
-│   └── actions/
-│       └── claims.ts           # Server actions for claims
-├── components/
-│   ├── ui/                     # shadcn/ui components
-│   ├── claims/
-│   │   ├── ClaimsList.tsx      # Display claims table
-│   │   ├── ClaimEditor.tsx     # Add/edit claim dialog
-│   │   ├── ClaimBadge.tsx      # Type badge component
-│   │   ├── DeleteClaimDialog.tsx
-│   │   └── AddClaimButton.tsx
-│   └── users/
-│       ├── UserTable.tsx       # Users list table
-│       ├── UserStatsCards.tsx  # Dashboard stats
-│       ├── UserActivityList.tsx
-│       ├── ToggleAdminButton.tsx
-│       └── CopyButton.tsx
-├── lib/
-│   ├── supabase/
-│   │   ├── client.ts           # Browser Supabase client
-│   │   └── server.ts           # Server Supabase client
-│   ├── claims.ts               # Claims utility functions
-│   └── utils.ts                # General utilities
-├── types/
-│   └── claims.ts               # TypeScript types
-└── middleware.ts               # Auth middleware
+### Reading Claims
+
+```typescript
+import { createClient } from '@supabase/supabase-js';
+
+const { data: { user } } = await supabase.auth.getUser();
+
+// Global claims
+const isAdmin = user?.app_metadata?.claims_admin;
+const userTier = user?.app_metadata?.tier;
+
+// App-specific claims
+const myAppAccess = user?.app_metadata?.apps?.['my-app'];
+if (myAppAccess?.enabled) {
+  const role = myAppAccess.role;        // e.g., 'editor'
+  const perms = myAppAccess.permissions; // e.g., ['read', 'write']
+}
 ```
 
-## Usage
-
-### Dashboard
-
-The main dashboard shows:
-- Total users, claims admins, total claims, and recent signups
-- Recent user activity
-- Claims distribution chart
-
-### Users List
-
-- View all users in a searchable table
-- See user email, ID, claims count, and last sign in
-- Click on any user to view details
-
-### User Details
-
-For each user you can:
-- View user information (email, ID, status, dates)
-- See all custom claims with their types
-- Add new claims with proper JSON validation
-- Edit existing claims
-- Delete claims
-- Toggle claims_admin status
-- Copy user ID to clipboard
-
-### Adding/Editing Claims
-
-When adding or editing claims, enter values in JSON format:
-- **Number**: `100`
-- **String**: `"MANAGER"` (note: include quotes)
-- **Boolean**: `true` or `false`
-- **Array**: `["item1", "item2"]`
-- **Object**: `{"level": 5, "active": true}`
-
-The editor validates JSON and shows the detected type.
-
-## Security
-
-### Access Control
-
-- **Admin dashboard routes** require admin access (global `claims_admin: true` or app-specific `apps.{app_id}.admin: true`)
-- **Auth portal routes** (for SSO + account passkeys) are available to any authenticated user:
-  - `/login`
-  - `/account` (manage passkeys)
-  - `/sso/*` (SSO redirect completion)
-  - `/api/auth/*` (SSO code exchange + passkey endpoints)
-
-### Best Practices
-
-1. **Limit claims_admin access** - Only grant to trusted administrators
-2. **Use descriptive claim names** - Avoid reserved names like `provider` and `providers`
-3. **Validate claim values** - The dashboard validates JSON, but consider app-level validation
-4. **Session refresh** - Users must refresh their session to see updated claims
-
-## Deployment
-
-### Docker (Recommended for Production)
-
-**Production-ready Docker configuration included!**
-
-#### Quick Start
-
-```bash
-# 1. Setup environment
-cp .env.docker.example .env.production
-
-# 2. Build and deploy
-docker-compose up -d
-
-# 3. Access at http://localhost:3050
-```
-
-#### Production with Nginx + SSL
-
-```bash
-# Deploy with nginx reverse proxy
-docker-compose -f docker-compose.prod.yml up -d
-
-# Access at http://localhost (or your domain)
-```
-
-**Documentation:**
-- [🚀 Quick Start Guide](./DOCKER_QUICK_START.md) - Get running in 5 minutes
-- [📚 Complete Deployment Guide](./DOCKER_DEPLOYMENT.md) - Full production setup with SSL, monitoring, and troubleshooting
-
-**Features:**
-- Multi-stage optimized builds
-- Nginx reverse proxy with SSL/TLS support
-- Health checks and monitoring
-- Security hardening
-- Easy updates and maintenance
-- Make commands for convenience
-
-### Vercel
-
-1. Push your code to GitHub
-2. Import the project in Vercel
-3. Add environment variables in Vercel dashboard
-4. Deploy
-
-### Other Platforms
-
-This is a standard Next.js 14 app and can be deployed to any platform that supports Node.js:
-- Netlify
-- Railway
-- Digital Ocean App Platform
-- AWS (Amplify, ECS, etc.)
-- Fly.io
-- Render
-
-## Technologies
-
-- **[Next.js 14](https://nextjs.org/)** - React framework with App Router
-- **[TypeScript](https://www.typescriptlang.org/)** - Type safety
-- **[Tailwind CSS](https://tailwindcss.com/)** - Styling
-- **[shadcn/ui](https://ui.shadcn.com/)** - Component library
-- **[Supabase](https://supabase.com/)** - Backend and authentication
-- **[Recharts](https://recharts.org/)** - Charts (for future enhancements)
-- **[date-fns](https://date-fns.org/)** - Date formatting
-- **[Lucide Icons](https://lucide.dev/)** - Icon library
-
-## Database Migrations
-
-This project uses an automated migration system to safely manage database changes.
-
-### Quick Commands
-
-```bash
-# Check what migrations need to be run
-pnpm migrate:status
-
-# Run all pending migrations
-pnpm migrate
-
-# Force re-run a specific migration
-pnpm migrate:force 001_multi_app_support
-```
-
-### Available Migrations
-
-- `001_multi_app_support` - Multi-app support functions
-- `002_app_configuration_tables` - App and role management
-- `003_api_keys` - API key management system
-- `004_external_key_sources` - External key source integration
-- `006_performance_optimizations` - Database performance improvements
-- `007_auth_and_passkeys` - Auth portal SSO + passkeys (WebAuthn) support
-
-📚 **See [MIGRATION_GUIDE.md](./MIGRATION_GUIDE.md) for complete migration documentation.**
-
-## Troubleshooting
-
-### "Access Denied" after login
-
-Make sure your user has the `claims_admin` claim set to `true`. Run this in your Supabase SQL Editor:
+### RLS Policy Integration
 
 ```sql
-select set_claim('YOUR-USER-ID', 'claims_admin', 'true');
+-- Row Level Security using JWT claims
+CREATE POLICY "Users can access their org data"
+ON documents FOR SELECT
+USING (
+  org_id = (auth.jwt() -> 'app_metadata' ->> 'org_id')::uuid
+);
+
+CREATE POLICY "Admins have full access"
+ON documents FOR ALL
+USING (
+  (auth.jwt() -> 'app_metadata' ->> 'claims_admin')::boolean = true
+);
 ```
-
-### Can't see updated claims
-
-Users need to refresh their session. Either:
-- Log out and back in
-- Call `supabase.auth.refreshSession()` in your app
-
-### "Unauthorized" errors
-
-Ensure:
-1. Your environment variables are correct
-2. The custom claims functions are installed in your Supabase project
-3. Your user has claims_admin access
-
-### Migration Issues
-
-See [Migration Guide](./docs/MIGRATION_GUIDE.md#troubleshooting) for detailed troubleshooting steps.
 
 ## Documentation
 
-**📚 [Complete Documentation Index](./content/docs/INDEX.md)** - Full documentation navigation
+| Guide | Purpose |
+|-------|---------|
+| **[Complete Integration Guide](./content/docs/guides/complete-integration-guide.md)** | Step-by-step implementation |
+| **[SSO Integration Guide](./content/docs/guides/sso-integration-guide.md)** | Connect your apps to the broker |
+| **[Claims Guide](./content/docs/authorization/claims-guide.md)** | Understanding JWT claims |
+| **[Authorization Patterns](./content/docs/authorization/authorization-patterns.md)** | RBAC implementation |
+| **[API Reference](./docs/EXTERNAL_API_CONTRACT.md)** | RPC function documentation |
+| **[Multi-App Guide](./content/docs/advanced/multi-app-guide.md)** | Managing multiple applications |
 
-### For Application Developers (Primary Audience) ⭐
+**[Full Documentation Index](./content/docs/INDEX.md)**
 
-**Goal:** Integrate custom claims into YOUR Supabase applications
+## Deployment
 
-| Step | Guide | Purpose |
-|------|-------|---------|
-| 1 | **[Claims Guide](./content/docs/core/claims-guide.md)** | Understand what custom claims are |
-| 2 | **[Complete Integration Guide](./content/docs/integration/complete-integration-guide.md)** | Step-by-step implementation |
-| 3 | **[Authentication Guide](./content/docs/integration/authentication-guide.md)** | Implement auth with claims |
-| 4 | **[Authorization Patterns](./content/docs/integration/authorization-patterns.md)** | Role-based access control |
-| 5 | **[Environment Configuration](./content/docs/integration/environment-configuration.md)** | Production deployment |
+### Docker (Recommended)
 
-**Quick Reference:**
-- **[Auth Quick Reference](./content/docs/integration/auth-quick-reference.md)** - Copy-paste code snippets
-- **[API Documentation](./docs/EXTERNAL_API_CONTRACT.md)** - RPC function reference
-- **[Session Management](./content/docs/integration/session-management.md)** - Session handling
+```bash
+# Setup
+cp .env.docker.example .env.production
 
-### For Dashboard Administrators (Optional)
+# Deploy
+docker-compose up -d
 
-**Goal:** Deploy and manage the admin dashboard
+# Access at http://localhost:3050
+```
 
-- **[Dashboard Quick Start](./content/docs/dashboard/quick-start.md)** - Get dashboard running in 5 minutes
-- **[Dashboard Setup Guide](./content/docs/dashboard/setup.md)** - Detailed configuration
+With Nginx + SSL:
+```bash
+docker-compose -f docker-compose.prod.yml up -d
+```
 
-### Additional Integration Resources
+See [Docker Deployment Guide](./DOCKER_DEPLOYMENT.md) for full production setup.
 
-| Category | Guides |
-|----------|--------|
-| **Auth Methods** | [Passwordless Auth](./content/docs/integration/passwordless-auth.md), [Password Auth](./content/docs/integration/password-auth.md) |
-| **Advanced** | [Multi-App Guide](./content/docs/core/multi-app-guide.md), [RLS Policies](./content/docs/integration/rls-policies.md), [API Keys](./content/docs/integration/api-keys-guide.md) |
-| **Examples** | [App Auth Integration](./content/docs/integration/app-auth-integration.md) |
+### Vercel / Other Platforms
 
-### Deployment Resources
+Standard Next.js deployment. See [Environment Configuration](./content/docs/guides/environment-configuration.md).
 
-| Resource | Purpose |
-|----------|---------|
-| **[Environment Configuration](./content/docs/integration/environment-configuration.md)** | **Critical** - Production environment setup |
-| [Docker Deployment](./DOCKER_DEPLOYMENT.md) | Complete Docker deployment guide |
-| [Docker Quick Start](./DOCKER_QUICK_START.md) | Quick Docker setup |
-| [Session Configuration](./docs/SESSION_CONFIGURATION.md) | Session tuning and configuration |
+## Architecture
 
-### Technical Reference
+```
+supabase-access-broker/
+├── app/
+│   ├── (auth)/           # Auth portal routes (login, SSO, callbacks)
+│   ├── (dashboard)/      # Admin console routes (users, apps, settings)
+│   ├── account/          # User self-service (profile, passkeys, MFA)
+│   ├── api/              # API routes (webhooks, passkey endpoints)
+│   └── actions/          # Server actions
+├── components/
+│   ├── auth/             # Auth UI components
+│   ├── claims/           # Claims management components
+│   ├── users/            # User management components
+│   └── ui/               # Base UI components (shadcn)
+├── lib/
+│   ├── supabase/         # Supabase client utilities
+│   └── claims.ts         # Claims helper functions
+├── migrations/           # SQL migration files
+└── types/                # TypeScript definitions
+```
 
-| Resource | Purpose |
-|----------|---------|
-| [External API Contract](./docs/EXTERNAL_API_CONTRACT.md) | RPC function documentation |
-| [Migration Guide](./docs/MIGRATION_GUIDE.md) | Database migration system |
-| [install.sql](./install.sql) | SQL functions installation script |
-| [uninstall.sql](./uninstall.sql) | SQL functions removal script |
+## Technology Stack
+
+- **Next.js 15** / **React 19** — App framework
+- **TypeScript** — Type safety
+- **Supabase** — Auth, database, RLS
+- **@simplewebauthn** — Passkey/WebAuthn support
+- **Tailwind CSS** / **shadcn/ui** — Styling
+- **Radix UI** — Accessible components
+
+## Database Migrations
+
+```bash
+# Check migration status
+pnpm migrate:status
+
+# Run pending migrations
+pnpm migrate
+
+# Force re-run a migration
+pnpm migrate:force <migration_name>
+```
+
+See [Migration Guide](./docs/MIGRATION_GUIDE.md) for details.
+
+## Security Model
+
+| Layer | Mechanism |
+|-------|-----------|
+| **Route Protection** | Middleware-based authentication checks |
+| **Authorization** | JWT claims embedded in tokens |
+| **Database** | Row Level Security policies |
+| **API Keys** | SHA-256 hashed, with usage tracking |
+| **SSO** | Redirect URI whitelisting, short-lived auth codes |
+| **Audit** | SSO event logging |
+
+### Access Control
+
+- **Admin routes** (`/`, `/users`, `/apps`) require `claims_admin: true`
+- **Auth portal routes** (`/login`, `/account`, `/sso/*`) are available to authenticated users
+- **API routes** validate API keys or session tokens
 
 ## Contributing
 
-This dashboard is part of the [supabase-custom-claims](https://github.com/supabase-community/supabase-custom-claims) project. Feel free to submit issues and pull requests.
+See [Contributing Guide](./content/docs/contributing/contributing.md).
 
 ## License
 
-MIT License - see the main project repository for details.
+MIT License

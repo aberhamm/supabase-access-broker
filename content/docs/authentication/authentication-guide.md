@@ -8,7 +8,7 @@ order: 1
 
 # Authentication Setup Guide
 
-**Context:** This guide is part of the Supabase Claims Admin Dashboard documentation. It covers how to set up Supabase Auth (NOT NextAuth) and integrate it with the custom claims/roles system to control user access during sign up and sign in.
+**Context:** This guide is part of the Supabase Access Broker documentation. It covers how to set up Supabase Auth (NOT NextAuth) and integrate it with the custom claims/roles system to control user access during sign up and sign in.
 
 **Technology Stack:** Next.js 14+ App Router, Supabase Auth, TypeScript, React Server Components
 
