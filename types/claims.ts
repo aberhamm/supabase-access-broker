@@ -261,3 +261,60 @@ export interface UnifiedApiKey {
   is_local: boolean;
   remote_actions?: string[]; // Available actions for external keys (Phase 2)
 }
+
+// =============================================================================
+// MFA Types
+// =============================================================================
+
+export type MFAFactorType = 'totp' | 'phone';
+export type MFAFactorStatus = 'verified' | 'unverified';
+
+export interface MFAFactor {
+  id: string;
+  friendly_name?: string | null;
+  factor_type: MFAFactorType;
+  status: MFAFactorStatus;
+  created_at: string;
+  updated_at: string;
+  phone?: string; // For phone factors
+}
+
+export interface TOTPEnrollment {
+  id: string;
+  type: 'totp';
+  totp: {
+    qr_code: string; // Data URL for QR code
+    secret: string; // Base32 encoded secret
+    uri: string; // otpauth:// URI
+  };
+}
+
+// =============================================================================
+// User Status Types
+// =============================================================================
+
+export type BanDuration = 'none' | '24h' | '168h' | '720h' | '8766h';
+
+export const BAN_DURATION_LABELS: Record<BanDuration, string> = {
+  none: 'No ban',
+  '24h': '24 hours',
+  '168h': '7 days',
+  '720h': '30 days',
+  '8766h': '1 year',
+};
+
+export interface UserStatus {
+  is_banned: boolean;
+  banned_until?: string | null;
+  email_confirmed: boolean;
+  email_confirmed_at?: string | null;
+  phone?: string | null;
+  phone_confirmed_at?: string | null;
+}
+
+export interface UpdateProfileData {
+  email?: string;
+  phone?: string;
+  display_name?: string;
+  avatar_url?: string;
+}

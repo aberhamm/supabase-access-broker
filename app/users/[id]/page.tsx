@@ -5,7 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
-import { ArrowLeft } from 'lucide-react';
+import { ArrowLeft, ShieldCheck } from 'lucide-react';
 import { redirect } from 'next/navigation';
 import { ClaimsList } from '@/components/claims/ClaimsList';
 import { AddClaimButton } from '@/components/claims/AddClaimButton';
@@ -14,6 +14,9 @@ import { ResetPasswordButton } from '@/components/users/ResetPasswordButton';
 import { CopyButton } from '@/components/users/CopyButton';
 import { DeleteUserDialog } from '@/components/users/DeleteUserDialog';
 import { TelegramLink } from '@/components/users/TelegramLink';
+import { EditProfileDialog } from '@/components/users/EditProfileDialog';
+import { MFAFactorsList } from '@/components/users/MFAFactorsList';
+import { UserStatusCard } from '@/components/users/UserStatusCard';
 import { TelegramData } from '@/app/actions/telegram';
 import { AppAccessCard } from '@/components/apps/AppAccessCard';
 import { AppClaimsList } from '@/components/apps/AppClaimsList';
@@ -21,6 +24,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DashboardNav } from '@/components/layout/DashboardNav';
 import { getApps } from '@/lib/apps-service';
 import { isClaimsAdmin } from '@/lib/claims';
+import { listUserMFAFactors } from '@/app/actions/users';
 import { format } from 'date-fns';
 
 async function getUserEmail() {
@@ -69,8 +73,13 @@ export default async function UserDetailPage({
   const isGlobalAdmin = user.app_metadata?.claims_admin === true;
   const telegramData = user.app_metadata?.telegram as TelegramData | undefined;
 
-  // Fetch available apps from service
-  const availableApps = await getApps();
+  // Fetch available apps and MFA factors
+  const [availableApps, mfaResult] = await Promise.all([
+    getApps(),
+    listUserMFAFactors(id),
+  ]);
+
+  const mfaFactors = mfaResult.success ? mfaResult.factors || [] : [];
 
   // Check if user is admin to show Apps link
   const supabaseClient = await createClient();
@@ -104,8 +113,14 @@ export default async function UserDetailPage({
         <div className="grid gap-8 lg:grid-cols-3">
           <div className="space-y-6 lg:col-span-1">
             <Card>
-              <CardHeader>
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
                 <CardTitle>User Information</CardTitle>
+                <EditProfileDialog
+                  userId={id}
+                  currentEmail={user.email || ''}
+                  currentPhone={user.phone || ''}
+                  currentDisplayName={user.user_metadata?.display_name as string}
+                />
               </CardHeader>
               <CardContent className="space-y-4">
                 <div>
@@ -114,6 +129,24 @@ export default async function UserDetailPage({
                   </p>
                   <p className="text-sm">{user.email}</p>
                 </div>
+
+                {user.phone && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Phone
+                    </p>
+                    <p className="text-sm">{user.phone}</p>
+                  </div>
+                )}
+
+                {user.user_metadata?.display_name && (
+                  <div>
+                    <p className="text-sm font-medium text-muted-foreground">
+                      Display Name
+                    </p>
+                    <p className="text-sm">{user.user_metadata.display_name as string}</p>
+                  </div>
+                )}
 
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">
@@ -159,17 +192,25 @@ export default async function UserDetailPage({
                     </p>
                   </div>
                 )}
+              </CardContent>
+            </Card>
 
-                {user.email_confirmed_at && (
-                  <div>
-                    <p className="text-sm font-medium text-muted-foreground">
-                      Email Confirmed
-                    </p>
-                    <p className="text-sm">
-                      {format(new Date(user.email_confirmed_at), 'PPP')}
-                    </p>
-                  </div>
-                )}
+            <UserStatusCard
+              userId={id}
+              userEmail={user.email || ''}
+              emailConfirmedAt={user.email_confirmed_at}
+              bannedUntil={user.banned_until}
+            />
+
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <ShieldCheck className="h-5 w-5" />
+                  MFA Factors
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <MFAFactorsList factors={mfaFactors} userId={id} />
               </CardContent>
             </Card>
 

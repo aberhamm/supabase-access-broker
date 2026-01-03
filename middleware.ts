@@ -78,10 +78,46 @@ export async function middleware(request: NextRequest) {
     }
   );
 
+  // Try to get session first to see what's there
+  const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
+
+  if (sessionError) {
+    console.error('[MIDDLEWARE] getSession error:', sessionError.message);
+  }
+
   // Refreshing the auth token
   const {
     data: { user },
+    error: userError,
   } = await supabase.auth.getUser();
+
+  if (userError) {
+    console.error('[MIDDLEWARE] getUser error:', userError.message, userError.code);
+  }
+
+  // Debug: Log session vs user mismatch
+  if (sessionData?.session && !user) {
+    console.warn('[MIDDLEWARE] Session exists but getUser() returned no user!', {
+      sessionUserId: sessionData.session.user?.id,
+      sessionUserEmail: sessionData.session.user?.email,
+    });
+  }
+
+  // Clean up corrupted/invalid auth cookies if session is missing but cookies exist
+  const hasAuthCookies = request.cookies.getAll().some(c =>
+    c.name.includes('sb-') && c.name.includes('-auth-token')
+  );
+
+  if (!user && !sessionData?.session && hasAuthCookies) {
+    console.warn('[MIDDLEWARE] Clearing invalid auth cookies');
+    // Clear the corrupted cookies
+    const cookiesToClear = request.cookies.getAll()
+      .filter(c => c.name.includes('sb-') && (c.name.includes('-auth-token') || c.name.includes('-code-verifier')));
+
+    cookiesToClear.forEach(c => {
+      response.cookies.delete(c.name);
+    });
+  }
 
   const pathname = request.nextUrl.pathname;
 
@@ -89,6 +125,7 @@ export async function middleware(request: NextRequest) {
   const isPublicRoute =
     pathname.startsWith('/login') ||
     pathname.startsWith('/auth/callback') ||
+    pathname.startsWith('/auth/confirm') || // Handle magic link token_hash
     pathname.startsWith('/auth/logout') ||
     pathname.startsWith('/reset-password') ||
     pathname.startsWith('/api/auth/') ||
@@ -102,11 +139,18 @@ export async function middleware(request: NextRequest) {
     pathname.startsWith('/refresh-session') ||
     pathname.startsWith('/access-denied');
 
+  // Log auth cookies for debugging (names and value lengths, not actual values)
+  const authCookies = request.cookies.getAll()
+    .filter(c => c.name.includes('supabase') || c.name.includes('sb-'))
+    .map(c => ({ name: c.name, valueLength: c.value?.length || 0 }));
+
   console.log('🛡️ [MIDDLEWARE]', {
     pathname,
     isPublicRoute,
     hasUser: !!user,
     userEmail: user?.email,
+    authCookies: authCookies.length > 0 ? authCookies : 'none',
+    sessionExists: !!sessionData?.session,
   });
 
   // If user is not signed in and the current path is not a public route, redirect to /login

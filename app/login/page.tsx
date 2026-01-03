@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -54,6 +54,22 @@ export default function LoginPage() {
     // Sanitize the next parameter to prevent open redirects
     return safeNextPath(rawNext, '/');
   }, []);
+
+  // Handle token_hash in URL (from magic links that got redirected here)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tokenHash = params.get('token_hash');
+    const type = params.get('type') as 'email' | 'recovery' | null;
+
+    if (tokenHash && type) {
+      // Redirect to /auth/confirm to properly handle the token
+      const confirmUrl = new URL('/auth/confirm', window.location.origin);
+      confirmUrl.searchParams.set('token_hash', tokenHash);
+      confirmUrl.searchParams.set('type', type);
+      confirmUrl.searchParams.set('next', nextPath);
+      window.location.href = confirmUrl.toString();
+    }
+  }, [nextPath]);
 
   const handleMagicLinkLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -157,16 +173,43 @@ export default function LoginPage() {
 
     try {
       setLoading(true);
-      const { error } = await supabase.auth.verifyOtp({
+      console.log('[Login] Verifying OTP for email:', email);
+
+      const { data, error } = await supabase.auth.verifyOtp({
         email,
         token,
         type: 'email',
       });
+
+      console.log('[Login] verifyOtp result:', {
+        hasSession: !!data.session,
+        hasUser: !!data.user,
+        error: error?.message
+      });
+
       if (error) throw error;
 
+      // Ensure session is properly set before redirecting
+      if (data.session) {
+        console.log('[Login] Session established, user:', data.user?.email);
+        // Wait for cookies to be set
+        await new Promise(resolve => setTimeout(resolve, 200));
+
+        // Verify session was actually set
+        const { data: checkData } = await supabase.auth.getSession();
+        console.log('[Login] Session check after verify:', {
+          hasSession: !!checkData.session,
+          userEmail: checkData.session?.user?.email
+        });
+      } else {
+        console.warn('[Login] No session returned from verifyOtp');
+      }
+
+      console.log('[Login] Redirecting to:', nextPath);
       window.location.href = nextPath;
     } catch (error) {
       const err = error as { error_description?: string; message?: string };
+      console.error('[Login] OTP verification error:', err);
       toast.error(err.error_description || err.message || 'Invalid code');
     } finally {
       setLoading(false);
