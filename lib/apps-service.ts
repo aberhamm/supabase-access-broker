@@ -69,7 +69,8 @@ async function fetchAppsFromDb(forceRefresh = false): Promise<AppConfig[]> {
     const supabase = await createClient();
     // Prefer direct table select so we can include SSO columns without requiring RPC signature changes.
     const { data, error } = await supabase
-      .from('access_broker_app.apps')
+      .schema('access_broker_app')
+      .from('apps')
       .select(
         'id,name,description,color,icon,enabled,allowed_callback_urls,sso_client_secret_hash,created_at,updated_at'
       )
@@ -80,7 +81,8 @@ async function fetchAppsFromDb(forceRefresh = false): Promise<AppConfig[]> {
       // Postgres undefined_column is 42703.
       if (error.code === '42703') {
         const { data: baseData, error: baseError } = await supabase
-          .from('access_broker_app.apps')
+          .schema('access_broker_app')
+          .from('apps')
           .select('id,name,description,color,icon,enabled,created_at,updated_at')
           .order('name', { ascending: true });
 

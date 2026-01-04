@@ -236,3 +236,5 @@ export function MFAEnrollDialog({ onEnrolled }: MFAEnrollDialogProps) {
     </Dialog>
   );
 }
+
+

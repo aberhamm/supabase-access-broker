@@ -15,6 +15,7 @@ import { AlertCircle, RefreshCw, Copy } from 'lucide-react';
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
 import type { User } from '@supabase/supabase-js';
+import { debugLog } from '@/lib/auth-debug';
 
 export default function AccessDeniedPage() {
   const router = useRouter();
@@ -25,10 +26,7 @@ export default function AccessDeniedPage() {
   useEffect(() => {
     async function loadUserInfo() {
       const { data: { user } } = await supabase.auth.getUser();
-      console.log('🚫 [ACCESS DENIED] Current user:', user);
-      console.log('🚫 [ACCESS DENIED] User ID:', user?.id);
-      console.log('🚫 [ACCESS DENIED] User email:', user?.email);
-      console.log('🚫 [ACCESS DENIED] App metadata:', JSON.stringify(user?.app_metadata, null, 2));
+      debugLog('[AccessDenied] Loaded user info', { hasUser: !!user });
       setUserInfo(user);
       setLoading(false);
     }
@@ -36,7 +34,7 @@ export default function AccessDeniedPage() {
   }, [supabase.auth]);
 
   const handleLogout = () => {
-    console.log('🚪 [ACCESS DENIED] Logging out via /auth/logout...');
+    debugLog('[AccessDenied] Logging out via /auth/logout');
     // Use the centralized logout route for reliable cookie clearing
     router.push('/auth/logout');
   };

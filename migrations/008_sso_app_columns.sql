@@ -10,13 +10,14 @@
 ALTER TABLE public.apps
 ADD COLUMN IF NOT EXISTS allowed_callback_urls TEXT[] DEFAULT '{}';
 
--- Hashed client secret for secure SSO code exchange (bcrypt hash)
+-- Hashed client secret for secure SSO code exchange (SHA-256 hex)
 ALTER TABLE public.apps
 ADD COLUMN IF NOT EXISTS sso_client_secret_hash TEXT;
 
 -- Add comment for documentation
 COMMENT ON COLUMN public.apps.allowed_callback_urls IS 'Allowlist of callback URLs for SSO redirect validation. Empty array means no URL validation (less secure).';
-COMMENT ON COLUMN public.apps.sso_client_secret_hash IS 'Bcrypt-hashed client secret for SSO code exchange. NULL means no secret required.';
+COMMENT ON COLUMN public.apps.sso_client_secret_hash IS 'SHA-256 hashed client secret for SSO code exchange. NULL means no secret required.';
 
 NOTIFY pgrst, 'reload schema';
+
 

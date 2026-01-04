@@ -1,6 +1,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { safeNextPath, isPortalPath } from '@/lib/safe-redirect';
+import { debugLog } from '@/lib/auth-debug';
 
 // Get the base URL for redirects
 function getBaseUrl(request: Request): string {
@@ -36,7 +37,7 @@ export async function GET(request: Request) {
   const next = safeNextPath(rawNext, '/');
   const baseUrl = getBaseUrl(request);
 
-  console.log('[auth/confirm] Processing request:', {
+  debugLog('[auth/confirm] Processing request:', {
     hasTokenHash: !!tokenHash,
     type,
     next,
@@ -44,23 +45,22 @@ export async function GET(request: Request) {
   });
 
   if (!tokenHash) {
-    console.log('[auth/confirm] No token_hash, redirecting to login');
+    debugLog('[auth/confirm] No token_hash, redirecting to login');
     return NextResponse.redirect(new URL('/login', baseUrl));
   }
 
   const supabase = await createClient();
 
   // Verify the token hash
-  console.log('[auth/confirm] Verifying token_hash...');
+  debugLog('[auth/confirm] Verifying token_hash...');
   const { data, error } = await supabase.auth.verifyOtp({
     token_hash: tokenHash,
     type: type || 'email',
   });
 
-  console.log('[auth/confirm] verifyOtp result:', {
+  debugLog('[auth/confirm] verifyOtp result:', {
     hasSession: !!data?.session,
     hasUser: !!data?.user,
-    userEmail: data?.user?.email,
     error: error?.message
   });
 

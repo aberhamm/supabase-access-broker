@@ -1,10 +1,11 @@
 'use client';
 
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState, useCallback } from 'react';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import {
   Card,
   CardContent,
@@ -19,6 +20,43 @@ import { PasskeyButton } from '@/components/auth/PasskeyButton';
 import { SocialButtons } from '@/components/auth/SocialButtons';
 import { OTPInput } from '@/components/auth/OTPInput';
 import { safeNextPath } from '@/lib/safe-redirect';
+import { debugError, debugLog, debugWarn } from '@/lib/auth-debug';
+
+const REMEMBERED_EMAIL_KEY = 'remembered_email';
+
+function getInitial(email: string): string {
+  return email.charAt(0).toUpperCase();
+}
+
+function maskEmail(email: string): string {
+  const [local, domain] = email.split('@');
+  if (!domain) return email;
+  if (local.length <= 2) return email;
+  return `${local.slice(0, 2)}${'*'.repeat(Math.min(local.length - 2, 4))}@${domain}`;
+}
+
+function readRememberedEmail(): string | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    return localStorage.getItem(REMEMBERED_EMAIL_KEY);
+  } catch {
+    return null;
+  }
+}
+
+function persistRememberedEmail(value: string | null) {
+  if (typeof window === 'undefined') return;
+  try {
+    if (value) {
+      localStorage.setItem(REMEMBERED_EMAIL_KEY, value);
+    } else {
+      localStorage.removeItem(REMEMBERED_EMAIL_KEY);
+    }
+  } catch (error) {
+    // Some browsers block storage access in private or hardened modes.
+    debugWarn('[Login] Unable to access localStorage for remembered email', error);
+  }
+}
 
 export default function LoginPage() {
   const [email, setEmail] = useState('');
@@ -26,6 +64,10 @@ export default function LoginPage() {
   const [otpStep, setOtpStep] = useState<'email' | 'code'>('email');
   const [otpCode, setOtpCode] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberEmail, setRememberEmail] = useState(true);
+  const [rememberedEmail, setRememberedEmail] = useState<string | null>(null);
+  const [showRemembered, setShowRemembered] = useState(true);
+  const [mounted, setMounted] = useState(false);
   const [mode, setMode] = useState<'magic' | 'otp' | 'password'>(() => {
     if (AUTH_FEATURES.PASSWORD_LOGIN) return 'password';
     if (AUTH_FEATURES.EMAIL_OTP) return 'otp';
@@ -33,6 +75,17 @@ export default function LoginPage() {
   });
   const supabase = createClient();
   const emailInputRef = React.useRef<HTMLInputElement>(null);
+
+  // Load remembered email on mount
+  useEffect(() => {
+    setMounted(true);
+    const stored = readRememberedEmail();
+    if (stored) {
+      setRememberedEmail(stored);
+      setEmail(stored);
+      setShowRemembered(true);
+    }
+  }, []);
 
   const nextPath = useMemo(() => {
     if (typeof window === 'undefined') return '/';
@@ -71,6 +124,33 @@ export default function LoginPage() {
     }
   }, [nextPath]);
 
+  const handleSwitchAccount = useCallback(() => {
+    setShowRemembered(false);
+    setEmail('');
+    setPassword('');
+    setOtpCode('');
+    setOtpStep('email');
+    // Focus email input after animation
+    setTimeout(() => emailInputRef.current?.focus(), 150);
+  }, []);
+
+  const handleUseRemembered = useCallback(() => {
+    if (rememberedEmail) {
+      setEmail(rememberedEmail);
+      setShowRemembered(true);
+    }
+  }, [rememberedEmail]);
+
+  const saveEmailIfRemembered = useCallback((emailToSave: string) => {
+    if (rememberEmail && emailToSave) {
+      setRememberedEmail(emailToSave);
+      persistRememberedEmail(emailToSave);
+    } else if (!rememberEmail) {
+      setRememberedEmail(null);
+      persistRememberedEmail(null);
+    }
+  }, [rememberEmail]);
+
   const handleMagicLinkLogin = async (e: React.FormEvent) => {
     e.preventDefault();
 
@@ -92,6 +172,7 @@ export default function LoginPage() {
 
       if (error) throw error;
 
+      saveEmailIfRemembered(email);
       toast.success('Check your email for the magic link!');
     } catch (error) {
       const err = error as { error_description?: string; message?: string };
@@ -125,6 +206,7 @@ export default function LoginPage() {
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
 
+      saveEmailIfRemembered(email);
       window.location.href = nextPath;
     } catch (error) {
       const err = error as { error_description?: string; message?: string };
@@ -173,7 +255,7 @@ export default function LoginPage() {
 
     try {
       setLoading(true);
-      console.log('[Login] Verifying OTP for email:', email);
+      debugLog('[Login] Verifying OTP for email:', email);
 
       const { data, error } = await supabase.auth.verifyOtp({
         email,
@@ -181,7 +263,7 @@ export default function LoginPage() {
         type: 'email',
       });
 
-      console.log('[Login] verifyOtp result:', {
+      debugLog('[Login] verifyOtp result:', {
         hasSession: !!data.session,
         hasUser: !!data.user,
         error: error?.message
@@ -189,204 +271,271 @@ export default function LoginPage() {
 
       if (error) throw error;
 
+      saveEmailIfRemembered(email);
+
       // Ensure session is properly set before redirecting
       if (data.session) {
-        console.log('[Login] Session established, user:', data.user?.email);
+        debugLog('[Login] Session established, user:', data.user?.email);
         // Wait for cookies to be set
         await new Promise(resolve => setTimeout(resolve, 200));
 
         // Verify session was actually set
         const { data: checkData } = await supabase.auth.getSession();
-        console.log('[Login] Session check after verify:', {
+        debugLog('[Login] Session check after verify:', {
           hasSession: !!checkData.session,
           userEmail: checkData.session?.user?.email
         });
       } else {
-        console.warn('[Login] No session returned from verifyOtp');
+        debugWarn('[Login] No session returned from verifyOtp');
       }
 
-      console.log('[Login] Redirecting to:', nextPath);
+      debugLog('[Login] Redirecting to:', nextPath);
       window.location.href = nextPath;
     } catch (error) {
       const err = error as { error_description?: string; message?: string };
-      console.error('[Login] OTP verification error:', err);
+      debugError('[Login] OTP verification error:', err);
       toast.error(err.error_description || err.message || 'Invalid code');
     } finally {
       setLoading(false);
     }
   };
 
+  // Determine if we should show the welcome back state
+  const showWelcomeBack = mounted && rememberedEmail && showRemembered;
+
   return (
-    <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
-          <CardDescription>
-            Sign in to continue
-          </CardDescription>
+    <div className="flex min-h-screen items-center justify-center p-4 bg-gradient-to-b from-background to-muted/30">
+      <Card className="w-full max-w-md overflow-hidden shadow-lg border-border/50">
+        <CardHeader className="space-y-1 pb-6">
+          {showWelcomeBack ? (
+            // Welcome back state with avatar
+            <div className="flex flex-col items-center space-y-4 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+              <div
+                className="flex h-16 w-16 items-center justify-center rounded-full bg-primary text-primary-foreground text-2xl font-semibold shadow-md ring-4 ring-primary/10"
+                aria-hidden="true"
+              >
+                {getInitial(rememberedEmail)}
+              </div>
+              <div className="text-center space-y-1">
+                <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
+                <CardDescription className="text-base">
+                  {maskEmail(rememberedEmail)}
+                </CardDescription>
+              </div>
+              <button
+                type="button"
+                onClick={handleSwitchAccount}
+                className="text-sm text-muted-foreground hover:text-foreground transition-colors underline-offset-4 hover:underline"
+              >
+                Not you? Sign in with a different account
+              </button>
+            </div>
+          ) : (
+            // Normal header
+            <div className="animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
+              <CardTitle className="text-2xl font-bold">Sign in</CardTitle>
+              <CardDescription>
+                Sign in to continue
+              </CardDescription>
+              {rememberedEmail && !showRemembered && (
+                <button
+                  type="button"
+                  onClick={handleUseRemembered}
+                  className="mt-2 text-sm text-primary hover:text-primary/80 transition-colors"
+                >
+                  Sign in as {maskEmail(rememberedEmail)}
+                </button>
+              )}
+            </div>
+          )}
         </CardHeader>
-        <CardContent>
-          {(AUTH_FEATURES.GOOGLE_LOGIN || AUTH_FEATURES.GITHUB_LOGIN) && (
-            <div className="mb-4">
-              <SocialButtons
-                next={nextPath}
-                enableGoogle={AUTH_FEATURES.GOOGLE_LOGIN}
-                enableGitHub={AUTH_FEATURES.GITHUB_LOGIN}
-              />
-            </div>
-          )}
-
-          {AUTH_FEATURES.PASSKEYS && (
-            <div className="mb-4">
-              <PasskeyButton className="w-full" next={nextPath} />
-            </div>
-          )}
-
-          <form
-            onSubmit={
-              mode === 'password'
-                ? handlePasswordLogin
-                : mode === 'otp'
-                  ? otpStep === 'email'
-                    ? handleSendOtp
-                    : handleVerifyOtp
-                  : handleMagicLinkLogin
-            }
-            className="space-y-4"
-          >
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <Input
-                ref={emailInputRef}
-                id="email"
-                name="email"
-                type="email"
-                placeholder="admin@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                disabled={loading}
-                required
-                autoComplete="username email"
-                autoFocus
-              />
-            </div>
-
-            {mode === 'password' && AUTH_FEATURES.PASSWORD_LOGIN && (
-              <div className="space-y-2">
-                <Label htmlFor="password">Password</Label>
-                <Input
-                  id="password"
-                  name="password"
-                  type="password"
-                  placeholder="••••••••"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={loading}
-                  autoComplete="current-password"
-                  required
+        <CardContent className="space-y-6">
+          {/* Quick sign-in options */}
+          {(AUTH_FEATURES.GOOGLE_LOGIN || AUTH_FEATURES.GITHUB_LOGIN || AUTH_FEATURES.PASSKEYS) && (
+            <div className="space-y-3">
+              {(AUTH_FEATURES.GOOGLE_LOGIN || AUTH_FEATURES.GITHUB_LOGIN) && (
+                <SocialButtons
+                  next={nextPath}
+                  enableGoogle={AUTH_FEATURES.GOOGLE_LOGIN}
+                  enableGitHub={AUTH_FEATURES.GITHUB_LOGIN}
                 />
-                <div className="text-right">
-                  <a href="/reset-password" className="text-xs text-muted-foreground hover:text-foreground">
-                    Forgot password?
-                  </a>
-                </div>
-              </div>
-            )}
-
-            {mode === 'otp' && AUTH_FEATURES.EMAIL_OTP && otpStep === 'code' && (
-              <div className="space-y-2">
-                <Label>Code</Label>
-                <OTPInput value={otpCode} onChange={setOtpCode} disabled={loading} />
-                <Button
-                  type="button"
-                  variant="ghost"
-                  className="px-0 text-sm"
-                  onClick={() => {
-                    setOtpStep('email');
-                    setOtpCode('');
-                  }}
-                  disabled={loading}
-                >
-                  Use a different email
-                </Button>
-              </div>
-            )}
-
-            {mode === 'magic' && AUTH_FEATURES.MAGIC_LINK && (
-            <Button type="submit" className="w-full" disabled={loading}>
-              {loading ? 'Sending magic link...' : 'Send magic link'}
-            </Button>
-            )}
-
-            {mode === 'otp' && AUTH_FEATURES.EMAIL_OTP && (
-              <Button type="submit" className="w-full" disabled={loading}>
-                {otpStep === 'email'
-                  ? loading
-                    ? 'Sending code...'
-                    : 'Send code'
-                  : loading
-                    ? 'Verifying...'
-                    : 'Verify code'}
-              </Button>
-            )}
-
-            {mode === 'password' && AUTH_FEATURES.PASSWORD_LOGIN && (
-              <Button type="submit" className="w-full" disabled={loading}>
-                {loading ? 'Signing in...' : 'Sign in'}
-              </Button>
-            )}
-          </form>
-
-          {(AUTH_FEATURES.EMAIL_OTP || AUTH_FEATURES.MAGIC_LINK || AUTH_FEATURES.PASSWORD_LOGIN) && (
-            <div className="mt-3 flex justify-center gap-3 text-xs text-muted-foreground">
-              {AUTH_FEATURES.PASSWORD_LOGIN && mode !== 'password' && (
-                <button
-                  type="button"
-                  className="hover:text-foreground"
-                  onClick={() => {
-                    setMode('password');
-                    setOtpStep('email');
-                    setOtpCode('');
-                  }}
-                  disabled={loading}
-                >
-                  Use password
-                </button>
               )}
-              {AUTH_FEATURES.EMAIL_OTP && mode !== 'otp' && (
-                <button
-                  type="button"
-                  className="hover:text-foreground"
-                  onClick={() => {
-                    setMode('otp');
-                    setOtpStep('email');
-                    setOtpCode('');
-                  }}
-                  disabled={loading}
-                >
-                  Use code
-                </button>
-              )}
-              {AUTH_FEATURES.MAGIC_LINK && mode !== 'magic' && (
-                <button
-                  type="button"
-                  className="hover:text-foreground"
-                  onClick={() => {
-                    setMode('magic');
-                    setOtpStep('email');
-                    setOtpCode('');
-                  }}
-                  disabled={loading}
-                >
-                  Use magic link
-                </button>
+              {AUTH_FEATURES.PASSKEYS && (
+                <PasskeyButton className="w-full" next={nextPath} />
               )}
             </div>
           )}
 
-          <div className="mt-6 space-y-2">
+          {/* Divider between quick options and email form */}
+          {(AUTH_FEATURES.GOOGLE_LOGIN || AUTH_FEATURES.GITHUB_LOGIN || AUTH_FEATURES.PASSKEYS) &&
+           (AUTH_FEATURES.PASSWORD_LOGIN || AUTH_FEATURES.EMAIL_OTP || AUTH_FEATURES.MAGIC_LINK) && (
+            <div className="relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-border/60" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-card px-2 text-muted-foreground">or continue with email</span>
+              </div>
+            </div>
+          )}
+
+          {/* Email form */}
+          {(AUTH_FEATURES.PASSWORD_LOGIN || AUTH_FEATURES.EMAIL_OTP || AUTH_FEATURES.MAGIC_LINK) && (
+            <form
+              onSubmit={
+                mode === 'password'
+                  ? handlePasswordLogin
+                  : mode === 'otp'
+                    ? otpStep === 'email'
+                      ? handleSendOtp
+                      : handleVerifyOtp
+                    : handleMagicLinkLogin
+              }
+              className="space-y-4"
+            >
+              {/* Email field - hidden when welcome back is shown */}
+              {!showWelcomeBack && (
+                <div className="space-y-2 animate-in fade-in-0 slide-in-from-bottom-2 duration-200">
+                  <Label htmlFor="email">Email</Label>
+                  <Input
+                    ref={emailInputRef}
+                    id="email"
+                    name="email"
+                    type="email"
+                    placeholder="you@example.com"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={loading}
+                    required
+                    autoComplete="username email"
+                    autoFocus={!rememberedEmail}
+                    className="h-11"
+                  />
+                </div>
+              )}
+
+              {mode === 'password' && AUTH_FEATURES.PASSWORD_LOGIN && (
+                <div className="space-y-2 animate-in fade-in-0 slide-in-from-bottom-2 duration-200 delay-75">
+                  <div className="flex items-center justify-between">
+                    <Label htmlFor="password">Password</Label>
+                    <a href="/reset-password" className="text-xs text-muted-foreground hover:text-foreground transition-colors">
+                      Forgot password?
+                    </a>
+                  </div>
+                  <Input
+                    id="password"
+                    name="password"
+                    type="password"
+                    placeholder="Enter your password"
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={loading}
+                    autoComplete="current-password"
+                    required
+                    autoFocus={!!showWelcomeBack}
+                    className="h-11"
+                  />
+                </div>
+              )}
+
+              {mode === 'otp' && AUTH_FEATURES.EMAIL_OTP && otpStep === 'code' && (
+                <div className="space-y-2 animate-in fade-in-0 slide-in-from-bottom-2 duration-200">
+                  <Label>Verification code</Label>
+                  <OTPInput value={otpCode} onChange={setOtpCode} disabled={loading} />
+                  <button
+                    type="button"
+                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    onClick={() => {
+                      setOtpStep('email');
+                      setOtpCode('');
+                    }}
+                    disabled={loading}
+                  >
+                    ← Use a different email
+                  </button>
+                </div>
+              )}
+
+              {/* Remember email checkbox */}
+              {!showWelcomeBack && (
+                <div className="flex items-center space-x-2 animate-in fade-in-0 duration-200 delay-100">
+                  <Checkbox
+                    id="remember-email"
+                    checked={rememberEmail}
+                    onCheckedChange={(checked) => setRememberEmail(checked === true)}
+                    disabled={loading}
+                  />
+                  <label
+                    htmlFor="remember-email"
+                    className="text-sm text-muted-foreground cursor-pointer select-none leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    Remember my email on this device
+                  </label>
+                </div>
+              )}
+
+              <Button type="submit" className="w-full h-11 font-medium" disabled={loading}>
+                {mode === 'magic' && (loading ? 'Sending magic link...' : 'Send magic link')}
+                {mode === 'otp' && (
+                  otpStep === 'email'
+                    ? (loading ? 'Sending code...' : 'Send code')
+                    : (loading ? 'Verifying...' : 'Verify code')
+                )}
+                {mode === 'password' && (loading ? 'Signing in...' : 'Sign in')}
+              </Button>
+
+              {/* Mode switcher */}
+              {[AUTH_FEATURES.PASSWORD_LOGIN, AUTH_FEATURES.EMAIL_OTP, AUTH_FEATURES.MAGIC_LINK].filter(Boolean).length > 1 && (
+                <div className="flex justify-center gap-1 text-sm text-muted-foreground">
+                  <span>Or sign in with</span>
+                  {[
+                    AUTH_FEATURES.PASSWORD_LOGIN && mode !== 'password' && (
+                      <button
+                        key="password"
+                        type="button"
+                        className="font-medium text-foreground hover:underline underline-offset-4 transition-colors"
+                        onClick={() => { setMode('password'); setOtpStep('email'); setOtpCode(''); }}
+                        disabled={loading}
+                      >
+                        password
+                      </button>
+                    ),
+                    AUTH_FEATURES.EMAIL_OTP && mode !== 'otp' && (
+                      <button
+                        key="otp"
+                        type="button"
+                        className="font-medium text-foreground hover:underline underline-offset-4 transition-colors"
+                        onClick={() => { setMode('otp'); setOtpStep('email'); setOtpCode(''); }}
+                        disabled={loading}
+                      >
+                        email code
+                      </button>
+                    ),
+                    AUTH_FEATURES.MAGIC_LINK && mode !== 'magic' && (
+                      <button
+                        key="magic"
+                        type="button"
+                        className="font-medium text-foreground hover:underline underline-offset-4 transition-colors"
+                        onClick={() => { setMode('magic'); setOtpStep('email'); setOtpCode(''); }}
+                        disabled={loading}
+                      >
+                        magic link
+                      </button>
+                    ),
+                  ].filter(Boolean).reduce((acc: React.ReactNode[], curr, idx, arr) => {
+                    if (idx > 0 && idx < arr.length) acc.push(<span key={`sep-${idx}`}> or </span>);
+                    acc.push(curr);
+                    return acc;
+                  }, [])}
+                </div>
+              )}
+            </form>
+          )}
+
+          {/* Footer */}
+          <div className="space-y-2 pt-2 border-t border-border/60">
             <p className="text-center text-sm text-muted-foreground">
-              Your account works across all apps managed by this system. One login, access everywhere.
+              Your account works across all apps managed by this system.
             </p>
             <p className="text-center text-xs text-muted-foreground">
               New users must be created by an administrator

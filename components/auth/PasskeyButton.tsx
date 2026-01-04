@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { startAuthentication } from '@simplewebauthn/browser';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
+import { debugError, debugLog } from '@/lib/auth-debug';
 
 type PasskeyButtonProps = {
   next?: string;
@@ -93,7 +94,7 @@ export function PasskeyButton({ next = '/', className }: PasskeyButtonProps) {
   const handlePasskeySignIn = async () => {
     try {
       setLoading(true);
-      console.log('[Passkey] Starting authentication...');
+      debugLog('[Passkey] Starting authentication...');
 
       const optionsRes = await fetch('/api/auth/passkey/login/options', {
         method: 'POST',
@@ -109,24 +110,24 @@ export function PasskeyButton({ next = '/', className }: PasskeyButtonProps) {
       const { options, debug } = (await optionsRes.json()) as OptionsResponse;
 
       // Log debug info to help troubleshoot RP ID / origin issues
-      console.log('[Passkey] Server configuration:', debug);
-      console.log('[Passkey] Browser origin:', window.location.origin);
-      console.log('[Passkey] Options received:', { ...options, challenge: '(hidden)' });
+      debugLog('[Passkey] Server configuration:', debug);
+      debugLog('[Passkey] Browser origin:', window.location.origin);
+      debugLog('[Passkey] Options received:', { ...options, challenge: '(hidden)' });
 
       // Attempt WebAuthn authentication - this triggers the browser's passkey prompt
       // Add timeout to prevent hanging indefinitely when no credentials exist
       let authResponse;
       try {
-        console.log('[Passkey] Calling startAuthentication...');
+        debugLog('[Passkey] Calling startAuthentication...');
         authResponse = await withTimeout(
           startAuthentication({ optionsJSON: options }),
           PASSKEY_TIMEOUT_MS,
           'Passkey authentication timed out. No passkeys may be registered for this account.'
         );
-        console.log('[Passkey] Authentication successful');
+        debugLog('[Passkey] Authentication successful');
       } catch (webAuthnError) {
         // Handle WebAuthn-specific errors with user-friendly messages
-        console.error('[Passkey] WebAuthn error:', webAuthnError);
+        debugError('[Passkey] WebAuthn error:', webAuthnError);
         const friendlyMessage = getWebAuthnErrorMessage(webAuthnError);
         throw new Error(friendlyMessage);
       }

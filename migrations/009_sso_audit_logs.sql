@@ -106,3 +106,5 @@ COMMENT ON COLUMN public.sso_audit_logs.event_type IS 'Event classification: sso
 COMMENT ON COLUMN public.sso_audit_logs.redirect_uri_host IS 'Hostname from redirect_uri (sanitized, not full URI)';
 COMMENT ON COLUMN public.sso_audit_logs.metadata IS 'Additional context in JSON format (e.g., error details, request params)';
 
+
+

@@ -34,7 +34,8 @@ export default async function AccountPage() {
   // Fetch passkeys and MFA factors in parallel
   const [passkeysResult, mfaResult] = await Promise.all([
     supabase
-      .from('access_broker_app.passkey_credentials')
+      .schema('access_broker_app')
+      .from('passkey_credentials')
       .select('id,name,created_at,last_used_at,device_type')
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
@@ -48,7 +49,7 @@ export default async function AccountPage() {
     <div className="mx-auto max-w-2xl space-y-6 p-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-semibold">Account</h1>
-        <Link href="/auth/logout">
+        <Link href="/auth/logout" prefetch={false}>
           <Button variant="outline" size="sm">
             <LogOut className="h-4 w-4 mr-2" />
             Sign Out

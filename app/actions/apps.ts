@@ -15,6 +15,9 @@ import { refreshCache, getApps } from '@/lib/apps-service';
 import { revalidatePath } from 'next/cache';
 import type { CreateAppData, UpdateAppData, CreateRoleData, UpdateRoleData, AppConfig } from '@/types/claims';
 
+const SSO_SETTINGS_MISSING_ERROR =
+  'SSO settings columns are missing in your database. Apply migrations/008_sso_app_columns.sql (or run `pnpm migrate`). If you already moved tables to access_broker_app, also apply migrations/010_move_to_access_broker_schema.sql.';
+
 // ============================================================================
 // App Query Actions
 // ============================================================================
@@ -146,7 +149,8 @@ export async function updateAppSSOSettingsAction(
     const allowed_callback_urls = normalizeCallbackUrls(data.allowed_callback_urls);
 
     const { error } = await supabase
-      .from('access_broker_app.apps')
+      .schema('access_broker_app')
+      .from('apps')
       .update({ allowed_callback_urls })
       .eq('id', appId);
 
@@ -154,8 +158,7 @@ export async function updateAppSSOSettingsAction(
       if (error.code === '42703') {
         return {
           data: null,
-          error:
-            'SSO settings columns are missing in your database. Apply migrations/007_auth_and_passkeys.sql (or run `pnpm migrate`) to add allowed_callback_urls and sso_client_secret_hash.',
+          error: SSO_SETTINGS_MISSING_ERROR,
         };
       }
       return { data: null, error: error.message || 'Failed to update SSO settings' };
@@ -188,7 +191,8 @@ export async function generateAppSecretAction(
     const sso_client_secret_hash = createHash('sha256').update(secret, 'utf8').digest('hex');
 
     const { error } = await supabase
-      .from('access_broker_app.apps')
+      .schema('access_broker_app')
+      .from('apps')
       .update({ sso_client_secret_hash })
       .eq('id', appId);
 
@@ -196,8 +200,7 @@ export async function generateAppSecretAction(
       if (error.code === '42703') {
         return {
           data: null,
-          error:
-            'SSO settings columns are missing in your database. Apply migrations/007_auth_and_passkeys.sql (or run `pnpm migrate`) to add allowed_callback_urls and sso_client_secret_hash.',
+          error: SSO_SETTINGS_MISSING_ERROR,
         };
       }
       return { data: null, error: error.message || 'Failed to generate app secret' };

@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
 import { createAuthCode, validateRedirectUri, isRedirectUriAllowed } from '@/lib/sso-service';
 import { logSSOEvent, extractHostname, extractClientIP } from '@/lib/audit-service';
+import { getAppUrl } from '@/lib/app-url';
 
 /** Standard OAuth-style error codes */
 type SSOErrorCode =
@@ -86,6 +87,9 @@ export async function GET(request: Request) {
   const redirectUri = url.searchParams.get('redirect_uri');
   const state = url.searchParams.get('state');
 
+  // Use canonical app URL for redirects (handles reverse proxy scenarios)
+  const appOrigin = getAppUrl();
+
   // Common audit context
   const auditContext = {
     ipAddress: extractClientIP(request) || undefined,
@@ -104,7 +108,7 @@ export async function GET(request: Request) {
       metadata: { reason: 'missing_parameters' },
     });
 
-    const errorUrl = buildErrorPageUrl(url.origin, {
+    const errorUrl = buildErrorPageUrl(appOrigin, {
       error: 'invalid_request',
       errorDescription: 'Missing required parameters: app_id and redirect_uri are required.',
       appId,
@@ -121,7 +125,7 @@ export async function GET(request: Request) {
 
   // User not logged in - redirect to login preserving SSO params
   if (!user) {
-    const loginUrl = new URL('/login', url.origin);
+    const loginUrl = new URL('/login', appOrigin);
     loginUrl.searchParams.set('app_id', appId);
     loginUrl.searchParams.set('redirect_uri', redirectUri);
     if (state) loginUrl.searchParams.set('state', state);
@@ -185,7 +189,7 @@ export async function GET(request: Request) {
     });
 
     // Otherwise, show portal error page
-    const errorUrl = buildErrorPageUrl(url.origin, {
+    const errorUrl = buildErrorPageUrl(appOrigin, {
       error: errorCode,
       errorDescription: message,
       appId,

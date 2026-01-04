@@ -14,6 +14,7 @@ import type {
 
 import { createAdminClient, createClient } from '@/lib/supabase/server';
 import { AUTH_PORTAL, getAuthPortalHostname, getPasskeyRpId } from '@/lib/auth-config';
+import { debugLog } from '@/lib/auth-debug';
 
 function getExpectedOrigin(): string {
   // Must match the browser origin exactly (scheme + host + optional port)
@@ -53,16 +54,19 @@ async function storeChallenge(params: {
   userId?: string | null;
 }): Promise<void> {
   const supabase = await createAdminClient();
-  const { error } = await supabase.from('access_broker_app.passkey_challenges').insert({
-    challenge: params.challenge,
-    type: params.type,
-    user_id: params.userId ?? null,
-  });
+  const { error } = await supabase
+    .schema('access_broker_app')
+    .from('passkey_challenges')
+    .insert({
+      challenge: params.challenge,
+      type: params.type,
+      user_id: params.userId ?? null,
+    });
   if (error) {
     console.error('[Passkey] Failed to store challenge:', error);
     throw error;
   }
-  console.log('[Passkey] Challenge stored for user:', params.userId, 'type:', params.type);
+  debugLog('[Passkey] Challenge stored for user:', params.userId, 'type:', params.type);
 }
 
 async function loadChallenge(params: {
@@ -72,10 +76,11 @@ async function loadChallenge(params: {
 }): Promise<{ id: string; challenge: string; user_id: string | null } | null> {
   const supabase = await createAdminClient();
 
-  console.log('[Passkey] Loading challenge:', { type: params.type, userId: params.userId, now: new Date().toISOString() });
+  debugLog('[Passkey] Loading challenge:', { type: params.type, userId: params.userId, now: new Date().toISOString() });
 
   let q = supabase
-    .from('access_broker_app.passkey_challenges')
+    .schema('access_broker_app')
+    .from('passkey_challenges')
     .select('id,challenge,user_id,expires_at,created_at,type')
     .eq('type', params.type)
     .gt('expires_at', new Date().toISOString())
@@ -89,19 +94,20 @@ async function loadChallenge(params: {
   if (error) {
     console.error('[Passkey] Failed to load challenge:', error);
   }
-  console.log('[Passkey] Challenge lookup result:', data ? { id: data.id, expires_at: data.expires_at } : 'not found');
+  debugLog('[Passkey] Challenge lookup result:', data ? { id: data.id, expires_at: data.expires_at } : 'not found');
   return data ? { id: data.id, challenge: data.challenge, user_id: data.user_id } : null;
 }
 
 async function deleteChallenge(id: string): Promise<void> {
   const supabase = await createAdminClient();
-  await supabase.from('access_broker_app.passkey_challenges').delete().eq('id', id);
+  await supabase.schema('access_broker_app').from('passkey_challenges').delete().eq('id', id);
 }
 
 export async function getUserPasskeys(userId: string): Promise<PasskeyCredentialRow[]> {
   const supabase = await createAdminClient();
   const { data, error } = await supabase
-    .from('access_broker_app.passkey_credentials')
+    .schema('access_broker_app')
+    .from('passkey_credentials')
     .select('*')
     .eq('user_id', userId)
     .order('created_at', { ascending: false });
@@ -180,16 +186,19 @@ export async function verifyRegistrationForCurrentUser(params: {
     const { credential, credentialDeviceType, credentialBackedUp } = verification.registrationInfo;
 
     const supabaseAdmin = await createAdminClient();
-    const insert = await supabaseAdmin.from('access_broker_app.passkey_credentials').insert({
-      user_id: user.id,
-      credential_id: credential.id,
-      public_key: toBase64Url(credential.publicKey),
-      counter: credential.counter,
-      device_type: credentialDeviceType,
-      backed_up: credentialBackedUp,
-      transports: params.response.response.transports || null,
-      name: params.name || null,
-    });
+    const insert = await supabaseAdmin
+      .schema('access_broker_app')
+      .from('passkey_credentials')
+      .insert({
+        user_id: user.id,
+        credential_id: credential.id,
+        public_key: toBase64Url(credential.publicKey),
+        counter: credential.counter,
+        device_type: credentialDeviceType,
+        backed_up: credentialBackedUp,
+        transports: params.response.response.transports || null,
+        name: params.name || null,
+      });
     if (insert.error) throw insert.error;
   }
 
@@ -231,7 +240,8 @@ export async function verifyAuthentication(params: {
 
   const supabaseAdmin = await createAdminClient();
   const { data: keyRow, error: keyErr } = await supabaseAdmin
-    .from('access_broker_app.passkey_credentials')
+    .schema('access_broker_app')
+    .from('passkey_credentials')
     .select('*')
     .eq('credential_id', credentialIdB64Url)
     .maybeSingle();
@@ -262,7 +272,8 @@ export async function verifyAuthentication(params: {
   if (verification.verified) {
     const newCounter = verification.authenticationInfo.newCounter;
     await supabaseAdmin
-      .from('access_broker_app.passkey_credentials')
+      .schema('access_broker_app')
+      .from('passkey_credentials')
       .update({ counter: newCounter, last_used_at: new Date().toISOString() })
       .eq('id', keyRow.id);
   }

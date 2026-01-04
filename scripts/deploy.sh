@@ -254,7 +254,10 @@ sync_env() {
         "$local_env" \
         "${DEPLOY_USER}@${DEPLOY_HOST}:${DEPLOY_PATH}/.env.production"
 
-    success ".env.production synced to remote"
+    # Create symlink for Docker Compose variable substitution
+    $SSH_CMD "cd ${DEPLOY_PATH} && ln -sf .env.production .env"
+
+    success ".env.production synced to remote (symlinked to .env)"
 
     # Show a preview of key settings (without secrets)
     echo ""

@@ -45,7 +45,8 @@ export async function POST(request: Request) {
 
     const supabase = await createAdminClient();
     const { data: appRow, error: appErr } = await supabase
-      .from('access_broker_app.apps')
+      .schema('access_broker_app')
+      .from('apps')
       .select('id,enabled,sso_client_secret_hash')
       .eq('id', appId)
       .maybeSingle();

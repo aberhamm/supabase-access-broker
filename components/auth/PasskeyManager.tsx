@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { debugError, debugLog } from '@/lib/auth-debug';
 
 export type PasskeyItem = {
   id: string;
@@ -37,7 +38,7 @@ export function PasskeyManager({ initialPasskeys, onDelete }: PasskeyManagerProp
   const handleAdd = async () => {
     try {
       setAdding(true);
-      console.log('[Passkey] Starting registration...');
+      debugLog('[Passkey] Starting registration...');
 
       // Check WebAuthn support
       if (!window.PublicKeyCredential) {
@@ -46,7 +47,7 @@ export function PasskeyManager({ initialPasskeys, onDelete }: PasskeyManagerProp
 
       // Check if platform authenticator is available (Touch ID, Face ID, Windows Hello)
       const platformAvailable = await PublicKeyCredential.isUserVerifyingPlatformAuthenticatorAvailable();
-      console.log('[Passkey] Platform authenticator available:', platformAvailable);
+      debugLog('[Passkey] Platform authenticator available:', platformAvailable);
 
       const optsRes = await fetch('/api/auth/passkey/register/options', { method: 'GET' });
       if (!optsRes.ok) {
@@ -55,7 +56,7 @@ export function PasskeyManager({ initialPasskeys, onDelete }: PasskeyManagerProp
       }
 
       const { options } = (await optsRes.json()) as { options: PublicKeyCredentialCreationOptionsJSON };
-      console.log('[Passkey] Got options, calling startRegistration...', { rpId: options.rp.id, origin: window.location.origin });
+      debugLog('[Passkey] Got options, calling startRegistration...', { rpId: options.rp.id, origin: window.location.origin });
 
       // Add timeout to detect if WebAuthn hangs
       const timeoutPromise = new Promise<never>((_, reject) => {
@@ -66,7 +67,7 @@ export function PasskeyManager({ initialPasskeys, onDelete }: PasskeyManagerProp
         startRegistration({ optionsJSON: options }),
         timeoutPromise,
       ]);
-      console.log('[Passkey] Registration response received');
+      debugLog('[Passkey] Registration response received');
 
       const verifyRes = await fetch('/api/auth/passkey/register/verify', {
         method: 'POST',
@@ -86,7 +87,7 @@ export function PasskeyManager({ initialPasskeys, onDelete }: PasskeyManagerProp
       setDeviceName('');
       router.refresh();
     } catch (e) {
-      console.error('[Passkey] Error:', e);
+      debugError('[Passkey] Error:', e);
       const message = e instanceof Error ? e.message : 'Failed to add passkey';
       toast.error(message);
     } finally {

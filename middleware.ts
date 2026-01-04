@@ -1,9 +1,12 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { validateApiKey, recordApiKeyUsage } from '@/lib/api-keys-service';
+import { debugLog, debugWarn, debugTrace, isDebugAuthEnabled } from '@/lib/auth-debug';
+import { PUBLIC_ROUTE_PREFIXES, PORTAL_ROUTE_PREFIXES } from '@/lib/auth-routes';
 
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
+  const debugAuth = isDebugAuthEnabled();
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
@@ -64,15 +67,44 @@ export async function middleware(request: NextRequest) {
       cookies: {
         getAll: () => request.cookies.getAll(),
         setAll: (cookiesToSet) => {
-          cookiesToSet.forEach(({ name, value, options }) =>
+          // Detect if request came over HTTPS (via proxy or direct)
+          // Also check NEXT_PUBLIC_APP_URL as fallback for when proxy doesn't set headers
+          const isSecure = request.headers.get('x-forwarded-proto') === 'https' ||
+            request.nextUrl.protocol === 'https:' ||
+            process.env.NEXT_PUBLIC_APP_URL?.startsWith('https://');
+
+          debugLog('[MIDDLEWARE] setAll called with', cookiesToSet.length, 'cookies');
+          const deleteIntents = cookiesToSet
+            .filter(({ value, options }) =>
+              (value === '' || value === undefined || value === null) ||
+              options?.maxAge === 0 ||
+              (options?.expires ? new Date(options.expires).getTime() <= Date.now() : false)
+            )
+            .map(({ name, value, options }) => ({
+              name,
+              valueLength: value?.length ?? 0,
+              maxAge: options?.maxAge,
+              expires: options?.expires ? new Date(options.expires).toISOString() : undefined,
+              path: options?.path,
+              sameSite: options?.sameSite,
+            }));
+          if (deleteIntents.length > 0) {
+            debugWarn('[MIDDLEWARE] Delete-intent cookies detected:', deleteIntents);
+            debugTrace('[MIDDLEWARE] Delete-intent stack:');
+          }
+          cookiesToSet.forEach(({ name, value, options }) => {
+            debugLog('[MIDDLEWARE] Setting cookie:', name, 'length:', value.length, 'maxAge:', options?.maxAge);
             response.cookies.set(name, value, {
               ...options,
-              httpOnly: true,
-              sameSite: 'lax',
-              path: '/',
-              maxAge: 7 * 24 * 60 * 60, // 7 days
-            })
-          );
+              // Note: NOT using httpOnly so browser client can read auth cookies
+              // This is the standard Supabase SSR pattern
+              sameSite: options?.sameSite ?? 'lax',
+              path: options?.path ?? '/',
+              maxAge: options?.maxAge ?? 7 * 24 * 60 * 60, // 7 days
+              secure: options?.secure ?? isSecure, // Required for HTTPS
+              httpOnly: options?.httpOnly ?? false,
+            });
+          });
         },
       },
     }
@@ -87,7 +119,7 @@ export async function middleware(request: NextRequest) {
 
   // Refreshing the auth token
   const {
-    data: { user },
+    data: { user: verifiedUser },
     error: userError,
   } = await supabase.auth.getUser();
 
@@ -95,67 +127,74 @@ export async function middleware(request: NextRequest) {
     console.error('[MIDDLEWARE] getUser error:', userError.message, userError.code);
   }
 
+  // Fallback: if getUser() fails but session exists, use session user
+  // This can happen when the token is valid but getUser() fails for other reasons
+  const user = verifiedUser || (sessionData?.session?.user ?? null);
+
+  if (!verifiedUser && sessionData?.session?.user) {
+    console.warn('[MIDDLEWARE] Using session user as fallback (getUser failed but session exists)');
+  }
+
   // Debug: Log session vs user mismatch
   if (sessionData?.session && !user) {
-    console.warn('[MIDDLEWARE] Session exists but getUser() returned no user!', {
-      sessionUserId: sessionData.session.user?.id,
-      sessionUserEmail: sessionData.session.user?.email,
+    const session = sessionData.session;
+    const expiresAt = session.expires_at ? new Date(session.expires_at * 1000) : null;
+
+    console.warn('[MIDDLEWARE] Session exists but getUser() returned no user', {
+      tokenExpiresAt: expiresAt?.toISOString(),
+      userError: userError ? { message: userError.message, status: userError.status, code: userError.code } : null,
     });
   }
 
   // Clean up corrupted/invalid auth cookies if session is missing but cookies exist
+  // Be careful not to clear cookies on transient errors - only clear if we got a definitive
+  // "no session" response (not an error)
   const hasAuthCookies = request.cookies.getAll().some(c =>
     c.name.includes('sb-') && c.name.includes('-auth-token')
   );
 
-  if (!user && !sessionData?.session && hasAuthCookies) {
-    console.warn('[MIDDLEWARE] Clearing invalid auth cookies');
-    // Clear the corrupted cookies
-    const cookiesToClear = request.cookies.getAll()
-      .filter(c => c.name.includes('sb-') && (c.name.includes('-auth-token') || c.name.includes('-code-verifier')));
+  // Only clear cookies if:
+  // 1. No user AND no session (both checks passed, not errored)
+  // 2. No session error (if there was an error, the session might be valid but we couldn't verify)
+  // 3. No user error (same reason)
+  const shouldClearCookies = !user && !sessionData?.session && hasAuthCookies &&
+    !sessionError && !userError;
 
-    cookiesToClear.forEach(c => {
-      response.cookies.delete(c.name);
-    });
+  if (shouldClearCookies) {
+    if (debugAuth) {
+      debugWarn('[MIDDLEWARE] Skipping cookie cleanup because DEBUG_AUTH is enabled');
+    } else {
+      debugWarn('[MIDDLEWARE] Clearing invalid auth cookies');
+      const cookiesToClear = request.cookies.getAll()
+        .filter(c => c.name.includes('sb-') && (c.name.includes('-auth-token') || c.name.includes('-code-verifier')));
+      cookiesToClear.forEach(c => {
+        response.cookies.delete(c.name);
+      });
+    }
   }
 
   const pathname = request.nextUrl.pathname;
 
   // Public (no session required)
-  const isPublicRoute =
-    pathname.startsWith('/login') ||
-    pathname.startsWith('/auth/callback') ||
-    pathname.startsWith('/auth/confirm') || // Handle magic link token_hash
-    pathname.startsWith('/auth/logout') ||
-    pathname.startsWith('/reset-password') ||
-    pathname.startsWith('/api/auth/') ||
-    pathname.startsWith('/api/health') ||
-    pathname.startsWith('/demo/'); // Demo pages for SSO testing
+  const isPublicRoute = PUBLIC_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 
   // Authenticated-but-not-admin routes (SSO portal features)
-  const isPortalRoute =
-    pathname.startsWith('/sso/') ||
-    pathname.startsWith('/account') ||
-    pathname.startsWith('/refresh-session') ||
-    pathname.startsWith('/access-denied');
+  const isPortalRoute = PORTAL_ROUTE_PREFIXES.some((prefix) => pathname.startsWith(prefix));
 
-  // Log auth cookies for debugging (names and value lengths, not actual values)
-  const authCookies = request.cookies.getAll()
-    .filter(c => c.name.includes('supabase') || c.name.includes('sb-'))
-    .map(c => ({ name: c.name, valueLength: c.value?.length || 0 }));
+  const authCookieCount = request.cookies.getAll()
+    .filter(c => c.name.includes('supabase') || c.name.includes('sb-')).length;
 
-  console.log('🛡️ [MIDDLEWARE]', {
+  debugLog('[MIDDLEWARE] Request auth state', {
     pathname,
     isPublicRoute,
     hasUser: !!user,
-    userEmail: user?.email,
-    authCookies: authCookies.length > 0 ? authCookies : 'none',
     sessionExists: !!sessionData?.session,
+    authCookieCount,
   });
 
   // If user is not signed in and the current path is not a public route, redirect to /login
   if (!user && !isPublicRoute) {
-    console.log('🔒 [MIDDLEWARE] No user and not public route, redirecting to /login');
+    debugLog('[MIDDLEWARE] No user and not public route, redirecting to /login');
     const url = request.nextUrl.clone();
     url.pathname = '/login';
     // Optional: remember where to return after login
@@ -189,12 +228,12 @@ export async function middleware(request: NextRequest) {
     const hasAdminAccess = isGlobalAdmin || isAppAdmin;
 
     if (hasAdminAccess) {
-      console.log('🔓 [MIDDLEWARE] Admin user already logged in, redirecting to dashboard');
-    const url = request.nextUrl.clone();
-    url.pathname = '/';
+      debugLog('[MIDDLEWARE] Admin user already logged in, redirecting to dashboard');
+      const url = request.nextUrl.clone();
+      url.pathname = '/';
       url.search = '';
-    return NextResponse.redirect(url);
-  }
+      return NextResponse.redirect(url);
+    }
 
     // Non-admins can use the portal routes (SSO/account); keep them on login by default.
   }
@@ -211,23 +250,20 @@ export async function middleware(request: NextRequest) {
 
     const hasAdminAccess = isGlobalAdmin || isAppAdmin;
 
-    console.log('🔐 [MIDDLEWARE] Admin check:', {
+    debugLog('[MIDDLEWARE] Admin check:', {
       isGlobalAdmin,
       isAppAdmin,
       hasAdminAccess,
-      appMetadata: user.app_metadata,
     });
 
     if (!hasAdminAccess) {
-      console.warn('⚠️ [MIDDLEWARE] User lacks admin access, redirecting to /access-denied');
-      console.warn('⚠️ [MIDDLEWARE] User ID:', user.id);
-      console.warn('⚠️ [MIDDLEWARE] User metadata:', JSON.stringify(user.app_metadata, null, 2));
+      console.warn('[MIDDLEWARE] User lacks admin access, redirecting to /access-denied');
       const url = request.nextUrl.clone();
       url.pathname = '/access-denied';
       return NextResponse.redirect(url);
     }
 
-    console.log('✅ [MIDDLEWARE] User has admin access, allowing request');
+    debugLog('[MIDDLEWARE] User has admin access, allowing request');
   }
 
   return response;

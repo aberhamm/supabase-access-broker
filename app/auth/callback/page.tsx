@@ -3,6 +3,7 @@
 import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
+import { debugError, debugLog } from '@/lib/auth-debug';
 
 function AuthCallbackContent() {
   const router = useRouter();
@@ -19,7 +20,7 @@ function AuthCallbackContent() {
       // Check for tokens in the URL hash (implicit flow from magic links)
       const hash = window.location.hash;
       if (hash && hash.includes('access_token')) {
-        console.log('[Auth Callback] Found tokens in hash, setting session...');
+        debugLog('[Auth Callback] Found tokens in hash, setting session...');
         setStatus('Setting up session...');
 
         // Parse the hash to get the access token and refresh token
@@ -34,13 +35,13 @@ function AuthCallbackContent() {
           });
 
           if (error) {
-            console.error('[Auth Callback] Error setting session:', error);
+            debugError('[Auth Callback] Error setting session:', error);
             setStatus('Authentication failed');
             router.push('/login?error=session_failed');
             return;
           }
 
-          console.log('[Auth Callback] Session set successfully');
+          debugLog('[Auth Callback] Session set successfully');
 
           // Check admin access
           const user = data.user;
@@ -61,13 +62,13 @@ function AuthCallbackContent() {
 
       // Handle PKCE flow (code in query params)
       if (code) {
-        console.log('[Auth Callback] Found code, exchanging for session...');
+        debugLog('[Auth Callback] Found code, exchanging for session...');
         setStatus('Exchanging code for session...');
 
         const { error } = await supabase.auth.exchangeCodeForSession(code);
 
         if (error) {
-          console.error('[Auth Callback] Error exchanging code:', error);
+          debugError('[Auth Callback] Error exchanging code:', error);
           setStatus('Authentication failed');
           router.push('/login?error=code_exchange_failed');
           return;
@@ -95,7 +96,7 @@ function AuthCallbackContent() {
       }
 
       // No code or hash tokens - redirect to login
-      console.log('[Auth Callback] No code or tokens found');
+      debugLog('[Auth Callback] No code or tokens found');
       router.push('/login');
     };
 

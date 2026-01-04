@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { generateRegistrationOptionsForCurrentUser, getDefaultPasskeyRpIdDebug } from '@/lib/passkey-service';
 import { createClient } from '@/lib/supabase/server';
+import { debugLog } from '@/lib/auth-debug';
 
 export async function GET() {
   try {
@@ -18,11 +19,11 @@ export async function GET() {
       return NextResponse.json({ error: 'No user session found' }, { status: 401 });
     }
 
-    console.log('[Passkey Register] User authenticated:', user.email);
-    console.log('[Passkey Register] WebAuthn config:', getDefaultPasskeyRpIdDebug());
+    debugLog('[Passkey Register] User authenticated');
+    debugLog('[Passkey Register] WebAuthn config:', getDefaultPasskeyRpIdDebug());
 
     const { options } = await generateRegistrationOptionsForCurrentUser();
-    console.log('[Passkey Register] Generated options with rpId:', options.rp.id);
+    debugLog('[Passkey Register] Generated options with rpId:', options.rp.id);
     return NextResponse.json({ options });
   } catch (e) {
     console.error('[Passkey Register] Full error:', e);

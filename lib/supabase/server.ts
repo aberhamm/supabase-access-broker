@@ -1,6 +1,9 @@
 import { createServerClient } from '@supabase/ssr';
 import { cookies } from 'next/headers';
 
+// Determine if we're in a secure (HTTPS) context based on app URL
+const isSecureContext = process.env.NEXT_PUBLIC_APP_URL?.startsWith('https://') ?? false;
+
 export async function createClient() {
   const cookieStore = await cookies();
 
@@ -23,15 +26,17 @@ export async function createClient() {
         },
         setAll(cookiesToSet) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
+            cookiesToSet.forEach(({ name, value, options }) => {
               cookieStore.set(name, value, {
                 ...options,
-                // Extend cookie expiry to 7 days
-                maxAge: 7 * 24 * 60 * 60, // 7 days in seconds
-                path: '/',
-                sameSite: 'lax',
-              })
-            );
+                maxAge: options?.maxAge ?? 7 * 24 * 60 * 60, // 7 days in seconds
+                path: options?.path ?? '/',
+                sameSite: options?.sameSite ?? 'lax',
+                secure: options?.secure ?? isSecureContext, // Required for HTTPS
+                httpOnly: options?.httpOnly ?? false,
+                // Note: NOT using httpOnly so browser client can read auth cookies
+              });
+            });
           } catch {
             // The `setAll` method was called from a Server Component.
             // This can be ignored if you have middleware refreshing
@@ -66,14 +71,16 @@ export async function createAdminClient() {
         },
         setAll(cookiesToSet) {
           try {
-            cookiesToSet.forEach(({ name, value, options }) =>
+            cookiesToSet.forEach(({ name, value, options }) => {
               cookieStore.set(name, value, {
                 ...options,
-                maxAge: 7 * 24 * 60 * 60, // 7 days
-                path: '/',
-                sameSite: 'lax',
-              })
-            );
+                maxAge: options?.maxAge ?? 7 * 24 * 60 * 60, // 7 days
+                path: options?.path ?? '/',
+                sameSite: options?.sameSite ?? 'lax',
+                secure: options?.secure ?? isSecureContext, // Required for HTTPS
+                httpOnly: options?.httpOnly ?? false,
+              });
+            });
           } catch {
             // The `setAll` method was called from a Server Component.
             // This can be ignored if you have middleware refreshing
