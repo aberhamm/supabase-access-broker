@@ -170,9 +170,15 @@ When you exchange the code (Step 2), you receive:
   "user": {
     "id": "uuid",
     "email": "user@example.com",
-    "email_verified": true,
-    "app_metadata": { ... },
-    "user_metadata": { ... }
+    "connected_accounts": {
+      "telegram": {
+        "id": 123456789,
+        "username": "johndoe",
+        "first_name": "John",
+        "last_name": "Doe",
+        "linked_at": "2024-01-15T10:30:00.000Z"
+      }
+    }
   },
   "app_id": "your-app-id",
   "app_claims": {
@@ -188,6 +194,7 @@ When you exchange the code (Step 2), you receive:
 
 - **`user.id`**: Unique user identifier (use this as your user ID)
 - **`user.email`**: User's email address
+- **`user.connected_accounts.telegram`**: Optional connected account data (null if not linked)
 - **`app_claims.enabled`**: **MUST be `true`** to grant access
 - **`app_claims.role`**: User's role in your app (e.g., `"admin"`, `"user"`)
 - **`app_claims.permissions`**: Array of permission strings

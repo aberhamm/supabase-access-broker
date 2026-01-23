@@ -103,6 +103,7 @@ const res = await fetch('https://auth.yourdomain.com/api/auth/exchange', {
 if (!res.ok) throw new Error(`SSO exchange failed (${res.status})`);
 const payload = await res.json();
 // payload: { user, app_id, app_claims, expires_in }
+// user: { id, email, connected_accounts: { telegram: TelegramData | null } }
 ```
 
 ### A4) Client app: enforce access
@@ -112,6 +113,17 @@ Treat this as the canonical access gate:
 ```ts
 if (payload.app_claims?.enabled !== true) {
   // deny access in the client app
+}
+```
+
+### A5) Client app: consume connected accounts (optional)
+
+Only use the specific connected account fields you need. Example:
+
+```ts
+const telegram = payload.user?.connected_accounts?.telegram ?? null;
+if (telegram) {
+  // Use telegram.id / username / first_name / last_name / linked_at
 }
 ```
 

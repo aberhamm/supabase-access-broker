@@ -124,6 +124,13 @@ export async function POST(request: Request) {
       apps && typeof apps === 'object'
         ? ((apps as Record<string, unknown>)[appId] ?? null)
         : null;
+    const telegram =
+      appMetadata &&
+      typeof appMetadata === 'object' &&
+      'telegram' in (appMetadata as Record<string, unknown>) &&
+      typeof (appMetadata as Record<string, unknown>).telegram === 'object'
+        ? ((appMetadata as Record<string, unknown>).telegram as Record<string, unknown>)
+        : null;
 
     // Log successful exchange
     logSSOEvent({
@@ -134,7 +141,13 @@ export async function POST(request: Request) {
     });
 
     return NextResponse.json({
-      user: { id: user.id, email: user.email },
+      user: {
+        id: user.id,
+        email: user.email,
+        connected_accounts: {
+          telegram,
+        },
+      },
       app_id: appId,
       app_claims: appClaims,
       expires_in: 300,
