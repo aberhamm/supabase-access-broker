@@ -46,37 +46,59 @@ export function SSOSettingsCard({
 
   const secretConfigured = !!app.sso_client_secret_hash;
 
-  const addUrl = () => {
+  const addUrl = async () => {
     try {
       const normalized = normalizeUrl(newUrl);
       if (urls.includes(normalized)) {
         toast.info('That callback URL is already in the allowlist.');
         return;
       }
-      setUrls((prev) => [...prev, normalized]);
+      const newUrls = [...urls, normalized];
+      setUrls(newUrls);
       setNewUrl('');
+
+      // Auto-save immediately
+      setSaving(true);
+      try {
+        const result = await updateAppSSOSettingsAction(app.id, { allowed_callback_urls: newUrls });
+        if (result.error) {
+          toast.error(result.error);
+          setUrls(urls); // Revert on error
+          return;
+        }
+        toast.success('Callback URL added');
+        onUpdated?.();
+      } catch (e) {
+        const err = e as { message?: string };
+        toast.error(err.message || 'Failed to add callback URL');
+        setUrls(urls); // Revert on error
+      } finally {
+        setSaving(false);
+      }
     } catch {
       toast.error('Please enter a valid URL (e.g. https://app.example.com/auth/callback)');
     }
   };
 
-  const removeUrl = (u: string) => {
-    setUrls((prev) => prev.filter((x) => x !== u));
-  };
+  const removeUrl = async (u: string) => {
+    const newUrls = urls.filter((x) => x !== u);
+    setUrls(newUrls);
 
-  const saveUrls = async () => {
+    // Auto-save immediately
     setSaving(true);
     try {
-      const result = await updateAppSSOSettingsAction(app.id, { allowed_callback_urls: urls });
+      const result = await updateAppSSOSettingsAction(app.id, { allowed_callback_urls: newUrls });
       if (result.error) {
         toast.error(result.error);
+        setUrls(urls); // Revert on error
         return;
       }
-      toast.success('SSO callback URLs updated');
+      toast.success('Callback URL removed');
       onUpdated?.();
     } catch (e) {
       const err = e as { message?: string };
-      toast.error(err.message || 'Failed to update callback URLs');
+      toast.error(err.message || 'Failed to remove callback URL');
+      setUrls(urls); // Revert on error
     } finally {
       setSaving(false);
     }
@@ -113,19 +135,14 @@ export function SSOSettingsCard({
   return (
     <div className="space-y-6">
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-          <div className="space-y-1">
-            <CardTitle className="text-base flex items-center gap-2">
-              <Link2 className="h-4 w-4" />
-              Allowed Callback URLs
-            </CardTitle>
-            <p className="text-sm text-muted-foreground">
-              Only these redirect URIs can be used with SSO for <code className="rounded bg-muted px-1">{app.id}</code>.
-            </p>
-          </div>
-          <Button onClick={saveUrls} disabled={saving} variant="default">
-            {saving ? 'Saving...' : 'Save'}
-          </Button>
+        <CardHeader>
+          <CardTitle className="text-base flex items-center gap-2">
+            <Link2 className="h-4 w-4" />
+            Allowed Callback URLs
+          </CardTitle>
+          <p className="text-sm text-muted-foreground">
+            Only these redirect URIs can be used with SSO for <code className="rounded bg-muted px-1">{app.id}</code>.
+          </p>
         </CardHeader>
         <CardContent className="space-y-4">
           <Alert>

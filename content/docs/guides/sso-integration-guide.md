@@ -213,12 +213,60 @@ AuthPortal.login({
   state: 'optional-state-string'
 });
 
-// Later, when logging out
+// Later, when logging out (Single Logout - ends portal session)
 AuthPortal.logout({
   appId: 'your-app-id',
-  redirectUri: 'https://yourapp.com'
+  redirectUri: 'https://yourapp.com/logged-out'
 });
 ```
+
+## Logout Options
+
+When users log out of your app, you have two choices:
+
+### Option 1: Local Logout (Simple)
+
+Clear your app's session only. User stays logged into the portal.
+
+```typescript
+// app/auth/logout/route.ts
+export async function GET() {
+  const cookieStore = await cookies();
+  cookieStore.delete('your-session-cookie');
+  return NextResponse.redirect(new URL('/login', request.url));
+}
+```
+
+**Result:** Quick re-login (no re-authentication needed).
+
+### Option 2: Single Logout / SLO (Full)
+
+Redirect to the portal's logout endpoint to end the central session.
+
+```typescript
+// app/auth/logout/route.ts
+const PORTAL_URL = 'https://auth.yourdomain.com';
+const APP_URL = 'https://yourapp.com';
+
+export async function GET() {
+  const cookieStore = await cookies();
+
+  // 1. Clear local session first
+  cookieStore.delete('your-session-cookie');
+
+  // 2. Redirect to portal logout with callback
+  const logoutUrl = new URL('/auth/logout', PORTAL_URL);
+  logoutUrl.searchParams.set('next', `${APP_URL}/logged-out`);
+
+  return NextResponse.redirect(logoutUrl.toString());
+}
+```
+
+**Result:** User is logged out of portal and all SSO apps.
+
+**Important:** Your callback URL (`https://yourapp.com/logged-out`) must be registered in your app's `allowed_callback_urls`.
+
+> **See also:** [Logout Guide](/docs/authentication/logout-guide) for complete logout documentation including troubleshooting and best practices.
 
 ## Security Best Practices
 

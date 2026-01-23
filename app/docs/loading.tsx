@@ -3,10 +3,21 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function DocsLoadingSkeleton() {
   return (
     <div className="container mx-auto p-6 max-w-7xl">
+      {/* Breadcrumb skeleton */}
+      <div className="flex items-center gap-2 mb-6">
+        <Skeleton className="h-4 w-4" />
+        <Skeleton className="h-4 w-16" />
+        <Skeleton className="h-4 w-4" />
+        <Skeleton className="h-4 w-32" />
+      </div>
+
       {/* Header skeleton */}
-      <div className="mb-8">
-        <Skeleton className="h-10 w-64 mb-2" />
-        <Skeleton className="h-6 w-96" />
+      <div className="mb-8 flex items-center justify-between">
+        <div>
+          <Skeleton className="h-10 w-64 mb-2" />
+          <Skeleton className="h-6 w-96" />
+        </div>
+        <Skeleton className="h-10 w-40" />
       </div>
 
       {/* Tip banner skeleton */}
@@ -29,7 +40,7 @@ export default function DocsLoadingSkeleton() {
                 className="border rounded-lg p-6"
               >
                 <div className="flex items-start gap-3 mb-4">
-                  <Skeleton className="h-10 w-10 rounded-lg flex-shrink-0" />
+                  <Skeleton className="h-10 w-10 rounded-lg shrink-0" />
                   <div className="flex-1 space-y-2">
                     <Skeleton className="h-6 w-3/4" />
                     <div className="flex gap-2">

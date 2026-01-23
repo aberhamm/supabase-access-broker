@@ -76,6 +76,7 @@ export function DashboardNav({ email, showApps = true }: DashboardNavProps) {
                       'gap-2',
                       item.active && 'pointer-events-none'
                     )}
+                    aria-current={item.active ? 'page' : undefined}
                   >
                     <Icon className="h-4 w-4" />
                     {item.label}

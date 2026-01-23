@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -11,7 +12,6 @@ import type { AppConfig } from '@/types/claims';
 
 interface OverviewTabContentProps {
   app: AppConfig;
-  onTabChange?: (tab: string) => void;
 }
 
 interface Stats {
@@ -22,7 +22,8 @@ interface Stats {
   externalKeys: number;
 }
 
-export function OverviewTabContent({ app, onTabChange }: OverviewTabContentProps) {
+export function OverviewTabContent({ app }: OverviewTabContentProps) {
+  const router = useRouter();
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
   const [copied, setCopied] = useState(false);
@@ -91,7 +92,7 @@ export function OverviewTabContent({ app, onTabChange }: OverviewTabContentProps
       <div className="grid gap-4 md:grid-cols-3">
         <Card
           className="cursor-pointer transition-colors hover:bg-muted/50"
-          onClick={() => onTabChange?.('roles')}
+          onClick={() => router.push(`/apps/${app.id}/roles`)}
         >
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -109,7 +110,7 @@ export function OverviewTabContent({ app, onTabChange }: OverviewTabContentProps
 
         <Card
           className="cursor-pointer transition-colors hover:bg-muted/50"
-          onClick={() => onTabChange?.('api-keys')}
+          onClick={() => router.push(`/apps/${app.id}/api-keys`)}
         >
           <CardHeader className="flex flex-row items-center justify-between pb-2">
             <CardTitle className="text-sm font-medium text-muted-foreground">

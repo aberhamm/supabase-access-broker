@@ -8,7 +8,9 @@ export type SSOEventType =
   | 'sso_complete_error'
   | 'sso_complete_redirect_error'
   | 'token_exchange_success'
-  | 'token_exchange_error';
+  | 'token_exchange_error'
+  | 'logout_success'
+  | 'logout_external_redirect';
 
 /**
  * Parameters for logging an SSO audit event

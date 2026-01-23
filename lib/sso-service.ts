@@ -7,6 +7,86 @@ function isAllowedInsecureRedirect(url: URL): boolean {
 }
 
 /**
+ * Result of validating a logout redirect URL
+ */
+export interface LogoutRedirectValidation {
+  allowed: boolean;
+  appId?: string;
+  appName?: string;
+}
+
+/**
+ * Check if a redirect URL is allowed for logout (Single Logout / SLO).
+ * Unlike SSO auth flow which requires a specific app_id, SLO allows any
+ * redirect URL that is registered in ANY enabled app's allowed_callback_urls.
+ *
+ * This supports the flow where an external app redirects users to:
+ *   {portal}/auth/logout?next=https://app.example.com/logged-out
+ *
+ * Security checks:
+ * - URL must be valid and parseable
+ * - Must use HTTPS (except localhost for development)
+ * - Must be in an enabled app's allowed_callback_urls
+ *
+ * Returns information about which app the URL belongs to for audit logging.
+ */
+export async function isLogoutRedirectAllowed(
+  redirectUrl: string
+): Promise<LogoutRedirectValidation> {
+  // Parse and validate the URL
+  let url: URL;
+  try {
+    url = new URL(redirectUrl);
+  } catch {
+    return { allowed: false };
+  }
+
+  // Check protocol (https required, except localhost)
+  if (url.protocol !== 'https:' && !(url.protocol === 'http:' && isAllowedInsecureRedirect(url))) {
+    return { allowed: false };
+  }
+
+  try {
+    const supabase = await createAdminClient();
+
+    // Find any enabled app that has this URL in its allowed_callback_urls
+    // We use a contains query since allowed_callback_urls is a JSONB array
+    const { data, error } = await supabase
+      .schema('access_broker_app')
+      .from('apps')
+      .select('id, name, allowed_callback_urls')
+      .eq('enabled', true)
+      .not('allowed_callback_urls', 'is', null);
+
+    if (error) {
+      console.error('[SLO] Error querying apps for logout redirect validation:', error);
+      return { allowed: false };
+    }
+
+    if (!data || data.length === 0) {
+      return { allowed: false };
+    }
+
+    // Check each app's allowed_callback_urls for the redirect URL
+    for (const app of data) {
+      const allowedUrls = (app.allowed_callback_urls || []) as string[];
+      if (allowedUrls.includes(redirectUrl)) {
+        return {
+          allowed: true,
+          appId: app.id,
+          appName: app.name,
+        };
+      }
+    }
+
+    return { allowed: false };
+  } catch (err) {
+    console.error('[SLO] Exception validating logout redirect:', err);
+    return { allowed: false };
+  }
+}
+
+/**
  * Check if a redirect_uri is allowed for an app WITHOUT throwing errors.
  * Used to determine whether we can safely redirect back to the client on error.
  * Returns true only if the URI is valid, parseable, uses https (or localhost http),

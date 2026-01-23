@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
+import { cn } from '@/lib/utils';
 
 export function SkeletonStats() {
   return (
@@ -15,9 +16,15 @@ export function SkeletonStats() {
   );
 }
 
-export function SkeletonStatsGrid({ count = 4 }: { count?: number }) {
+export function SkeletonStatsGrid({
+  count = 4,
+  className,
+}: {
+  count?: number;
+  className?: string;
+}) {
   return (
-    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+    <div className={cn('grid gap-6 md:grid-cols-2 lg:grid-cols-4', className)}>
       {Array.from({ length: count }).map((_, i) => (
         <SkeletonStats key={i} />
       ))}

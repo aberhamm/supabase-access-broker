@@ -103,10 +103,12 @@ You're setting up the platform for your organization.
 1. **[Quick Start](./getting-started/quick-start.md)** — end-to-end sign-up/sign-in + access gate
 2. **[Complete Integration Guide](./guides/complete-integration-guide.md)** — deeper walkthrough
 3. **[Authentication Guide](./authentication/authentication-guide.md)** — auth patterns (OTP, OAuth, callbacks)
-4. **[Claims Guide](./authorization/claims-guide.md)** — how claims work + constraints
-5. **[Authorization Patterns](./authorization/authorization-patterns.md)** — RBAC/permissions patterns
-6. **[RLS Policies](./authorization/rls-policies.md)** — database security using JWT claims
-7. **[Environment Configuration](./guides/environment-configuration.md)** — production deployment + redirect safety
+4. **[Session Management](./authentication/session-management.md)** — session lifecycle and persistence
+5. **[Logout Guide](./authentication/logout-guide.md)** — internal logout, SSO logout, and Single Logout (SLO)
+6. **[Claims Guide](./authorization/claims-guide.md)** — how claims work + constraints
+7. **[Authorization Patterns](./authorization/authorization-patterns.md)** — RBAC/permissions patterns
+8. **[RLS Policies](./authorization/rls-policies.md)** — database security using JWT claims
+9. **[Environment Configuration](./guides/environment-configuration.md)** — production deployment + redirect safety
 
 ## Reference / Quick copy-paste
 
@@ -117,6 +119,7 @@ You're setting up the platform for your organization.
 ## SSO & Auth Portal
 
 - **[SSO Integration Guide](./guides/sso-integration-guide.md)** — integrate your app with the central auth portal (simple)
+- **[Logout Guide](./authentication/logout-guide.md)** — implement logout for internal apps and SSO clients (SLO)
 - **[Auth Portal (SSO + Passkeys)](./authentication/auth-portal-sso-passkeys.md)** — technical spec (API, DB schema)
 - **[Agent Instructions: Auth Portal](./reference/auth-portal-agent-instructions.md)** — copy/paste tasks for AI agents
 
