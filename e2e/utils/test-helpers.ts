@@ -135,6 +135,7 @@ export async function createTestApp() {
       .update({
         enabled: true,
         allowed_callback_urls: [DEMO_CALLBACK],
+        sso_client_secret_hash: null,
       })
       .eq('id', TEST_APP.id);
 
@@ -150,6 +151,7 @@ export async function createTestApp() {
     color: TEST_APP.color,
     enabled: true,
     allowed_callback_urls: [DEMO_CALLBACK],
+    sso_client_secret_hash: null,
   }).select().single();
 
   if (error) {

@@ -48,7 +48,7 @@ Passkeys (WebAuthn) require the portal origin/RP ID to match. For local dev, `ht
 
 ```env
 # Optional (defaults to NEXT_PUBLIC_APP_URL hostname)
-NEXT_PUBLIC_AUTH_PASSKEY_RP_ID=auth.yourdomain.com
+NEXT_PUBLIC_AUTH_PASSKEY_RP_ID=access-broker.yourdomain.com
 ```
 
 ## Bootstrapping admin access

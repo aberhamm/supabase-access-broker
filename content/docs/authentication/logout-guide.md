@@ -161,7 +161,7 @@ Redirect to the portal's logout endpoint to end the central session.
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 
-const PORTAL_URL = process.env.AUTH_PORTAL_URL || 'https://auth.yourdomain.com';
+const PORTAL_URL = process.env.AUTH_PORTAL_URL || 'https://access-broker.yourdomain.com';
 const YOUR_APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'https://yourapp.com';
 
 export async function GET(request: Request) {

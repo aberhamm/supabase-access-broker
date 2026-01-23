@@ -27,9 +27,9 @@ This repo can act as a **central auth portal** for multiple applications (Option
 Set these on the portal:
 
 ```env
-NEXT_PUBLIC_APP_URL=https://auth.yourdomain.com
+NEXT_PUBLIC_APP_URL=https://access-broker.yourdomain.com
 NEXT_PUBLIC_AUTH_PASSKEYS=true
-NEXT_PUBLIC_AUTH_PASSKEY_RP_ID=auth.yourdomain.com
+NEXT_PUBLIC_AUTH_PASSKEY_RP_ID=access-broker.yourdomain.com
 ```
 
 ### User UX
@@ -44,7 +44,7 @@ NEXT_PUBLIC_AUTH_PASSKEY_RP_ID=auth.yourdomain.com
 Client app redirects user to the portal:
 
 ```
-GET https://auth.yourdomain.com/login?app_id=app1&redirect_uri=https://app1.com/auth/callback&state=xyz
+GET https://access-broker.yourdomain.com/login?app_id=app1&redirect_uri=https://app1.com/auth/callback&state=xyz
 ```
 
 After authentication, the portal completes SSO:
@@ -76,7 +76,7 @@ WHERE id = 'app1';
 Client app backend exchanges the code:
 
 ```
-POST https://auth.yourdomain.com/api/auth/exchange
+POST https://access-broker.yourdomain.com/api/auth/exchange
 Content-Type: application/json
 
 {
@@ -120,9 +120,9 @@ Example usage in a client app:
 
 ```html
 <script>
-  window.__AUTH_PORTAL_URL__ = 'https://auth.yourdomain.com';
+  window.__AUTH_PORTAL_URL__ = 'https://access-broker.yourdomain.com';
 </script>
-<script src="https://auth.yourdomain.com/sdk/auth-portal.js"></script>
+<script src="https://access-broker.yourdomain.com/sdk/auth-portal.js"></script>
 
 <button onclick="AuthPortal.login({ appId: 'app1', redirectUri: 'https://app1.com/auth/callback', state: 'xyz' })">
   Sign in

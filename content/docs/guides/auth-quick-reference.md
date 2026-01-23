@@ -202,7 +202,7 @@ Redirect users to the portal:
 
 ```ts
 // app-side (client): send user to portal login
-const portalUrl = 'https://auth.yourdomain.com';
+const portalUrl = 'https://access-broker.yourdomain.com';
 const appId = 'app1';
 const redirectUri = 'https://app1.com/auth/callback';
 
@@ -214,7 +214,7 @@ Then exchange the returned code:
 
 ```ts
 // app-side (server): exchange code for user info + app claims
-const res = await fetch('https://auth.yourdomain.com/api/auth/exchange', {
+const res = await fetch('https://access-broker.yourdomain.com/api/auth/exchange', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({ code, app_id: 'app1', app_secret: process.env.SSO_APP_SECRET }),

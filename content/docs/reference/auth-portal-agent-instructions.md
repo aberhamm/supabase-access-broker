@@ -50,13 +50,13 @@ NEXT_PUBLIC_AUTH_MAGIC_LINK=true
 Client app must redirect to:
 
 ```
-GET https://AUTH_PORTAL/login?app_id=APP_ID&redirect_uri=CALLBACK_URL&state=OPTIONAL
+GET https://access-broker.yourdomain.com/login?app_id=APP_ID&redirect_uri=CALLBACK_URL&state=OPTIONAL
 ```
 
 Minimal browser snippet:
 
 ```ts
-const portalUrl = 'https://auth.yourdomain.com';
+const portalUrl = 'https://access-broker.yourdomain.com';
 const appId = 'app1';
 const redirectUri = 'https://app1.com/auth/callback';
 
@@ -90,7 +90,7 @@ https://app1.com/auth/callback?code=...&state=...
 In the client app backend, exchange the code:
 
 ```ts
-const res = await fetch('https://auth.yourdomain.com/api/auth/exchange', {
+const res = await fetch('https://access-broker.yourdomain.com/api/auth/exchange', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
   body: JSON.stringify({
@@ -167,8 +167,8 @@ Passkeys are enabled on the portal with:
 
 ```env
 NEXT_PUBLIC_AUTH_PASSKEYS=true
-NEXT_PUBLIC_APP_URL=https://auth.yourdomain.com
-NEXT_PUBLIC_AUTH_PASSKEY_RP_ID=auth.yourdomain.com
+NEXT_PUBLIC_APP_URL=https://access-broker.yourdomain.com
+NEXT_PUBLIC_AUTH_PASSKEY_RP_ID=access-broker.yourdomain.com
 ```
 
 User flows:
@@ -192,9 +192,9 @@ Client app HTML:
 
 ```html
 <script>
-  window.__AUTH_PORTAL_URL__ = 'https://auth.yourdomain.com';
+  window.__AUTH_PORTAL_URL__ = 'https://access-broker.yourdomain.com';
 </script>
-<script src="https://auth.yourdomain.com/sdk/auth-portal.js"></script>
+<script src="https://access-broker.yourdomain.com/sdk/auth-portal.js"></script>
 ```
 
 Usage:
@@ -202,3 +202,49 @@ Usage:
 ```js
 AuthPortal.login({ appId: 'app1', redirectUri: 'https://app1.com/auth/callback', state: 'xyz' });
 ```
+
+## Task E — User lookup API integration
+
+When a client app needs to look up user information by ID, email, or Telegram ID (e.g., when handling webhooks or background jobs), use the `/api/users/lookup` endpoint.
+
+### E1) Client app: call user lookup endpoint
+
+From the client app backend:
+
+```ts
+const response = await fetch('https://access-broker.yourdomain.com/api/users/lookup', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    app_id: process.env.APP_ID,
+    app_secret: process.env.SSO_APP_SECRET,
+    telegram_id: 123456789, // or user_id / email (use exactly one)
+  }),
+});
+
+const data = await response.json();
+// { user: { id, email, connected_accounts }, app_claims }
+```
+
+### E2) Portal implementation
+
+**Endpoint:** `app/api/users/lookup/route.ts`
+
+- Validates app credentials (same as `/api/auth/exchange`)
+- Looks up user via `lookup_user_by_identifier()` SQL function
+- Returns safe user payload with connected accounts
+- Logs audit events: `user_lookup_success` / `user_lookup_error`
+
+**Database function:** `lookup_user_by_identifier(p_user_id, p_email, p_telegram_id)`
+
+- Defined in `migrations/011_user_lookup_function.sql`
+- Returns user data from `auth.users` by any identifier
+- SECURITY DEFINER to access auth schema
+
+**Acceptance criteria (Task E):**
+
+- Endpoint validates app_id and app_secret
+- Supports lookup by user_id, email, or telegram_id (exactly one per request)
+- Returns same safe payload shape as `/api/auth/exchange`
+- Returns 404 if user not found
+- Audit logs all lookup attempts

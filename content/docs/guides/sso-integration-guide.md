@@ -77,7 +77,7 @@ In your app, redirect users to the portal:
 // components/LoginButton.tsx
 export function LoginButton() {
   const handleLogin = () => {
-    const portalUrl = 'https://auth.yourdomain.com';
+    const portalUrl = 'https://access-broker.yourdomain.com';
     const appId = 'your-app-id';
     const callbackUrl = 'https://yourapp.com/auth/callback';
 
@@ -101,7 +101,7 @@ Create a route to receive the auth code:
 // app/auth/callback/route.ts
 import { NextResponse } from 'next/server';
 
-const PORTAL_URL = 'https://auth.yourdomain.com';
+const PORTAL_URL = 'https://access-broker.yourdomain.com';
 const APP_ID = 'your-app-id';
 
 export async function GET(request: Request) {
@@ -207,9 +207,9 @@ For even simpler integration, use the portal's JavaScript SDK:
 ```html
 <!-- In your HTML -->
 <script>
-  window.__AUTH_PORTAL_URL__ = 'https://auth.yourdomain.com';
+  window.__AUTH_PORTAL_URL__ = 'https://access-broker.yourdomain.com';
 </script>
-<script src="https://auth.yourdomain.com/sdk/auth-portal.js"></script>
+<script src="https://access-broker.yourdomain.com/sdk/auth-portal.js"></script>
 ```
 
 ```js
@@ -252,7 +252,7 @@ Redirect to the portal's logout endpoint to end the central session.
 
 ```typescript
 // app/auth/logout/route.ts
-const PORTAL_URL = 'https://auth.yourdomain.com';
+const PORTAL_URL = 'https://access-broker.yourdomain.com';
 const APP_URL = 'https://yourapp.com';
 
 export async function GET() {
@@ -448,6 +448,102 @@ WHERE id = 'your-app-id';
 - Ensure your server clock is synchronized (use NTP)
 - Start a fresh login flow if the code fails
 - Check server logs for timing issues
+
+## User Lookup API
+
+Once a user has authenticated through SSO, your app may need to look up user information later (e.g., when receiving a Telegram message). The portal provides a `/api/users/lookup` endpoint for this purpose.
+
+### Endpoint
+
+**Route:** `POST /api/users/lookup`
+
+**Request:**
+
+```json
+{
+  "app_id": "your-app-id",
+  "app_secret": "your-secret",
+  "user_id": "uuid",           // Option 1: Lookup by user ID
+  "email": "user@example.com", // Option 2: Lookup by email
+  "telegram_id": 123456789     // Option 3: Lookup by Telegram ID
+}
+```
+
+**Note:** Provide exactly **one** lookup identifier. Requests with multiple identifiers return `400`.
+
+**Response:**
+
+```json
+{
+  "user": {
+    "id": "uuid",
+    "email": "user@example.com",
+    "connected_accounts": {
+      "telegram": {
+        "id": 123456789,
+        "username": "johndoe",
+        "first_name": "John",
+        "last_name": "Doe",
+        "linked_at": "2024-01-15T10:30:00.000Z"
+      }
+    }
+  },
+  "app_claims": {
+    "enabled": true,
+    "role": "user",
+    "permissions": ["read", "write"]
+  }
+}
+```
+
+### Usage Example
+
+```typescript
+// When you receive a Telegram message from user ID 123456789
+const response = await fetch('https://access-broker.yourdomain.com/api/users/lookup', {
+  method: 'POST',
+  headers: { 'Content-Type': 'application/json' },
+  body: JSON.stringify({
+    app_id: process.env.APP_ID,
+    app_secret: process.env.SSO_APP_SECRET,
+    telegram_id: 123456789, // from incoming Telegram message
+  }),
+});
+
+if (!response.ok) {
+  throw new Error('User lookup failed');
+}
+
+const data = await response.json();
+// data.user.id is the Supabase user ID
+// data.app_claims tells you their role/permissions in your app
+```
+
+### Use Cases
+
+- **Telegram bots**: Look up which user sent a message via their Telegram ID
+- **Webhook handlers**: Resolve external identifiers (email, Telegram ID) to internal user IDs
+- **Background jobs**: Fetch user details without requiring an active session
+
+### Error Responses
+
+| Status | Error | Description |
+|--------|-------|-------------|
+| 400 | `Missing app_id` | Request missing app_id |
+| 400 | `Missing lookup identifier` | No user_id, email, or telegram_id provided |
+| 400 | `Provide only one lookup identifier` | Multiple identifiers provided |
+| 400 | `Unknown app_id` | App not found in database |
+| 401 | `Missing app_secret` | App requires secret but none provided |
+| 401 | `Invalid app_secret` | Secret doesn't match stored hash |
+| 403 | `App is disabled` | App exists but is disabled |
+| 404 | `User not found` | No user matches the identifier |
+
+### Security Notes
+
+- **Always use app_secret**: Store it securely in your backend environment variables
+- **Never expose in browser**: Call this endpoint only from your server/backend
+- **Check app_claims**: Verify `app_claims.enabled === true` before granting access
+- **Audit logged**: All lookups are logged with app_id and lookup method
 
 ## What's Next
 

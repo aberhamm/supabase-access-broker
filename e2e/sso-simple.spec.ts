@@ -21,6 +21,7 @@ test.describe('SSO Integration - Simplified E2E', () => {
   test.beforeAll(async () => {
     const user = await ensureTestUser();
     testUserId = user.id;
+    await createTestApp();
     // Use existing demo-app, just ensure user has access
     await grantUserAppAccess(testUserId, TEST_APP.id);
   });
