@@ -11,11 +11,44 @@ import {
 } from '@/lib/claims';
 import { revalidatePath } from 'next/cache';
 
+// Input validation constants
+const MAX_UID_LENGTH = 36; // UUID length
+const MAX_CLAIM_NAME_LENGTH = 64;
+const MAX_CLAIM_VALUE_LENGTH = 10000;
+const MAX_APP_ID_LENGTH = 64;
+
+function validateInput(
+  uid: string,
+  claim?: string,
+  value?: string,
+  appId?: string
+): { error: string } | null {
+  if (!uid || uid.length > MAX_UID_LENGTH) {
+    return { error: 'Invalid user ID' };
+  }
+  if (claim !== undefined && (claim.length === 0 || claim.length > MAX_CLAIM_NAME_LENGTH)) {
+    return { error: `Claim name must be between 1 and ${MAX_CLAIM_NAME_LENGTH} characters` };
+  }
+  if (value !== undefined && value.length > MAX_CLAIM_VALUE_LENGTH) {
+    return { error: `Claim value exceeds maximum length of ${MAX_CLAIM_VALUE_LENGTH} characters` };
+  }
+  if (appId !== undefined && (appId.length === 0 || appId.length > MAX_APP_ID_LENGTH)) {
+    return { error: `App ID must be between 1 and ${MAX_APP_ID_LENGTH} characters` };
+  }
+  return null;
+}
+
 export async function setClaimAction(
   uid: string,
   claim: string,
   value: string
 ) {
+  // Validate input lengths
+  const validationError = validateInput(uid, claim, value);
+  if (validationError) {
+    return validationError;
+  }
+
   const supabase = await createClient();
 
   // Verify user is claims_admin
@@ -46,6 +79,12 @@ export async function setClaimAction(
 }
 
 export async function deleteClaimAction(uid: string, claim: string) {
+  // Validate input lengths
+  const validationError = validateInput(uid, claim);
+  if (validationError) {
+    return validationError;
+  }
+
   const supabase = await createClient();
 
   // Verify user is claims_admin
@@ -68,6 +107,12 @@ export async function deleteClaimAction(uid: string, claim: string) {
 }
 
 export async function toggleClaimsAdminAction(uid: string, isAdmin: boolean) {
+  // Validate input lengths
+  const validationError = validateInput(uid);
+  if (validationError) {
+    return validationError;
+  }
+
   const supabase = await createClient();
 
   // Verify current user is claims_admin
@@ -107,6 +152,12 @@ export async function setAppClaimAction(
   claim: string,
   value: string
 ) {
+  // Validate input lengths
+  const validationError = validateInput(uid, claim, value, appId);
+  if (validationError) {
+    return validationError;
+  }
+
   const supabase = await createClient();
 
   // Verify user is app admin or global admin
@@ -154,6 +205,12 @@ export async function deleteAppClaimAction(
   appId: string,
   claim: string
 ) {
+  // Validate input lengths
+  const validationError = validateInput(uid, claim, undefined, appId);
+  if (validationError) {
+    return validationError;
+  }
+
   const supabase = await createClient();
 
   // Verify user is app admin or global admin
@@ -187,6 +244,12 @@ export async function toggleAppAccessAction(
   appId: string,
   enabled: boolean
 ) {
+  // Validate input lengths
+  const validationError = validateInput(uid, undefined, undefined, appId);
+  if (validationError) {
+    return validationError;
+  }
+
   const supabase = await createClient();
 
   // Verify user is app admin or global admin
@@ -226,6 +289,12 @@ export async function setAppRoleAction(
   appId: string,
   role: string
 ) {
+  // Validate input lengths (role uses claim validation)
+  const validationError = validateInput(uid, role, undefined, appId);
+  if (validationError) {
+    return validationError;
+  }
+
   const supabase = await createClient();
 
   // Verify user is app admin or global admin
@@ -259,6 +328,12 @@ export async function toggleAppAdminAction(
   appId: string,
   isAdmin: boolean
 ) {
+  // Validate input lengths
+  const validationError = validateInput(uid, undefined, undefined, appId);
+  if (validationError) {
+    return validationError;
+  }
+
   const supabase = await createClient();
 
   // Only global admins can grant app admin rights
