@@ -4,7 +4,7 @@
 	build up down logs restart clean rebuild health test sync-env-local \
 	prod-up prod-down prod-logs prod-restart prod-rebuild \
 	deploy deploy-remote deploy-init deploy-build deploy-push deploy-start \
-	deploy-restart deploy-sync-env deploy-sync-config deploy-logs deploy-status deploy-ssh \
+	deploy-restart deploy-migrate deploy-sync-env deploy-sync-config deploy-logs deploy-status deploy-ssh \
 	shell nginx-shell nginx-test ps stats backup-env \
 	migrate migrate-status migrate-force
 
@@ -45,6 +45,7 @@ help:
 	@echo "  make deploy-build       - Build image locally only"
 	@echo "  make deploy-push        - Push image to server only"
 	@echo "  make deploy-start       - Start containers on server"
+	@echo "  make deploy-migrate     - Run database migrations (connects to prod DB)"
 	@echo "  make deploy-restart     - Quick restart without rebuilding"
 	@echo "  make deploy-sync-env    - Sync .env.production to server"
 	@echo "  make deploy-sync-config - Sync docker-compose and nginx config"
@@ -163,6 +164,9 @@ deploy-start:
 
 deploy-restart:
 	@./scripts/deploy.sh restart
+
+deploy-migrate:
+	@./scripts/deploy.sh deploy-migrate
 
 deploy-sync-env:
 	@./scripts/deploy.sh sync-env

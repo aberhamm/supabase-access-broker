@@ -371,6 +371,7 @@ Usage: ./scripts/deploy.sh [command]
 Commands:
   deploy        Full deployment (build locally, push, start) [default]
   deploy-remote Full deployment (build on server, faster for slow connections)
+  deploy-migrate Run database migrations (locally, connects to Supabase directly)
   init          First-time server setup
   build         Build image locally only
   build-remote  Build image on server only
@@ -387,6 +388,7 @@ Commands:
 Examples:
   ./scripts/deploy.sh                  # Full deploy (local build)
   ./scripts/deploy.sh deploy-remote    # Full deploy (remote build)
+  ./scripts/deploy.sh deploy-migrate   # Run migrations against prod DB
   ./scripts/deploy.sh sync-env         # Push .env.production to server
   ./scripts/deploy.sh logs app         # Show app logs
   ./scripts/deploy.sh logs nginx       # Show nginx logs
@@ -396,6 +398,33 @@ Configuration:
   Create .env.deploy from .env.deploy.example with your server details.
 
 EOF
+}
+
+# Run database migrations locally (connects directly to Supabase via service role key)
+deploy_migrate() {
+    local env_file="${SCRIPT_DIR}/.env.production"
+
+    if [[ ! -f "$env_file" ]]; then
+        error ".env.production not found"
+        echo "Migrations connect directly to Supabase using credentials from .env.production"
+        exit 1
+    fi
+
+    log "Running database migrations (connecting directly to Supabase)..."
+
+    cd "$SCRIPT_DIR"
+
+    # The migrate script reads .env.production automatically
+    if command -v pnpm >/dev/null 2>&1; then
+        pnpm migrate
+    elif command -v npm >/dev/null 2>&1; then
+        npm run migrate
+    else
+        error "pnpm or npm is required to run migrations"
+        exit 1
+    fi
+
+    success "Migrations completed"
 }
 
 # Main
@@ -436,6 +465,9 @@ main() {
             fi
             build_image_remote
             start_containers
+            ;;
+        deploy-migrate)
+            deploy_migrate
             ;;
         init)
             init_remote
