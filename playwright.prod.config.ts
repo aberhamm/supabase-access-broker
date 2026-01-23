@@ -4,7 +4,7 @@ import dotenv from 'dotenv';
 // Load environment variables
 dotenv.config({ path: '.env.local' });
 
-const PROD_URL = process.env.TEST_APP_URL || 'https://claims-admin.home.arpa';
+const PROD_URL = process.env.TEST_APP_URL || 'https://access-broker.home.arpa';
 
 /**
  * Playwright config for testing against production

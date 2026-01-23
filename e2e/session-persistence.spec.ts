@@ -1,7 +1,7 @@
 import { test, expect, Page, Response } from '@playwright/test';
 
 // Test environment config - can be overridden via env vars
-const APP_URL = process.env.TEST_APP_URL || 'https://claims-admin.home.arpa';
+const APP_URL = process.env.TEST_APP_URL || 'https://access-broker.home.arpa';
 const TEST_USER = {
   email: process.env.TEST_USER_EMAIL || 'test@test.com',
   password: process.env.TEST_USER_PASSWORD || 'test',
