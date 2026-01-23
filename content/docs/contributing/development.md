@@ -59,6 +59,53 @@ The dashboard requires `claims_admin: true` in the user’s claims.
 select set_claim('YOUR-USER-ID', 'claims_admin', 'true');
 ```
 
+## Database Migrations
+
+Migrations are stored in `/migrations/*.sql` and are applied **manually** to the Supabase project.
+
+### How to apply migrations
+
+**Option 1: Supabase SQL Editor**
+1. Open your Supabase project dashboard
+2. Go to SQL Editor
+3. Copy/paste the migration SQL and run it
+
+**Option 2: Supabase MCP (via Cursor/Claude)**
+
+Ask the AI assistant to apply the migration using the Supabase MCP tool:
+
+```
+Apply migrations/XXX_migration_name.sql to prod using the Supabase MCP
+```
+
+**Option 3: `make deploy-migrate` (local)**
+
+Runs `pnpm migrate` locally, connecting directly to Supabase using credentials from `.env.production`. Note: requires migration infrastructure to be set up first (see below).
+
+### Migration tracking (optional)
+
+The `pnpm migrate` script can track applied migrations automatically, but requires a one-time bootstrap:
+
+1. Apply `migrations/000_migration_tracker.sql` via SQL Editor
+2. Create the `exec_sql` helper function:
+
+```sql
+CREATE OR REPLACE FUNCTION public.exec_sql(sql TEXT)
+RETURNS void LANGUAGE plpgsql SECURITY DEFINER SET search_path = public AS $$
+BEGIN EXECUTE sql; END; $$;
+
+REVOKE ALL ON FUNCTION public.exec_sql FROM PUBLIC;
+GRANT EXECUTE ON FUNCTION public.exec_sql TO service_role;
+```
+
+After that, `make deploy-migrate` will work automatically.
+
+### Creating new migrations
+
+1. Create a new file: `migrations/NNN_description.sql` (increment the number)
+2. Add the same SQL to `install.sql` for fresh installations
+3. Apply to prod via one of the methods above
+
 ## Common issues
 
 - **Access denied after login**: you didn’t set `claims_admin`
