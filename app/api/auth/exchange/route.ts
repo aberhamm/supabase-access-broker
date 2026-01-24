@@ -1,5 +1,6 @@
 import crypto from 'crypto';
 import { NextResponse } from 'next/server';
+import { debugLog, debugWarn } from '@/lib/auth-debug';
 import { createAdminClient } from '@/lib/supabase/server';
 import { consumeAuthCode } from '@/lib/sso-service';
 import { logSSOEvent, extractClientIP } from '@/lib/audit-service';
@@ -100,6 +101,11 @@ export async function POST(request: Request) {
 
     const { userId } = await consumeAuthCode({ code, appId });
 
+    debugLog('[SSO Exchange] Auth code consumed', {
+      appId,
+      userId,
+    });
+
     const { data: userData, error: userErr } = await supabase.auth.admin.getUserById(userId);
     if (userErr) throw userErr;
 
@@ -113,6 +119,34 @@ export async function POST(request: Request) {
         ...auditContext,
       });
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
+    }
+
+    debugLog('[SSO Exchange] User resolved', {
+      appId,
+      userId: user.id,
+      email: user.email,
+    });
+
+    if (user.id !== userId) {
+      debugWarn('[SSO Exchange] User ID mismatch after lookup', {
+        appId,
+        expectedUserId: userId,
+        actualUserId: user.id,
+        email: user.email,
+      });
+      logSSOEvent({
+        eventType: 'token_exchange_user_id_mismatch',
+        appId,
+        userId,
+        errorCode: 'user_id_mismatch',
+        ...auditContext,
+        metadata: {
+          expected_user_id: userId,
+          actual_user_id: user.id,
+          email: user.email,
+        },
+      });
+      return NextResponse.json({ error: 'User ID validation failed' }, { status: 500 });
     }
 
     const appMetadata = user.app_metadata as unknown;

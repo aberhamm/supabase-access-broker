@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
+import { debugLog, debugWarn } from '@/lib/auth-debug';
 import { createClient } from '@/lib/supabase/server';
-import { createAuthCode, validateRedirectUri, isRedirectUriAllowed } from '@/lib/sso-service';
+import { createAuthCode, validateRedirectUri, isRedirectUriAllowed, lookupUserByEmail } from '@/lib/sso-service';
 import { logSSOEvent, extractHostname, extractClientIP } from '@/lib/audit-service';
 import { getAppUrl } from '@/lib/app-url';
 
@@ -132,6 +133,16 @@ export async function GET(request: Request) {
     return NextResponse.redirect(loginUrl);
   }
 
+  const sessionUserId = user.id;
+  const sessionEmail = user.email ?? null;
+
+  debugLog('[SSO Complete] Session user resolved', {
+    userId: sessionUserId,
+    email: sessionEmail,
+    appId,
+    redirectUri,
+  });
+
   // Check if redirect_uri is allowed BEFORE proceeding
   // This determines whether we can safely redirect back to the client on error
   const redirectAllowed = await isRedirectUriAllowed({ appId, redirectUri });
@@ -140,8 +151,36 @@ export async function GET(request: Request) {
     // Full validation (will throw with specific error messages)
     await validateRedirectUri({ appId, redirectUri });
 
+    let authUserId = sessionUserId;
+    if (sessionEmail) {
+      const lookup = await lookupUserByEmail(sessionEmail);
+      if (lookup?.id && lookup.id !== sessionUserId) {
+        debugWarn('[SSO Complete] Session user ID mismatch; using email lookup ID', {
+          sessionUserId,
+          lookupUserId: lookup.id,
+          email: sessionEmail,
+        });
+        logSSOEvent({
+          eventType: 'sso_user_id_mismatch',
+          userId: lookup.id,
+          ...auditContext,
+          metadata: {
+            session_user_id: sessionUserId,
+            lookup_user_id: lookup.id,
+            email: sessionEmail,
+          },
+        });
+        authUserId = lookup.id;
+      }
+    } else {
+      debugWarn('[SSO Complete] Session user missing email; using session ID', {
+        userId: sessionUserId,
+        appId,
+      });
+    }
+
     // Create auth code and redirect to client
-    const code = await createAuthCode({ userId: user.id, appId, redirectUri });
+    const code = await createAuthCode({ userId: authUserId, appId, redirectUri });
     const callbackUrl = new URL(redirectUri);
     callbackUrl.searchParams.set('code', code);
     if (state) callbackUrl.searchParams.set('state', state);
@@ -149,7 +188,7 @@ export async function GET(request: Request) {
     // Log success (fire-and-forget)
     logSSOEvent({
       eventType: 'sso_complete_success',
-      userId: user.id,
+      userId: authUserId,
       ...auditContext,
     });
 
