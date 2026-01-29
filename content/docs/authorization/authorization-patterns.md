@@ -126,29 +126,212 @@ export async function GET(request: Request) {
 
 Verify permissions on every request:
 
+**Basic middleware with role check:**
+
 ```typescript
 // middleware.ts
+import { createServerClient } from '@supabase/ssr';
+import { NextResponse, type NextRequest } from 'next/server';
+
 export async function middleware(request: NextRequest) {
-  const supabase = createServerClient(/* ... */);
+  let response = NextResponse.next({
+    request: {
+      headers: request.headers,
+    },
+  });
+
+  const supabase = createServerClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL!,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
+    {
+      cookies: {
+        get(name: string) {
+          return request.cookies.get(name)?.value;
+        },
+        set(name: string, value: string, options: CookieOptions) {
+          request.cookies.set({ name, value, ...options });
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+          response.cookies.set({ name, value, ...options });
+        },
+        remove(name: string, options: CookieOptions) {
+          request.cookies.set({ name, value: '', ...options });
+          response = NextResponse.next({
+            request: {
+              headers: request.headers,
+            },
+          });
+          response.cookies.set({ name, value: '', ...options });
+        },
+      },
+    }
+  );
+
   const { data: { user } } = await supabase.auth.getUser();
-
   const pathname = request.nextUrl.pathname;
-  const isPublicRoute = pathname.startsWith('/login');
 
+  // Public routes
+  const publicRoutes = ['/login', '/signup', '/auth/callback'];
+  const isPublicRoute = publicRoutes.some(route => pathname.startsWith(route));
+
+  // Redirect to login if not authenticated
   if (!user && !isPublicRoute) {
-    return NextResponse.redirect('/login');
+    const redirectUrl = new URL('/login', request.url);
+    redirectUrl.searchParams.set('redirect', pathname);
+    return NextResponse.redirect(redirectUrl);
   }
 
-  // ✅ Check authorization for protected routes
+  // Check authorization for protected routes
   if (user && !isPublicRoute) {
-    const hasAccess = user.app_metadata?.role === 'admin';
+    // Admin routes
+    if (pathname.startsWith('/admin')) {
+      const isAdmin = user.app_metadata?.claims_admin === true;
+      if (!isAdmin) {
+        return NextResponse.redirect(new URL('/access-denied', request.url));
+      }
+    }
 
-    if (!hasAccess) {
-      return NextResponse.redirect('/access-denied');
+    // App-specific routes
+    if (pathname.startsWith('/blog')) {
+      const hasAccess = user.app_metadata?.apps?.['blog-app']?.enabled === true;
+      if (!hasAccess) {
+        return NextResponse.redirect(new URL('/access-denied', request.url));
+      }
     }
   }
 
-  return NextResponse.next();
+  return response;
+}
+
+export const config = {
+  matcher: [
+    '/((?!_next/static|_next/image|favicon.ico|.*\\.(?:svg|png|jpg|jpeg|gif|webp)$).*)',
+  ],
+};
+```
+
+**Advanced middleware with app-specific and role-based routing:**
+
+```typescript
+// middleware.ts
+import { createServerClient } from '@supabase/ssr';
+import { NextResponse, type NextRequest } from 'next/server';
+
+// Define route permissions
+const ROUTE_PERMISSIONS = {
+  '/admin': {
+    requireGlobalAdmin: true,
+  },
+  '/blog/admin': {
+    appId: 'blog-app',
+    requireAppAdmin: true,
+  },
+  '/blog/editor': {
+    appId: 'blog-app',
+    allowedRoles: ['editor', 'admin'],
+  },
+  '/blog/publish': {
+    appId: 'blog-app',
+    requiredPermission: 'publish',
+  },
+} as const;
+
+export async function middleware(request: NextRequest) {
+  // ... (supabase client setup same as above)
+
+  const { data: { user } } = await supabase.auth.getUser();
+  const pathname = request.nextUrl.pathname;
+
+  // Public routes
+  if (pathname.startsWith('/login') || pathname.startsWith('/auth/callback')) {
+    return response;
+  }
+
+  // Must be authenticated
+  if (!user) {
+    const redirectUrl = new URL('/login', request.url);
+    redirectUrl.searchParams.set('redirect', pathname);
+    return NextResponse.redirect(redirectUrl);
+  }
+
+  // Check route-specific permissions
+  for (const [route, permissions] of Object.entries(ROUTE_PERMISSIONS)) {
+    if (pathname.startsWith(route)) {
+      // Check global admin requirement
+      if (permissions.requireGlobalAdmin) {
+        const isGlobalAdmin = user.app_metadata?.claims_admin === true;
+        if (!isGlobalAdmin) {
+          return NextResponse.redirect(new URL('/access-denied', request.url));
+        }
+      }
+
+      // Check app admin requirement
+      if (permissions.requireAppAdmin && permissions.appId) {
+        const isGlobalAdmin = user.app_metadata?.claims_admin === true;
+        const isAppAdmin = user.app_metadata?.apps?.[permissions.appId]?.admin === true;
+
+        if (!isGlobalAdmin && !isAppAdmin) {
+          return NextResponse.redirect(new URL('/access-denied', request.url));
+        }
+      }
+
+      // Check role requirement
+      if (permissions.allowedRoles && permissions.appId) {
+        const userRole = user.app_metadata?.apps?.[permissions.appId]?.role;
+        const hasRole = userRole && permissions.allowedRoles.includes(userRole);
+
+        if (!hasRole) {
+          return NextResponse.redirect(new URL('/access-denied', request.url));
+        }
+      }
+
+      // Note: Permission checks would require fetching role definitions
+      // Better to do those in server components or API routes
+    }
+  }
+
+  return response;
+}
+```
+
+**Middleware with dynamic app detection:**
+
+```typescript
+// middleware.ts
+export async function middleware(request: NextRequest) {
+  // ... (setup)
+
+  const { data: { user } } = await supabase.auth.getUser();
+  const pathname = request.nextUrl.pathname;
+
+  // Extract app ID from URL (e.g., /apps/blog-app/editor)
+  const appMatch = pathname.match(/^\/apps\/([^\/]+)/);
+
+  if (appMatch) {
+    const appId = appMatch[1];
+
+    // Check if user has access to this app
+    const hasAccess = user?.app_metadata?.apps?.[appId]?.enabled === true;
+
+    if (!hasAccess) {
+      return NextResponse.redirect(new URL('/access-denied', request.url));
+    }
+
+    // Check for admin routes within the app
+    if (pathname.includes('/admin')) {
+      const isGlobalAdmin = user?.app_metadata?.claims_admin === true;
+      const isAppAdmin = user?.app_metadata?.apps?.[appId]?.admin === true;
+
+      if (!isGlobalAdmin && !isAppAdmin) {
+        return NextResponse.redirect(new URL('/access-denied', request.url));
+      }
+    }
+  }
+
+  return response;
 }
 ```
 
@@ -619,10 +802,35 @@ USING (
 - Feature-specific access (can_export, can_publish)
 - Custom app requirements
 
+### Admin Types
+
+This system has **three distinct admin concepts**:
+
+1. **`claims_admin`** - Global super-admin (manages everything)
+2. **`apps.{id}.admin`** - App-specific admin (manages one app)
+3. **"admin" role** - Regular role with admin permissions
+
+These are NOT the same thing! See **[Admin Roles and Permissions](/docs/role-management-guide#admin-roles-and-permissions)** for complete details on when to use each.
+
+**Quick example:**
+```typescript
+// Check for global super-admin
+const isGlobalAdmin = user?.app_metadata?.claims_admin === true;
+
+// Check for app-specific admin
+const isAppAdmin = user?.app_metadata?.apps?.['myapp']?.admin === true;
+
+// Check for "admin" role
+const hasAdminRole = user?.app_metadata?.apps?.['myapp']?.role === 'admin';
+
+// These are three different things!
+```
+
 ### Learn More
 
 For complete role management documentation:
 - **[Role Management Guide](/docs/role-management-guide)** - Complete guide to roles
+- **[Admin Roles and Permissions](/docs/role-management-guide#admin-roles-and-permissions)** - Understanding admin types
 - **[Claims Guide](/docs/claims-guide)** - Understanding custom claims
 - **[RLS Policies](/docs/rls-policies)** - Using roles in database security
 

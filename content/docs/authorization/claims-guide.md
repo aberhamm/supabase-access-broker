@@ -82,6 +82,8 @@ select set_claim('YOUR-USER-ID', 'claims_admin', 'true');
 
 Find your user ID in: **Authentication → Users** in the Supabase dashboard.
 
+**Important:** `claims_admin` is a global super-admin flag. For a complete explanation of different admin types (global admin, app admin, and admin roles), see the **[Admin Roles and Permissions](/docs/role-management-guide#admin-roles-and-permissions)** section in the Role Management Guide.
+
 ## Usage
 
 ### In the Dashboard (This App)
@@ -154,6 +156,261 @@ supabase.auth.onAuthStateChange((_event, session) => {
 });
 ```
 
+#### React Hook for Claims
+
+```typescript
+// hooks/useClaims.ts
+'use client';
+
+import { useEffect, useState } from 'react';
+import { createClient } from '@/lib/supabase/client';
+
+export function useClaims() {
+  const [claims, setClaims] = useState<Record<string, any>>({});
+  const [loading, setLoading] = useState(true);
+  const supabase = createClient();
+
+  useEffect(() => {
+    async function loadClaims() {
+      const { data: { user } } = await supabase.auth.getUser();
+      setClaims(user?.app_metadata || {});
+      setLoading(false);
+    }
+
+    loadClaims();
+
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {
+      loadClaims();
+    });
+
+    return () => subscription.unsubscribe();
+  }, [supabase]);
+
+  const getClaim = (claimName: string) => {
+    return claims[claimName];
+  };
+
+  const getAppClaim = (appId: string, claimName: string) => {
+    return claims?.apps?.[appId]?.[claimName];
+  };
+
+  return { claims, getClaim, getAppClaim, loading };
+}
+
+// Usage in component
+export function UserProfile() {
+  const { claims, getClaim, getAppClaim, loading } = useClaims();
+
+  if (loading) return <div>Loading...</div>;
+
+  const userLevel = getClaim('user_level');
+  const blogRole = getAppClaim('blog-app', 'role');
+
+  return (
+    <div>
+      <p>Level: {userLevel}</p>
+      <p>Blog Role: {blogRole}</p>
+    </div>
+  );
+}
+```
+
+#### Conditional Rendering Based on Claims
+
+```typescript
+// components/ClaimGate.tsx
+'use client';
+
+import { useClaims } from '@/hooks/useClaims';
+import { ReactNode } from 'react';
+
+interface ClaimGateProps {
+  claim: string;
+  value: any;
+  operator?: 'equals' | 'greaterThan' | 'lessThan' | 'includes';
+  children: ReactNode;
+  fallback?: ReactNode;
+}
+
+export function ClaimGate({
+  claim,
+  value,
+  operator = 'equals',
+  children,
+  fallback = null
+}: ClaimGateProps) {
+  const { getClaim, loading } = useClaims();
+
+  if (loading) return null;
+
+  const claimValue = getClaim(claim);
+  let hasAccess = false;
+
+  switch (operator) {
+    case 'equals':
+      hasAccess = claimValue === value;
+      break;
+    case 'greaterThan':
+      hasAccess = claimValue > value;
+      break;
+    case 'lessThan':
+      hasAccess = claimValue < value;
+      break;
+    case 'includes':
+      hasAccess = Array.isArray(claimValue) && claimValue.includes(value);
+      break;
+  }
+
+  return hasAccess ? <>{children}</> : <>{fallback}</>;
+}
+
+// Usage
+export function PremiumFeatures() {
+  return (
+    <>
+      {/* Show for users with premium plan */}
+      <ClaimGate claim="plan" value="PREMIUM">
+        <PremiumDashboard />
+      </ClaimGate>
+
+      {/* Show for high-level users */}
+      <ClaimGate claim="user_level" value={100} operator="greaterThan">
+        <AdvancedFeatures />
+      </ClaimGate>
+
+      {/* Show for users with specific permission */}
+      <ClaimGate claim="permissions" value="export" operator="includes">
+        <ExportButton />
+      </ClaimGate>
+    </>
+  );
+}
+```
+
+#### Server Component with Claims
+
+```typescript
+// app/dashboard/page.tsx
+import { createClient } from '@/lib/supabase/server';
+import { redirect } from 'next/navigation';
+
+export default async function DashboardPage() {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+
+  if (!user) {
+    redirect('/login');
+  }
+
+  // Access claims
+  const userLevel = user.app_metadata?.user_level || 0;
+  const plan = user.app_metadata?.plan;
+  const isClaimsAdmin = user.app_metadata?.claims_admin === true;
+
+  return (
+    <div>
+      <h1>Dashboard</h1>
+      <p>Your level: {userLevel}</p>
+      <p>Your plan: {plan}</p>
+
+      {isClaimsAdmin && (
+        <a href="/admin">Admin Panel</a>
+      )}
+
+      {userLevel > 50 && (
+        <div>
+          <h2>Premium Features</h2>
+          {/* Premium content */}
+        </div>
+      )}
+    </div>
+  );
+}
+```
+
+#### Managing Claims from Frontend
+
+```typescript
+// components/ClaimManager.tsx
+'use client';
+
+import { useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { toast } from 'sonner';
+
+export function ClaimManager({ userId }: { userId: string }) {
+  const [claimName, setClaimName] = useState('');
+  const [claimValue, setClaimValue] = useState('');
+  const [saving, setSaving] = useState(false);
+
+  const handleSetClaim = async () => {
+    setSaving(true);
+
+    try {
+      // Parse JSON value
+      const parsedValue = JSON.parse(claimValue);
+
+      const response = await fetch('/api/claims/set', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          userId,
+          claim: claimName,
+          value: parsedValue
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to set claim');
+      }
+
+      toast.success('Claim updated successfully');
+      setClaimName('');
+      setClaimValue('');
+    } catch (error) {
+      toast.error('Failed to set claim. Check JSON format.');
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <div className="space-y-4">
+      <div>
+        <label className="block text-sm font-medium mb-2">
+          Claim Name
+        </label>
+        <Input
+          value={claimName}
+          onChange={(e) => setClaimName(e.target.value)}
+          placeholder="e.g., user_level"
+        />
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium mb-2">
+          Claim Value (JSON)
+        </label>
+        <Input
+          value={claimValue}
+          onChange={(e) => setClaimValue(e.target.value)}
+          placeholder='e.g., 100 or "PREMIUM" or ["read","write"]'
+        />
+      </div>
+
+      <Button
+        onClick={handleSetClaim}
+        disabled={saving || !claimName || !claimValue}
+      >
+        {saving ? 'Saving...' : 'Set Claim'}
+      </Button>
+    </div>
+  );
+}
+```
+
 #### Using RPC Functions
 
 **For Current User:**
@@ -169,6 +426,123 @@ const { data, error } = await supabase.rpc('get_my_claim', {
 
 // Check if I'm an admin
 const { data, error } = await supabase.rpc('is_claims_admin');
+```
+
+#### API Route Examples (Next.js App Router)
+
+**Get user claims:**
+
+```typescript
+// app/api/claims/[userId]/route.ts
+import { createClient } from '@/lib/supabase/server';
+import { NextResponse } from 'next/server';
+
+export async function GET(
+  request: Request,
+  { params }: { params: { userId: string } }
+) {
+  const supabase = await createClient();
+
+  // Verify requester is admin
+  const { data: { user: requester } } = await supabase.auth.getUser();
+  if (!requester?.app_metadata?.claims_admin) {
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 403 }
+    );
+  }
+
+  // Get claims for target user
+  const { data, error } = await supabase.rpc('get_claims', {
+    uid: params.userId
+  });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json(data);
+}
+```
+
+**Set claim:**
+
+```typescript
+// app/api/claims/set/route.ts
+import { createClient } from '@/lib/supabase/server';
+import { NextResponse } from 'next/server';
+
+export async function POST(request: Request) {
+  const supabase = await createClient();
+
+  // Verify requester is admin
+  const { data: { user: requester } } = await supabase.auth.getUser();
+  if (!requester?.app_metadata?.claims_admin) {
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 403 }
+    );
+  }
+
+  const body = await request.json();
+  const { userId, claim, value } = body;
+
+  // Validate input
+  if (!userId || !claim || value === undefined) {
+    return NextResponse.json(
+      { error: 'Missing required fields' },
+      { status: 400 }
+    );
+  }
+
+  // Set claim
+  const { data, error } = await supabase.rpc('set_claim', {
+    uid: userId,
+    claim,
+    value
+  });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
+}
+```
+
+**Delete claim:**
+
+```typescript
+// app/api/claims/delete/route.ts
+import { createClient } from '@/lib/supabase/server';
+import { NextResponse } from 'next/server';
+
+export async function POST(request: Request) {
+  const supabase = await createClient();
+
+  // Verify requester is admin
+  const { data: { user: requester } } = await supabase.auth.getUser();
+  if (!requester?.app_metadata?.claims_admin) {
+    return NextResponse.json(
+      { error: 'Unauthorized' },
+      { status: 403 }
+    );
+  }
+
+  const body = await request.json();
+  const { userId, claim } = body;
+
+  const { data, error } = await supabase.rpc('delete_claim', {
+    uid: userId,
+    claim
+  });
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 });
+  }
+
+  return NextResponse.json({ success: true });
+}
 ```
 
 **For Any User (Requires claims_admin):**
@@ -440,6 +814,8 @@ By default:
 - ✅ SQL Editor can always modify claims
 
 To tighten security (SQL Editor only), edit the `is_claims_admin()` function in `install.sql`.
+
+**Understanding Admin Types:** The system has three distinct admin concepts - `claims_admin` (global), `apps.{id}.admin` (app-specific), and admin roles. See **[Admin Roles and Permissions](/docs/role-management-guide#admin-roles-and-permissions)** for details.
 
 ## Troubleshooting
 
