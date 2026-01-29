@@ -960,9 +960,10 @@ ORDER BY tablename, policyname;
 
 ## Related Documentation
 
-- [CLAIMS_GUIDE.md](/docs/claims-guide) - Understanding custom claims
-- [AUTHENTICATION_GUIDE.md](/docs/authentication-guide) - Setting up authentication
-- [MULTI_APP_GUIDE.md](/docs/multi-app-guide) - Multi-app architecture
+- [Role Management Guide](/docs/role-management-guide) - Database-backed roles and permissions
+- [Claims Guide](/docs/claims-guide) - Understanding custom claims
+- [Authorization Patterns](/docs/authorization-patterns) - Authorization best practices
+- [Multi-App Guide](/docs/multi-app-guide) - Multi-app architecture
 - [PostgreSQL RLS Documentation](https://www.postgresql.org/docs/current/ddl-rowsecurity.html)
 
 ## Summary

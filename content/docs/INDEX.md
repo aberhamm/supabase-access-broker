@@ -75,7 +75,8 @@ You want Supabase Auth with custom claims for authorization.
 
 1. [Quick Start](./getting-started/quick-start.md) — sign up/sign in with app access in 10 minutes
 2. [Claims Guide](./authorization/claims-guide.md) — understand how claims work
-3. [Authorization Patterns](./authorization/authorization-patterns.md) — implement RBAC
+3. [Role Management Guide](./authorization/role-management-guide.md) — define and manage roles
+4. [Authorization Patterns](./authorization/authorization-patterns.md) — implement RBAC
 
 ### Path 2: I have multiple apps sharing one Supabase project
 
@@ -106,9 +107,10 @@ You're setting up the platform for your organization.
 4. **[Session Management](./authentication/session-management.md)** — session lifecycle and persistence
 5. **[Logout Guide](./authentication/logout-guide.md)** — internal logout, SSO logout, and Single Logout (SLO)
 6. **[Claims Guide](./authorization/claims-guide.md)** — how claims work + constraints
-7. **[Authorization Patterns](./authorization/authorization-patterns.md)** — RBAC/permissions patterns
-8. **[RLS Policies](./authorization/rls-policies.md)** — database security using JWT claims
-9. **[Environment Configuration](./guides/environment-configuration.md)** — production deployment + redirect safety
+7. **[Role Management Guide](./authorization/role-management-guide.md)** — database-backed roles and permissions
+8. **[Authorization Patterns](./authorization/authorization-patterns.md)** — RBAC/permissions patterns
+9. **[RLS Policies](./authorization/rls-policies.md)** — database security using JWT claims
+10. **[Environment Configuration](./guides/environment-configuration.md)** — production deployment + redirect safety
 
 ## Reference / Quick copy-paste
 

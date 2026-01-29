@@ -30,6 +30,7 @@ Authorization  = What you can do (permissions)
 - [Common Patterns](#common-patterns)
 - [Implementation Examples](#implementation-examples)
 - [Best Practices](#best-practices)
+- [Database-Backed Roles](#database-backed-roles)
 - [Troubleshooting](#troubleshooting)
 
 ## Overview
@@ -459,6 +460,172 @@ export function getAppRole(user: User | null, appId: string): string | null {
 }
 ```
 
+## Database-Backed Roles
+
+This system includes **database-backed roles** that provide a structured way to define and manage user permissions. Instead of hardcoding roles in your application, you can define roles in the database with permissions and metadata.
+
+### Why Use Database-Backed Roles?
+
+**Traditional Approach (Hardcoded):**
+```typescript
+// Roles defined in code
+const userRole = user?.app_metadata?.role;
+if (userRole === 'admin' || userRole === 'editor') {
+  // Allow access
+}
+```
+
+❌ Must redeploy to add/change roles
+❌ No role metadata or descriptions
+❌ Hard to audit changes
+
+**Database-Backed Approach:**
+```typescript
+// Roles defined in database with permissions
+const roles = await getRoles(appId);
+const userRole = roles.find(r => r.name === user?.app_metadata?.apps?.[appId]?.role);
+
+if (userRole?.permissions.includes('edit')) {
+  // Allow access
+}
+```
+
+✅ Change roles without redeploying
+✅ Store permissions and metadata
+✅ Audit trail with timestamps
+✅ Dynamic role management via dashboard
+
+### Role Structure
+
+Roles are stored in the `roles` table:
+
+```typescript
+interface RoleConfig {
+  id: string;
+  name: string;              // 'editor'
+  label: string;             // 'Content Editor'
+  description?: string;      // 'Can edit and publish content'
+  app_id?: string;           // 'blog-app' or null for global
+  is_global: boolean;        // true for global roles
+  permissions: string[];     // ['read', 'write', 'publish']
+  created_at: string;
+}
+```
+
+### Creating Roles
+
+**Via Dashboard:**
+1. Navigate to Apps → Select App → Roles tab
+2. Click "Create Role"
+3. Define permissions and metadata
+
+**Via SQL:**
+```sql
+SELECT create_role(
+  'content_moderator',           -- name
+  'Content Moderator',           -- label
+  'Can moderate user content',   -- description
+  'forum-app',                   -- app_id
+  false,                         -- is_global
+  '["read", "write", "moderate", "delete"]'::jsonb
+);
+```
+
+**Via TypeScript:**
+```typescript
+import { createRoleAction } from '@/app/actions/apps';
+
+await createRoleAction({
+  name: 'content_moderator',
+  label: 'Content Moderator',
+  description: 'Can moderate user content',
+  app_id: 'forum-app',
+  is_global: false,
+  permissions: ['read', 'write', 'moderate', 'delete']
+});
+```
+
+### Assigning Roles to Users
+
+Roles are assigned via custom claims:
+
+```typescript
+import { setAppRoleAction } from '@/app/actions/claims';
+
+// Assign role to user
+await setAppRoleAction(
+  'user-id',
+  'forum-app',
+  'content_moderator'  // Role name from roles table
+);
+```
+
+This sets the user's claim:
+```json
+{
+  "apps": {
+    "forum-app": {
+      "enabled": true,
+      "role": "content_moderator"
+    }
+  }
+}
+```
+
+### Using Roles in Authorization
+
+**Check role name:**
+```typescript
+const userRole = user?.app_metadata?.apps?.['forum-app']?.role;
+if (userRole === 'content_moderator' || userRole === 'admin') {
+  // Allow moderation
+}
+```
+
+**Check role permissions:**
+```typescript
+import { getRoles } from '@/lib/apps-service';
+
+const roles = await getRoles('forum-app');
+const userRoleName = user?.app_metadata?.apps?.['forum-app']?.role;
+const userRole = roles.find(r => r.name === userRoleName);
+
+if (userRole?.permissions.includes('moderate')) {
+  // Allow moderation
+}
+```
+
+**In RLS policies:**
+```sql
+-- Check role name
+CREATE POLICY "Moderators can delete posts"
+ON forum_posts
+FOR DELETE
+USING (
+  (auth.jwt() -> 'app_metadata' -> 'apps' -> 'forum-app' ->> 'role')
+    IN ('content_moderator', 'admin')
+);
+```
+
+### Global vs App-Specific Roles
+
+**Global Roles** - Available across all apps:
+- Organization-wide roles (employee, contractor)
+- Cross-app permissions (company_admin)
+- Standard access levels (guest, member, premium)
+
+**App-Specific Roles** - Only for specific app:
+- App-unique workflows (blog_editor, forum_moderator)
+- Feature-specific access (can_export, can_publish)
+- Custom app requirements
+
+### Learn More
+
+For complete role management documentation:
+- **[Role Management Guide](/docs/role-management-guide)** - Complete guide to roles
+- **[Claims Guide](/docs/claims-guide)** - Understanding custom claims
+- **[RLS Policies](/docs/rls-policies)** - Using roles in database security
+
 ## Best Practices
 
 ### 1. Defense in Depth
@@ -594,9 +761,9 @@ const { data, error } = await supabase.auth.refreshSession();
 
 ## Next Steps
 
-- [Passwordless Authentication](/docs/passwordless-auth) - Magic link auth
-- [Password Authentication](/docs/password-auth) - Password + reset
-- [RLS Policies](/docs/rls-policies) - Database-level security
+- [Role Management Guide](/docs/role-management-guide) - Database-backed roles and permissions
+- [Claims Guide](/docs/claims-guide) - Understanding custom claims
+- [RLS Policies](/docs/rls-policies) - Database-level security with roles
 - [Authentication Guide](/docs/authentication-guide) - Full auth patterns
 
 ## Additional Resources

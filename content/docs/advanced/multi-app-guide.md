@@ -149,6 +149,28 @@ if (role === 'admin') {
 }
 ```
 
+**Using Database-Backed Roles:**
+
+This system supports database-backed roles with permissions. Instead of hardcoding roles, you can define them in the database:
+
+```typescript
+import { getRoles } from '@/lib/apps-service';
+
+// Get available roles for the app
+const roles = await getRoles('blog-app');
+
+// Find user's role definition
+const userRoleName = user?.app_metadata?.apps?.['blog-app']?.role;
+const userRole = roles.find(r => r.name === userRoleName);
+
+// Check permissions
+if (userRole?.permissions.includes('publish')) {
+  // Show publish button
+}
+```
+
+See the **[Role Management Guide](/docs/role-management-guide)** for complete details on creating and managing roles.
+
 ### Custom Permissions
 
 ```javascript
@@ -455,6 +477,13 @@ await setAppClaimAction(userId, appId, claimKey, value);
 await deleteAppClaimAction(userId, appId, claimKey);
 ```
 
+## Related Documentation
+
+- **[Role Management Guide](/docs/role-management-guide)** - Database-backed roles and permissions
+- **[Claims Guide](/docs/claims-guide)** - Understanding custom claims
+- **[Authorization Patterns](/docs/authorization-patterns)** - Authorization best practices
+- **[RLS Policies](/docs/rls-policies)** - Using roles in Row Level Security
+
 ## Support
 
 For issues or questions:
@@ -463,16 +492,12 @@ For issues or questions:
 3. Check Supabase Auth documentation
 4. Open an issue on GitHub
 
-## License
-
-Same as the main project.
-
 ---
 
 ## What's Next
 
 - **Docs home:** [/docs](/docs)
-- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
+- **Role Management:** [/docs/role-management-guide](/docs/role-management-guide)
 - **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
 - **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
 - **Production config:** [/docs/environment-configuration](/docs/environment-configuration)

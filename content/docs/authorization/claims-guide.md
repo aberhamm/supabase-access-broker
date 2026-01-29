@@ -239,6 +239,129 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 ```
 
+## Working with Roles
+
+### Roles vs Claims
+
+**This system includes database-backed roles** that provide a structured way to manage user permissions:
+
+| Aspect | Roles | Claims |
+|--------|-------|--------|
+| **Storage** | PostgreSQL `roles` table | User's `raw_app_meta_data` |
+| **Purpose** | Define permission templates | Assign permissions to users |
+| **Examples** | Role definitions with permissions | User has `role: "editor"` |
+
+### How Roles Work
+
+**1. Define roles in database:**
+```sql
+-- Create a role with permissions
+SELECT create_role(
+  'editor',              -- name
+  'Content Editor',      -- label
+  'Can edit content',    -- description
+  'blog-app',           -- app_id
+  false,                -- is_global
+  '["read", "write", "publish"]'::jsonb -- permissions
+);
+```
+
+**2. Assign role to user via claims:**
+```sql
+-- Set user's role claim
+SELECT set_app_claim(
+  'user-id'::uuid,
+  'blog-app',
+  'role',
+  '"editor"'::jsonb
+);
+```
+
+**3. Check role in authorization:**
+```typescript
+const userRole = user?.app_metadata?.apps?.['blog-app']?.role;
+if (userRole === 'editor') {
+  // Grant editor access
+}
+```
+
+### Role Types
+
+**Global Roles** - Available across all apps:
+```sql
+SELECT create_role(
+  'employee',
+  'Employee',
+  'Standard employee access',
+  NULL,     -- No app_id = global
+  true,     -- is_global
+  '["read"]'::jsonb
+);
+```
+
+**App-Specific Roles** - Only for specific app:
+```sql
+SELECT create_role(
+  'blog_editor',
+  'Blog Editor',
+  'Can edit blog posts',
+  'blog-app',  -- Specific app
+  false,       -- Not global
+  '["read", "write", "publish"]'::jsonb
+);
+```
+
+### Querying Roles
+
+**Get all roles for an app:**
+```sql
+SELECT * FROM get_app_roles('blog-app');
+```
+
+**Get only global roles:**
+```sql
+SELECT * FROM get_global_roles();
+```
+
+**In TypeScript:**
+```typescript
+import { getRoles, getGlobalRoles } from '@/lib/apps-service';
+
+const roles = await getRoles('blog-app');  // Includes global roles
+const globalOnly = await getGlobalRoles();
+```
+
+### Role-Based Authorization
+
+**Check user's role:**
+```typescript
+// In your app
+const { data: { user } } = await supabase.auth.getUser();
+const userRole = user?.app_metadata?.apps?.['blog-app']?.role;
+
+if (userRole === 'editor' || userRole === 'admin') {
+  // Allow editing
+}
+```
+
+**In RLS policies:**
+```sql
+CREATE POLICY "Editors can update posts"
+ON blog_posts
+FOR UPDATE
+USING (
+  (auth.jwt() -> 'app_metadata' -> 'apps' -> 'blog-app' ->> 'role')
+    IN ('editor', 'admin')
+);
+```
+
+### Learn More
+
+For complete role management documentation, see:
+- **[Role Management Guide](/docs/role-management-guide)** - Complete guide to database-backed roles
+- **[Authorization Patterns](/docs/authorization-patterns)** - Using roles in authorization
+- **[RLS Policies](/docs/rls-policies)** - Role-based database security
+
 ## Querying Users by Claims
 
 Find users with specific claims:
@@ -259,6 +382,10 @@ WHERE (raw_app_meta_data->'userlevel')::numeric > 100;
 ```sql
 SELECT * FROM auth.users
 WHERE (raw_app_meta_data->'userrole')::text = '"MANAGER"';
+
+-- Or for app-specific roles:
+SELECT * FROM auth.users
+WHERE raw_app_meta_data->'apps'->'blog-app'->>'role' = 'editor';
 ```
 
 ## Important Notes
@@ -364,7 +491,7 @@ Your claims data in `auth.users.raw_app_meta_data` will remain intact.
 ## What's Next
 
 - **Docs home:** [/docs](/docs)
-- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
-- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
-- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
+- **Role Management:** [/docs/role-management-guide](/docs/role-management-guide) - Database-backed role system
+- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns) - Authorization best practices
+- **RLS Policies:** [/docs/rls-policies](/docs/rls-policies) - Using claims in Row Level Security
 - **Production config:** [/docs/environment-configuration](/docs/environment-configuration)
