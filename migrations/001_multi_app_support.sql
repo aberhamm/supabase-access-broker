@@ -119,8 +119,8 @@ CREATE OR REPLACE FUNCTION is_app_admin(app_id text) RETURNS "bool"
         return true;
       END IF;
 
-      -- Check if user is admin for the specific app
-      IF coalesce((current_setting('request.jwt.claims', true)::jsonb)->'app_metadata'->'apps'->app_id->>'admin', 'false')::bool THEN
+      -- Check if user is admin for the specific app (role='admin')
+      IF (current_setting('request.jwt.claims', true)::jsonb)->'app_metadata'->'apps'->app_id->>'role' = 'admin' THEN
         return true;
       END IF;
 

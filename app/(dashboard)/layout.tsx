@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { DashboardNav } from '@/components/layout/DashboardNav';
 import { createClient } from '@/lib/supabase/server';
 import { isClaimsAdmin } from '@/lib/claims';
+import { hasAnyAppAdmin } from '@/types/claims';
 
 export default async function DashboardLayout({
   children,
@@ -21,10 +22,8 @@ export default async function DashboardLayout({
 
   const email = user.email || '';
   const isGlobalAdmin = user.app_metadata?.claims_admin === true;
-  const apps = (user.app_metadata?.apps as Record<string, unknown>) || {};
-  const isAppAdmin = Object.values(apps).some(
-    (app) => (app as { admin?: boolean })?.admin === true
-  );
+  const apps = user.app_metadata?.apps;
+  const isAppAdmin = hasAnyAppAdmin(apps);
 
   if (isGlobalAdmin) {
     const { data: isClaimsAdminJwt } = await isClaimsAdmin(supabase);

@@ -380,7 +380,7 @@ CREATE POLICY "Admins can create invites"
       WHERE auth.users.id = auth.uid()
       AND (
         (raw_app_meta_data->>'claims_admin')::boolean = true
-        OR (raw_app_meta_data->'apps'->app_id->>'admin')::boolean = true
+        OR raw_app_meta_data->'apps'->app_id->>'role' = 'admin'
       )
     )
   );

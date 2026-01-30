@@ -4,6 +4,7 @@ import { Suspense, useEffect, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { debugError, debugLog } from '@/lib/auth-debug';
+import { hasAnyAppAdmin } from '@/types/claims';
 
 function AuthCallbackContent() {
   const router = useRouter();
@@ -46,8 +47,8 @@ function AuthCallbackContent() {
           // Check admin access
           const user = data.user;
           const isGlobalAdmin = user?.app_metadata?.claims_admin === true;
-          const apps = (user?.app_metadata?.apps as Record<string, { admin?: boolean }>) || {};
-          const isAppAdmin = Object.values(apps).some((app) => app?.admin === true);
+          const apps = user?.app_metadata?.apps;
+          const isAppAdmin = hasAnyAppAdmin(apps);
 
           if (!isGlobalAdmin && !isAppAdmin) {
             router.push('/access-denied');
@@ -83,8 +84,8 @@ function AuthCallbackContent() {
         // Get user and check admin access
         const { data: { user } } = await supabase.auth.getUser();
         const isGlobalAdmin = user?.app_metadata?.claims_admin === true;
-        const apps = (user?.app_metadata?.apps as Record<string, { admin?: boolean }>) || {};
-        const isAppAdmin = Object.values(apps).some((app) => app?.admin === true);
+        const apps = user?.app_metadata?.apps;
+        const isAppAdmin = hasAnyAppAdmin(apps);
 
         if (!isGlobalAdmin && !isAppAdmin) {
           router.push('/access-denied');

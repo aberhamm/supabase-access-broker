@@ -7,12 +7,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { RefreshCw, CheckCircle2, XCircle, AlertTriangle, Copy, User, LogOut } from 'lucide-react';
 import { toast } from 'sonner';
+import { hasAnyAppAdmin } from '@/types/claims';
 
 type RefreshStatus = 'idle' | 'refreshing' | 'success' | 'no_access' | 'error';
 
 interface AppMetadata {
   claims_admin?: boolean;
-  apps?: Record<string, { admin?: boolean; enabled?: boolean }>;
+  apps?: Record<string, { role?: string; enabled?: boolean }>;
   [key: string]: unknown;
 }
 
@@ -23,9 +24,8 @@ function hasAdminAccess(appMetadata: AppMetadata | null): boolean {
   // Global admin
   if (appMetadata.claims_admin === true) return true;
 
-  // Per-app admin
-  const apps = appMetadata.apps || {};
-  return Object.values(apps).some((app) => app?.admin === true);
+  // Per-app admin (role='admin')
+  return hasAnyAppAdmin(appMetadata.apps);
 }
 
 export default function RefreshSessionPage() {
@@ -165,7 +165,7 @@ export default function RefreshSessionPage() {
               <p className="text-sm text-muted-foreground">
                 Your session was refreshed successfully, but your account still lacks the
                 required <code className="bg-muted px-1 py-0.5 rounded">claims_admin</code>{' '}
-                permission or app-level admin role.
+                permission or app-level admin role (role=&apos;admin&apos;).
               </p>
 
               {userId && (

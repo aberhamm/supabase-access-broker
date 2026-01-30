@@ -255,11 +255,8 @@ USING (
   -- User owns the data
   auth.uid() = user_id
   OR
-  -- User is admin for this app
-  COALESCE(
-    (auth.jwt() -> 'app_metadata' -> 'apps' -> app_id ->> 'admin')::boolean,
-    false
-  ) = true
+  -- User is admin for this app (role='admin')
+  (auth.jwt() -> 'app_metadata' -> 'apps' -> app_id ->> 'role') = 'admin'
   OR
   -- User is global admin
   COALESCE(
@@ -386,8 +383,8 @@ USING (
   (auth.jwt() -> 'app_metadata' -> 'apps' -> app_id -> 'permissions')
     ? 'read'
   OR
-  -- Or if user is admin
-  (auth.jwt() -> 'app_metadata' -> 'apps' -> app_id ->> 'admin')::boolean = true
+  -- Or if user is admin (role='admin')
+  (auth.jwt() -> 'app_metadata' -> 'apps' -> app_id ->> 'role') = 'admin'
 );
 
 -- Users need 'write' permission to modify projects
@@ -899,17 +896,14 @@ SELECT * FROM your_table;
 
 ```sql
 -- Policy: Only app admins and document owners can edit
--- Checks: app_metadata.apps.{app_id}.admin OR owner_id match
+-- Checks: app_metadata.apps.{app_id}.role = 'admin' OR owner_id match
 CREATE POLICY "App admins and owners can edit documents"
 ON documents
 FOR UPDATE
 USING (
   auth.uid() = owner_id
   OR
-  COALESCE(
-    (auth.jwt() -> 'app_metadata' -> 'apps' -> app_id ->> 'admin')::boolean,
-    false
-  ) = true
+  (auth.jwt() -> 'app_metadata' -> 'apps' -> app_id ->> 'role') = 'admin'
 );
 ```
 

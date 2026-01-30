@@ -220,8 +220,8 @@ CREATE OR REPLACE FUNCTION is_app_admin(app_id text) RETURNS "bool"
         return true;
       END IF;
 
-      -- Check if user is admin for the specific app
-      IF coalesce((current_setting('request.jwt.claims', true)::jsonb)->'app_metadata'->'apps'->app_id->>'admin', 'false')::bool THEN
+      -- Check if user is admin for the specific app (role='admin')
+      IF (current_setting('request.jwt.claims', true)::jsonb)->'app_metadata'->'apps'->app_id->>'role' = 'admin' THEN
         return true;
       END IF;
 
@@ -623,10 +623,10 @@ BEGIN
   RETURN QUERY
   SELECT u.id, u.email::TEXT, u.raw_app_meta_data
   FROM auth.users u
-  WHERE 
+  WHERE
     (p_user_id IS NOT NULL AND u.id = p_user_id)
     OR (p_email IS NOT NULL AND lower(u.email) = lower(p_email))
-    OR (p_telegram_id IS NOT NULL AND 
+    OR (p_telegram_id IS NOT NULL AND
         (u.raw_app_meta_data->'telegram'->>'id') IS NOT NULL AND
         (u.raw_app_meta_data->'telegram'->>'id') ~ '^[0-9]+$' AND
         (u.raw_app_meta_data->'telegram'->>'id')::BIGINT = p_telegram_id)
@@ -636,7 +636,7 @@ $$ LANGUAGE plpgsql;
 
 GRANT EXECUTE ON FUNCTION lookup_user_by_identifier TO service_role;
 
-COMMENT ON FUNCTION lookup_user_by_identifier IS 
+COMMENT ON FUNCTION lookup_user_by_identifier IS
   'Looks up a user by user_id, email, or telegram_id. Used by /api/users/lookup endpoint for SSO client apps.';
 
 NOTIFY pgrst, 'reload schema';

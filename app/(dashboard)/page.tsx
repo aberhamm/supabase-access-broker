@@ -7,6 +7,7 @@ import Link from 'next/link';
 import { Users, AppWindow } from 'lucide-react';
 import { redirect } from 'next/navigation';
 import { isClaimsAdmin } from '@/lib/claims';
+import { hasAnyAppAdmin } from '@/types/claims';
 
 // Logout is now handled by /auth/logout route for reliable cookie clearing
 
@@ -22,10 +23,8 @@ export default async function DashboardPage() {
   }
 
   const isGlobalAdmin = user.app_metadata?.claims_admin === true;
-  const apps = (user.app_metadata?.apps as Record<string, unknown>) || {};
-  const isAppAdmin = Object.values(apps).some(
-    (app) => (app as { admin?: boolean })?.admin === true
-  );
+  const apps = user.app_metadata?.apps;
+  const isAppAdmin = hasAnyAppAdmin(apps);
 
   // JWT-based check (what the database RPCs use). This can lag behind user.app_metadata
   // if the admin flag was added after login.

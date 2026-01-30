@@ -2,6 +2,7 @@ import { createClient } from '@/lib/supabase/server';
 import { NextResponse } from 'next/server';
 import { safeNextPath, isPortalPath } from '@/lib/safe-redirect';
 import { debugLog } from '@/lib/auth-debug';
+import { hasAnyAppAdmin } from '@/types/claims';
 
 // Get the base URL for redirects
 function getBaseUrl(request: Request): string {
@@ -91,10 +92,8 @@ export async function GET(request: Request) {
   }
 
   const isGlobalAdmin = user.app_metadata?.claims_admin === true;
-  const apps = user.app_metadata?.apps || {};
-  const isAppAdmin = Object.values(apps).some(
-    (app) => (app as { admin?: boolean })?.admin === true
-  );
+  const apps = user.app_metadata?.apps;
+  const isAppAdmin = hasAnyAppAdmin(apps);
   const hasAdminAccess = isGlobalAdmin || isAppAdmin;
 
   if (!hasAdminAccess) {

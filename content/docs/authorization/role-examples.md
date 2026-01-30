@@ -366,7 +366,8 @@ export default async function AdminUsersPage() {
   }
 
   const isGlobalAdmin = user.app_metadata?.claims_admin === true;
-  const appAdmin = user.app_metadata?.apps?.['hr-app']?.admin === true;
+  const userRole = user.app_metadata?.apps?.['hr-app']?.role;
+  const appAdmin = userRole === 'admin';
 
   if (!isGlobalAdmin && !appAdmin) {
     redirect('/access-denied');

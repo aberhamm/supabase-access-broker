@@ -74,8 +74,7 @@ graph TD
   "apps": {
     "app1": {
       "enabled": true,           // Required: grants access to app1
-      "role": "admin",           // App-specific role
-      "admin": true,             // App-specific admin rights
+      "role": "admin",           // App-specific role (grants dashboard + permissions)
       "permissions": ["read", "write", "delete"],
       "custom_field": "value"
     },
@@ -89,11 +88,10 @@ graph TD
 
 ### Admin Hierarchy
 
-There are three distinct admin concepts in this system:
+There are two distinct admin concepts in this system:
 
-- **`claims_admin`** - Global super-admin
-- **`apps.{app_id}.admin`** - App-specific admin
-- **"admin" role** - Regular role with admin permissions
+- **`claims_admin`** - Global super-admin (full system access)
+- **`role: "admin"`** - App-specific admin (dashboard access + app permissions)
 
 For full definitions, capabilities, and examples, see **[Admin Types and Permissions](/docs/admin-types)**.
 
@@ -393,8 +391,7 @@ export const APPS: AppInfo[] = [
   "apps": {
     "app1": {
       "enabled": true,
-      "role": "manager",
-      "admin": true              // App-specific admin
+      "role": "admin"           // App-specific admin (dashboard + permissions)
     },
     "app2": {
       "enabled": true,
@@ -446,7 +443,7 @@ This user can:
 - JWT tokens cache claims
 
 ### App admin can't see users
-- Verify they have `apps.{app_id}.admin: true`
+- Verify they have `apps.{app_id}.role: "admin"`
 - Check middleware allows app admins
 - Ensure RPC functions are deployed
 

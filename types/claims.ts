@@ -72,7 +72,6 @@ export interface ClaimDistribution {
 export interface AppClaim {
   enabled: boolean;
   role?: string;
-  admin?: boolean;
   permissions?: string[];
   metadata?: Record<string, unknown>;
   [key: string]: unknown;
@@ -81,6 +80,16 @@ export interface AppClaim {
 export interface AppMetadata {
   apps?: Record<string, AppClaim>;
   [key: string]: unknown; // Maintain backward compatibility
+}
+
+// Helper functions for admin checks
+export function isAppAdmin(app: AppClaim | undefined): boolean {
+  return app?.role === 'admin';
+}
+
+export function hasAnyAppAdmin(apps: Record<string, AppClaim> | Record<string, unknown> | undefined): boolean {
+  if (!apps) return false;
+  return Object.values(apps).some((app) => (app as AppClaim)?.role === 'admin');
 }
 
 export interface AppInfo {

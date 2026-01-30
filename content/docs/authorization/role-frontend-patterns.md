@@ -39,7 +39,7 @@ export function useUserRole(appId: string) {
         setUser(user);
         const userRole = user.app_metadata?.apps?.[appId]?.role;
         const globalAdmin = user.app_metadata?.claims_admin === true;
-        const appAdmin = user.app_metadata?.apps?.[appId]?.admin === true;
+        const appAdmin = userRole === 'admin';
 
         setRole(userRole || null);
         setIsAdmin(globalAdmin);
@@ -561,7 +561,7 @@ export function isGlobalAdmin(user: User | null): boolean {
 
 export function isAppAdmin(user: User | null, appId: string): boolean {
   if (isGlobalAdmin(user)) return true;
-  return user?.app_metadata?.apps?.[appId]?.admin === true;
+  return user?.app_metadata?.apps?.[appId]?.role === 'admin';
 }
 
 export function hasRole(user: User | null, appId: string, role: string): boolean {

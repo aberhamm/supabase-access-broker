@@ -8,16 +8,15 @@ order: 3
 
 # Admin Types and Permissions
 
-**Context:** This system has **three distinct admin concepts** that serve different purposes. Understanding the differences is critical for correct authorization.
+**Context:** This system has **two distinct admin concepts** that serve different purposes. Understanding the differences is critical for correct authorization.
 
 ```mermaid
 graph TD
     GlobalAdmin[claims_admin Global Super-Admin] --> AllApps[Manages Everything]
-    AppAdmin[apps.id.admin App Admin] --> OneApp[Manages One App Only]
-    RoleAdmin[role: admin Database Role] --> Features[Power User Features]
+    AppAdmin[role: admin App Admin Role] --> OneApp[Dashboard + App Permissions]
 ```
 
-## The Three Types of Admins
+## The Two Types of Admins
 
 ### 1. Global Super-Admin (`claims_admin`)
 
@@ -57,17 +56,18 @@ SELECT set_claim('user-id'::uuid, 'claims_admin', 'true');
 
 **Security Note:** This is the highest privilege level. Only grant to trusted administrators.
 
-### 2. App-Specific Admin (`apps.{app_id}.admin`)
+### 2. App Admin Role (`apps.{app_id}.role: "admin"`)
 
-**What it is:** A flag that grants admin rights for a specific application only.
+**What it is:** A role that grants BOTH dashboard management rights AND full app permissions for a specific application.
 
-**Location:** `app_metadata.apps.{app_id}.admin: true`
+**Location:** `app_metadata.apps.{app_id}.role: "admin"`
 
 **Powers (for that app only):**
 - ✅ Manage users who have access to their app
 - ✅ View and modify app-specific claims for users
 - ✅ Assign roles to users (for their app)
-- ❌ Cannot grant app admin rights
+- ✅ Full app permissions (admin role permissions)
+- ✅ Access to the dashboard for this app
 - ❌ Cannot manage global claims
 - ❌ Cannot manage other apps
 - ❌ Cannot create/delete apps or roles
@@ -76,10 +76,10 @@ SELECT set_claim('user-id'::uuid, 'claims_admin', 'true');
 
 **How to Grant:**
 ```typescript
-import { toggleAppAdminAction } from '@/app/actions/claims';
+import { setAppRoleAction } from '@/app/actions/claims';
 
-// Grant app admin status
-await toggleAppAdminAction('user-id', 'blog-app', true);
+// Grant app admin role
+await setAppRoleAction('user-id', 'blog-app', 'admin');
 ```
 
 **Example User:**
@@ -89,8 +89,7 @@ await toggleAppAdminAction('user-id', 'blog-app', true);
   "apps": {
     "blog-app": {
       "enabled": true,
-      "role": "editor",
-      "admin": true  // ← App-specific admin for blog-app
+      "role": "admin"  // ← App admin for blog-app (dashboard + permissions)
     },
     "forum-app": {
       "enabled": true,
@@ -101,68 +100,24 @@ await toggleAppAdminAction('user-id', 'blog-app', true);
 ```
 
 **Use Case Example:**
-- Blog app owner can manage blog users
+- Blog app owner can manage blog users in the dashboard
+- Has full admin permissions within the blog app itself
 - Cannot see or manage forum app users
-- Cannot make other users app admins
-
-### 3. Admin Role (Database Role)
-
-**What it is:** A regular role from the `roles` table that happens to be named "admin" (or similar).
-
-**Location:** `roles` table + assigned via `app_metadata.apps.{app_id}.role: "admin"`
-
-**Powers:** Whatever permissions are defined in the role's `permissions` array
-
-**This is NOT a special privilege** - it's just a role name with associated permissions.
-
-**How to Create:**
-```sql
-SELECT create_role(
-  'admin',                    -- Just a name, no special meaning
-  'Administrator',
-  'Full access to blog features',
-  'blog-app',
-  false,
-  '["read", "write", "delete", "publish", "moderate"]'::jsonb
-);
-```
-
-**How to Assign:**
-```typescript
-import { setAppRoleAction } from '@/app/actions/claims';
-
-// Assign "admin" role (just like any other role)
-await setAppRoleAction('user-id', 'blog-app', 'admin');
-```
-
-**Example User:**
-```json
-{
-  "claims_admin": false,
-  "apps": {
-    "blog-app": {
-      "enabled": true,
-      "role": "admin"  // ← Has "admin" role (from roles table)
-      // No "admin: true" flag - not an app admin
-    }
-  }
-}
-```
-
-**Important:** Having `role: "admin"` does NOT make you an app admin! You need `admin: true` for that.
+- Cannot create new apps or modify global settings
 
 ## Comparison Table
 
-| Aspect | `claims_admin` | `apps.{id}.admin` | `role: "admin"` |
-|--------|---------------|-------------------|-----------------|
-| **Type** | Global flag | App-specific flag | Regular role |
-| **Scope** | All apps | One app | One app |
-| **Can manage users** | All users | App users only | No (unless given permission) |
-| **Can create roles** | ✅ Yes | ❌ No | ❌ No |
-| **Can grant app admin** | ✅ Yes | ❌ No | ❌ No |
-| **Access dashboard** | ✅ Full access | ✅ Limited to their app | ❌ No |
-| **Defined in** | Hardcoded system flag | Hardcoded system flag | `roles` table |
-| **Typical use** | Platform admin | App owner | Power user |
+| Aspect | `claims_admin` | `role: "admin"` |
+|--------|---------------|-----------------|
+| **Type** | Global flag | Role assignment |
+| **Scope** | All apps | One app |
+| **Can manage users** | All users | App users only |
+| **Can create roles** | ✅ Yes | ❌ No |
+| **Can grant app admin** | ✅ Yes | ❌ No |
+| **Access dashboard** | ✅ Full access | ✅ Limited to their app |
+| **App permissions** | Determined by app-specific role | Admin permissions |
+| **Defined in** | Hardcoded system flag | `roles` table + assignment |
+| **Typical use** | Platform admin | App owner + power user |
 
 ## Authorization Check Examples
 
@@ -177,7 +132,8 @@ if (isGlobalAdmin) {
 
 **Check for app-specific admin:**
 ```typescript
-const isAppAdmin = user?.app_metadata?.apps?.['blog-app']?.admin === true;
+const userRole = user?.app_metadata?.apps?.['blog-app']?.role;
+const isAppAdmin = userRole === 'admin';
 const isGlobalAdmin = user?.app_metadata?.claims_admin === true;
 
 if (isGlobalAdmin || isAppAdmin) {
@@ -185,12 +141,15 @@ if (isGlobalAdmin || isAppAdmin) {
 }
 ```
 
-**Check for "admin" role:**
+**Using the helper function:**
 ```typescript
-const userRole = user?.app_metadata?.apps?.['blog-app']?.role;
+import { hasAnyAppAdmin } from '@/types/claims';
 
-if (userRole === 'admin') {
-  // Has admin role permissions (from roles table)
+const isGlobalAdmin = user?.app_metadata?.claims_admin === true;
+const isAppAdmin = hasAnyAppAdmin(user?.app_metadata?.apps);
+
+if (isGlobalAdmin || isAppAdmin) {
+  // Has admin access to at least one app
 }
 ```
 
@@ -216,14 +175,11 @@ USING (
     false
   ) = true
   OR
-  -- App-specific admin
-  COALESCE(
-    (auth.jwt() -> 'app_metadata' -> 'apps' -> app_id ->> 'admin')::boolean,
-    false
-  ) = true
+  -- App-specific admin (role='admin')
+  (auth.jwt() -> 'app_metadata' -> 'apps' -> app_id ->> 'role') = 'admin'
 );
 
--- Users with "admin" role can access admin features
+-- Users with admin role have full app permissions
 CREATE POLICY "Admin role can access features"
 ON blog_posts FOR ALL
 USING (
@@ -234,7 +190,7 @@ USING (
 
 ## Combining Admin Types
 
-A user can have multiple admin attributes:
+A user can be a global admin while also having specific roles in apps:
 
 ```json
 {
@@ -242,17 +198,19 @@ A user can have multiple admin attributes:
   "apps": {
     "blog-app": {
       "enabled": true,
-      "role": "admin",    // Has admin role
-      "admin": true       // Also app admin for blog-app
+      "role": "viewer"    // Has viewer role in blog-app
+    },
+    "forum-app": {
+      "enabled": true,
+      "role": "admin"     // Admin role in forum-app
     }
   }
 }
 ```
 
-**Best Practice:** Keep it simple. Usually pick one:
-- **Global admin** → Full system access
-- **App admin** → Manage specific app
-- **Admin role** → App-specific power user
+**Best Practice:** Keep it simple:
+- **Global admin** → Full system access, manages all apps
+- **App admin (role='admin')** → Manages specific app + has full app permissions
 
 ## When to Use Each
 
@@ -262,17 +220,12 @@ A user can have multiple admin attributes:
 - Users who need to manage multiple apps
 - Bootstrap/initial admin users
 
-**Use `apps.{id}.admin` for:**
-- Application owners
+**Use `role: "admin"` for:**
+- Application owners who manage their app
 - Team leads for specific apps
 - Delegated administration
 - Multi-tenant scenarios where app owners manage their users
-
-**Use "admin" role for:**
-- Power users within an app
-- Users with elevated permissions (but not admin rights)
-- Role-based feature access
-- Fine-grained permission control
+- Power users with full app permissions
 
 ## Security Considerations
 
@@ -288,17 +241,21 @@ SELECT email, created_at
 FROM auth.users
 WHERE (raw_app_meta_data->'claims_admin')::bool = true;
 
--- Find app admins for specific app
-SELECT email,
-       raw_app_meta_data->'apps'->'blog-app'->>'role' as role
-FROM auth.users
-WHERE (raw_app_meta_data->'apps'->'blog-app'->>'admin')::bool = true;
-
--- Find users with "admin" role
+-- Find app admins for specific app (role='admin')
 SELECT email,
        raw_app_meta_data->'apps'->'blog-app'->>'role' as role
 FROM auth.users
 WHERE raw_app_meta_data->'apps'->'blog-app'->>'role' = 'admin';
+
+-- Find all users with admin access to any app
+SELECT email,
+       jsonb_object_keys(raw_app_meta_data->'apps') as app_id
+FROM auth.users
+WHERE EXISTS (
+  SELECT 1
+  FROM jsonb_each(raw_app_meta_data->'apps')
+  WHERE value->>'role' = 'admin'
+);
 ```
 
 ## Related Documentation

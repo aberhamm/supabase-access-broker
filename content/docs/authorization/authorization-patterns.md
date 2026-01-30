@@ -279,7 +279,8 @@ export async function middleware(request: NextRequest) {
       // Check app admin requirement
       if (permissions.requireAppAdmin && permissions.appId) {
         const isGlobalAdmin = user.app_metadata?.claims_admin === true;
-        const isAppAdmin = user.app_metadata?.apps?.[permissions.appId]?.admin === true;
+        const userRole = user.app_metadata?.apps?.[permissions.appId]?.role;
+        const isAppAdmin = userRole === 'admin';
 
         if (!isGlobalAdmin && !isAppAdmin) {
           return NextResponse.redirect(new URL('/access-denied', request.url));
@@ -331,7 +332,8 @@ export async function middleware(request: NextRequest) {
     // Check for admin routes within the app
     if (pathname.includes('/admin')) {
       const isGlobalAdmin = user?.app_metadata?.claims_admin === true;
-      const isAppAdmin = user?.app_metadata?.apps?.[appId]?.admin === true;
+      const userRole = user?.app_metadata?.apps?.[appId]?.role;
+      const isAppAdmin = userRole === 'admin';
 
       if (!isGlobalAdmin && !isAppAdmin) {
         return NextResponse.redirect(new URL('/access-denied', request.url));
@@ -812,13 +814,12 @@ USING (
 
 ### Admin Types
 
-This system has **three distinct admin concepts**:
+This system has **two distinct admin concepts**:
 
 1. **`claims_admin`** - Global super-admin (manages everything)
-2. **`apps.{id}.admin`** - App-specific admin (manages one app)
-3. **"admin" role** - Regular role with admin permissions
+2. **`role: "admin"`** - App-specific admin (manages one app + has full app permissions)
 
-These are NOT the same thing. For full details and examples, see **[Admin Types and Permissions](/docs/admin-types)**.
+For full details and examples, see **[Admin Types and Permissions](/docs/admin-types)**.
 
 ### Learn More
 

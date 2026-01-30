@@ -222,7 +222,7 @@ interface RoleConfig {
 
 ## Admin Types and Permissions
 
-This system has three distinct admin concepts (`claims_admin`, `apps.{app_id}.admin`, and the `"admin"` role).
+This system has two distinct admin concepts (`claims_admin` for global super-admins, and `role: "admin"` for app-specific admins).
 For the full definitions, capability matrix, and examples, see **[Admin Types and Permissions](/docs/admin-types)**.
 
 ## Creating Roles

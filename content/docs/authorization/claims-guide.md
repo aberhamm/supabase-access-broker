@@ -839,7 +839,7 @@ By default:
 
 To tighten security (SQL Editor only), edit the `is_claims_admin()` function in `install.sql`.
 
-**Understanding Admin Types:** The system has three distinct admin concepts - `claims_admin` (global), `apps.{id}.admin` (app-specific), and admin roles. See **[Admin Types and Permissions](/docs/admin-types)** for details.
+**Understanding Admin Types:** The system has two distinct admin concepts - `claims_admin` (global super-admin), and `role: "admin"` (app-specific admin with dashboard + app permissions). See **[Admin Types and Permissions](/docs/admin-types)** for details.
 
 ## Troubleshooting
 

@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { validateApiKey, recordApiKeyUsage } from '@/lib/api-keys-service';
 import { debugLog, debugWarn, debugTrace, isDebugAuthEnabled } from '@/lib/auth-debug';
 import { PUBLIC_ROUTE_PREFIXES, PORTAL_ROUTE_PREFIXES } from '@/lib/auth-routes';
+import { hasAnyAppAdmin } from '@/types/claims';
 
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
@@ -221,10 +222,8 @@ export async function middleware(request: NextRequest) {
 
     // Determine admin access for redirect decision
     const isGlobalAdmin = user.app_metadata?.claims_admin === true;
-    const apps = user.app_metadata?.apps || {};
-    const isAppAdmin = Object.values(apps).some(
-      (app) => (app as { admin?: boolean })?.admin === true
-    );
+    const apps = user.app_metadata?.apps;
+    const isAppAdmin = hasAnyAppAdmin(apps);
     const hasAdminAccess = isGlobalAdmin || isAppAdmin;
 
     if (hasAdminAccess) {
@@ -243,10 +242,8 @@ export async function middleware(request: NextRequest) {
     const isGlobalAdmin = user.app_metadata?.claims_admin === true;
 
     // Check if user is admin for any app
-    const apps = user.app_metadata?.apps || {};
-    const isAppAdmin = Object.values(apps).some(
-      (app) => (app as { admin?: boolean })?.admin === true
-    );
+    const apps = user.app_metadata?.apps;
+    const isAppAdmin = hasAnyAppAdmin(apps);
 
     const hasAdminAccess = isGlobalAdmin || isAppAdmin;
 

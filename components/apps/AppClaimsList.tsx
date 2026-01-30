@@ -17,6 +17,7 @@ import { getAppById } from '@/lib/apps-config';
 import { ClaimEditor } from '../claims/ClaimEditor';
 import { DeleteClaimDialog } from '../claims/DeleteClaimDialog';
 import { setAppClaimAction, deleteAppClaimAction } from '@/app/actions/claims';
+import { AppClaim, isAppAdmin } from '@/types/claims';
 
 interface AppClaimsListProps {
   userId: string;
@@ -50,7 +51,7 @@ export function AppClaimsList({ userId, apps }: AppClaimsListProps) {
 
     // Filter out reserved/system app claims
     return Object.entries(appData).filter(
-      ([key]) => !['enabled', 'role', 'admin', 'permissions'].includes(key)
+      ([key]) => !['enabled', 'role', 'permissions'].includes(key)
     );
   };
 
@@ -106,7 +107,7 @@ export function AppClaimsList({ userId, apps }: AppClaimsListProps) {
                   {typeof appData.role === 'string' && appData.role && (
                     <Badge variant="outline">{appData.role}</Badge>
                   )}
-                  {appData.admin === true && (
+                  {isAppAdmin(appData as AppClaim) && (
                     <Badge variant="default">Admin</Badge>
                   )}
                 </div>
