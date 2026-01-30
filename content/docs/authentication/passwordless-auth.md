@@ -3,7 +3,7 @@ title: "Passwordless Authentication (Magic Links)"
 description: "Implement secure passwordless authentication using email magic links"
 category: "authentication"
 audience: "app-developer"
-order: 5
+order: 3
 ---
 
 # Passwordless Authentication (Magic Links)
@@ -726,8 +726,7 @@ analytics.track('user_authenticated', { userId: user.id, method: 'magic_link' })
 
 ## What's Next
 
-- **Docs home:** [/docs](/docs)
-- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
-- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
-- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
-- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)
+- **Auth setup:** [/docs/authentication-guide](/docs/authentication-guide)
+- **Session management:** [/docs/session-management](/docs/session-management)
+- **Logout:** [/docs/logout-guide](/docs/logout-guide)
+- **Authorization:** [/docs/authorization-patterns](/docs/authorization-patterns)

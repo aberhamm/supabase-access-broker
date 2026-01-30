@@ -2,7 +2,7 @@
 title: "API Keys Guide"
 description: "Secure your webhooks and external integrations with app-specific API keys"
 category: "advanced"
-audience: "app-developer"
+audience: "dashboard-admin"
 ---
 
 # API Keys Guide
@@ -377,8 +377,7 @@ Check the webhook endpoint logs or create an issue if you encounter problems not
 
 ## What's Next
 
-- **Docs home:** [/docs](/docs)
-- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
-- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
+- **Complete integration:** [/docs/complete-integration-guide](/docs/complete-integration-guide)
+- **Auth quick reference:** [/docs/auth-quick-reference](/docs/auth-quick-reference)
 - **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
 - **Production config:** [/docs/environment-configuration](/docs/environment-configuration)

@@ -2,7 +2,7 @@
 title: "Installation"
 description: "Install the SQL functions in Supabase and configure your Next.js app for production-safe auth redirects"
 category: "getting-started"
-audience: "app-developer"
+audience: "dashboard-admin"
 order: 3
 ---
 
@@ -77,19 +77,8 @@ Create the app in the admin dashboard, and use the same ID in your Next.js app (
 
 ---
 
-## What’s Next
+## What's Next
 
 - **Next:** [Quick Start](/docs/quick-start)
 - **Authorization:** [Claims Guide](/docs/claims-guide) → [Authorization Patterns](/docs/authorization-patterns)
 - **Production:** [Environment Configuration](/docs/environment-configuration)
-
-
----
-
-## What's Next
-
-- **Docs home:** [/docs](/docs)
-- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
-- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
-- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
-- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)

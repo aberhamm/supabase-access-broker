@@ -10,6 +10,9 @@ order: 1
 
 This guide is for **deploying Supabase Access Broker** (the admin console + auth portal), not for integrating claims into your user-facing app.
 
+**Scope:** Operating the Access Broker app (dashboard + auth portal).
+For client app integration, start with [Authentication Guide](/docs/authentication-guide) or [SSO Integration Guide](/docs/sso-integration-guide).
+
 ## Get Started in 5 Minutes
 
 ### 1) Install dependencies
@@ -51,18 +54,8 @@ Open `http://localhost:3050` and sign in.
 
 ---
 
-## What’s Next
-
-- **Next:** [Dashboard Setup Guide](/docs/setup) — deeper setup, troubleshooting, and production notes.
-- **Implementers:** If you’re integrating auth/claims into your app, start here: [Getting Started Overview](/docs/overview) → [Quick Start](/docs/quick-start).
-
-
----
-
 ## What's Next
 
+- **Dashboard setup:** [Dashboard Setup Guide](/docs/setup)
+- **Getting started:** [Overview](/docs/overview) → [Quick Start](/docs/quick-start)
 - **Docs home:** [/docs](/docs)
-- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
-- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
-- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
-- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)

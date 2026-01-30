@@ -8,6 +8,14 @@ order: 1
 
 # Complete App Integration Guide
 
+**TL;DR:**
+- End-to-end integration for a single app
+- Includes signup, signin, claims, and access checks
+- Use shared patterns for client setup and callbacks
+- Extend with RLS and API keys for production
+
+**Time to read:** 30 minutes | **Prerequisites:** [Quick Start](/docs/quick-start) | **Next steps:** [Authorization Patterns](/docs/authorization-patterns)
+
 **Purpose:** This guide provides complete, step-by-step instructions for integrating Supabase Access Broker into your application. After following this guide, you'll be able to register users to your app, authenticate them via SSO, and manage their claims.
 
 **Target Audience:** Developers integrating their applications with Access Broker (not deploying the broker itself)
@@ -1358,8 +1366,8 @@ For detailed information, see the [API Keys Guide](/docs/api-keys-guide).
 
 ## What's Next
 
-- **Docs home:** [/docs](/docs)
-- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
-- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
-- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
+- **Claims:** [/docs/claims-guide](/docs/claims-guide)
+- **Roles:** [/docs/role-management-guide](/docs/role-management-guide)
+- **RLS policies:** [/docs/rls-policies](/docs/rls-policies)
+- **API keys:** [/docs/api-keys-guide](/docs/api-keys-guide)
 - **Production config:** [/docs/environment-configuration](/docs/environment-configuration)

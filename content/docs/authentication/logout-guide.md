@@ -568,6 +568,6 @@ export function middleware(request: NextRequest) {
 
 ## What's Next
 
-- [Session Management](./session-management.md) - Understanding session lifecycle
-- [SSO Integration Guide](../guides/sso-integration-guide.md) - Complete SSO setup
-- [Security Best Practices](../guides/environment-configuration.md) - Production security
+- [Session Management](/docs/session-management) - Understanding session lifecycle
+- [SSO Integration Guide](/docs/sso-integration-guide) - Complete SSO setup
+- [Environment Configuration](/docs/environment-configuration) - Production security

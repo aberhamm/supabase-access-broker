@@ -8,6 +8,14 @@ order: 1
 
 # Supabase Custom Claims Guide
 
+**TL;DR:**
+- Claims live in `app_metadata` and are included in JWTs
+- Use claims for roles, features, and app access
+- Refresh sessions after changing claims
+- Avoid sensitive or frequently changing data in claims
+
+**Time to read:** 25 minutes | **Prerequisites:** [Installation](/docs/installation) | **Next steps:** [Role Management Guide](/docs/role-management-guide)
+
 ## What are Custom Claims?
 
 Custom Claims are special attributes attached to a user that you can use to control access to portions of your application. They're stored in the `raw_app_meta_data` field of the `auth.users` table and are included in the user's JWT access token.
@@ -36,6 +44,18 @@ Custom claims are stored in the JWT token, making them available to:
 - RLS (Row Level Security) policies
 
 **No database queries needed!** This can eliminate thousands or millions of database calls when checking permissions, especially in RLS policies.
+
+### Claims Flow
+
+```mermaid
+sequenceDiagram
+    Admin->>DB: set_claim user, role, editor
+    User->>Supabase: Login
+    Supabase->>User: JWT with claims
+    User->>App: Request with JWT
+    App->>RLS: Query checks claims in JWT
+    RLS->>App: Filtered results
+```
 
 ### Use Cases
 
@@ -82,7 +102,7 @@ select set_claim('YOUR-USER-ID', 'claims_admin', 'true');
 
 Find your user ID in: **Authentication → Users** in the Supabase dashboard.
 
-**Important:** `claims_admin` is a global super-admin flag. For a complete explanation of different admin types (global admin, app admin, and admin roles), see the **[Admin Roles and Permissions](/docs/role-management-guide#admin-roles-and-permissions)** section in the Role Management Guide.
+**Important:** `claims_admin` is a global super-admin flag. For a complete explanation of different admin types (global admin, app admin, and admin roles), see **[Admin Types and Permissions](/docs/admin-types)**.
 
 ## Usage
 
@@ -106,19 +126,19 @@ select get_claims('03acaa13-7989-45c1-8dfb-6eeb7cf0b92e');
 #### Get a Specific Claim
 
 ```sql
-select get_claim('03acaa13-7989-45c1-8dfb-6eeb7cf0b92e', 'userlevel');
+select get_claim('03acaa13-7989-45c1-8dfb-6eeb7cf0b92e', 'user_level');
 ```
 
 #### Set Claims (Different Types)
 
 **Number:**
 ```sql
-select set_claim('user-id', 'userlevel', '200');
+select set_claim('user-id', 'user_level', '200');
 ```
 
 **String:** (requires double quotes)
 ```sql
-select set_claim('user-id', 'userrole', '"MANAGER"');
+select set_claim('user-id', 'user_role', '"MANAGER"');
 ```
 
 **Boolean:**
@@ -150,7 +170,7 @@ select delete_claim('user-id', 'gamestate');
 supabase.auth.onAuthStateChange((_event, session) => {
   if (session?.user) {
     console.log(session.user.app_metadata); // All custom claims
-    const userLevel = session.user.app_metadata.userlevel;
+    const userLevel = session.user.app_metadata.user_level;
     const isAdmin = session.user.app_metadata.claims_admin;
   }
 });
@@ -421,7 +441,7 @@ const { data, error } = await supabase.rpc('get_my_claims');
 
 // Get a specific claim
 const { data, error } = await supabase.rpc('get_my_claim', {
-  claim: 'userlevel'
+  claim: 'user_level'
 });
 
 // Check if I'm an admin
@@ -556,20 +576,20 @@ const { data, error } = await supabase.rpc('get_claims', {
 // Get specific claim for a user
 const { data, error } = await supabase.rpc('get_claim', {
   uid: 'user-id',
-  claim: 'userlevel'
+  claim: 'user_level'
 });
 
 // Set a claim for a user
 const { data, error } = await supabase.rpc('set_claim', {
   uid: 'user-id',
-  claim: 'userlevel',
+  claim: 'user_level',
   value: 100
 });
 
 // Delete a claim for a user
 const { data, error } = await supabase.rpc('delete_claim', {
   uid: 'user-id',
-  claim: 'userlevel'
+  claim: 'user_level'
 });
 ```
 
@@ -580,13 +600,13 @@ Use claims to control database access:
 #### Only Allow Managers
 
 ```sql
-get_my_claim('userrole') = '"MANAGER"'::jsonb
+get_my_claim('user_role') = '"MANAGER"'::jsonb
 ```
 
 #### Only Allow High-Level Users
 
 ```sql
-coalesce(get_my_claim('userlevel')::numeric, 0) > 100
+coalesce(get_my_claim('user_level')::numeric, 0) > 100
 ```
 
 #### Only Allow Claims Admins
@@ -749,13 +769,13 @@ WHERE (raw_app_meta_data->'claims_admin')::bool = true;
 **Find users with level > 100:**
 ```sql
 SELECT * FROM auth.users
-WHERE (raw_app_meta_data->'userlevel')::numeric > 100;
+WHERE (raw_app_meta_data->'user_level')::numeric > 100;
 ```
 
 **Find users with specific role:**
 ```sql
 SELECT * FROM auth.users
-WHERE (raw_app_meta_data->'userrole')::text = '"MANAGER"';
+WHERE (raw_app_meta_data->'user_role')::text = '"MANAGER"';
 
 -- Or for app-specific roles:
 SELECT * FROM auth.users
@@ -781,7 +801,11 @@ await supabase.auth.refreshSession();
 - `provider` - Used by Supabase Auth
 - `providers` - Used by Supabase Auth
 - `exp` - Reserved by JWT standard
-- `role` - Reserved by Supabase Realtime
+
+✅ **About `role`:**
+- `role` is reserved by Supabase Realtime, not Supabase Auth
+- It's safe to use `role` in `app_metadata` for authorization
+- If you use Supabase Realtime, prefer prefixed names like `myapp_role`
 
 ✅ **Best practice:** Use prefixed names like `myapp_role`, `myapp_level`, etc.
 
@@ -815,7 +839,7 @@ By default:
 
 To tighten security (SQL Editor only), edit the `is_claims_admin()` function in `install.sql`.
 
-**Understanding Admin Types:** The system has three distinct admin concepts - `claims_admin` (global), `apps.{id}.admin` (app-specific), and admin roles. See **[Admin Roles and Permissions](/docs/role-management-guide#admin-roles-and-permissions)** for details.
+**Understanding Admin Types:** The system has three distinct admin concepts - `claims_admin` (global), `apps.{id}.admin` (app-specific), and admin roles. See **[Admin Types and Permissions](/docs/admin-types)** for details.
 
 ## Troubleshooting
 

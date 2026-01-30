@@ -10,6 +10,16 @@ order: 0
 
 Supabase Access Broker provides centralized authentication, authorization, and user management for single or multi-application environments built on Supabase.
 
+Not sure where to start? Choose your documentation track below.
+
+## Three Documentation Tracks
+
+**[Integrator](/docs/integrator)** — Connect your app to Access Broker for SSO and claims-based authorization
+
+**[Operator](/docs/operator)** — Deploy and manage the Access Broker platform for your organization
+
+**[Concepts](/docs/concepts)** — Understand authentication, authorization, claims, and roles
+
 ## Do I need this?
 
 **Answer these questions first:**
@@ -65,34 +75,39 @@ See [Supabase Auth Docs](https://supabase.com/docs/guides/auth) for the official
 
 You can use **just the SQL functions** without the dashboard, or deploy the **full platform**.
 
+## System Overview
+
+```mermaid
+graph LR
+    User[User] --> Portal[Auth Portal SSO]
+    User --> App[Your App]
+    Portal --> Supabase[Supabase Auth]
+    App --> Supabase
+    Supabase --> JWT[JWT with Claims]
+    JWT --> RLS[Database RLS]
+```
+
 ---
 
 ## Choose your path
 
-### Path 1: I want auth + claims in my Next.js app (single app)
+### Path 1: I want to integrate my app with Access Broker
 
-You want Supabase Auth with custom claims for authorization.
+You want to connect your application to Access Broker for SSO and claims-based authorization.
 
-1. [Quick Start](./getting-started/quick-start.md) — sign up/sign in with app access in 10 minutes
-2. [Claims Guide](./authorization/claims-guide.md) — understand how claims work
-3. [Role Management Guide](./authorization/role-management-guide.md) — define and manage roles
-4. [Authorization Patterns](./authorization/authorization-patterns.md) — implement RBAC
+**→ [Start with the Integrator Track](/docs/integrator)**
 
-### Path 2: I have multiple apps sharing one Supabase project
+### Path 2: I want to deploy and manage Access Broker
 
-You want centralized auth with per-app permissions.
+You're setting up and operating the Access Broker platform for your organization.
 
-1. [Multi-App Guide](./advanced/multi-app-guide.md) — architecture overview
-2. [SSO Integration Guide](./guides/sso-integration-guide.md) — connect apps to central auth
-3. [Complete Integration Guide](./guides/complete-integration-guide.md) — full implementation
+**→ [Start with the Operator Track](/docs/operator)**
 
-### Path 3: I want to deploy the Access Broker (admin dashboard + auth portal)
+### Path 3: I want to understand the fundamentals first
 
-You're setting up the platform for your organization.
+You want to learn about authentication, authorization, claims, and roles before diving into implementation.
 
-1. [Dashboard Quick Start](./dashboard/dashboard-quick-start.md) — deploy the admin UI
-2. [Dashboard Setup](./dashboard/setup.md) — configure apps and roles
-3. [Auth Portal (SSO + Passkeys)](./authentication/auth-portal-sso-passkeys.md) — enable SSO
+**→ [Start with Concepts](/docs/concepts)**
 
 ### Path 4: I'm an AI agent helping a developer
 
@@ -101,41 +116,45 @@ You're setting up the platform for your organization.
 
 ## Core implementation docs (recommended reading order)
 
-1. **[Quick Start](./getting-started/quick-start.md)** — end-to-end sign-up/sign-in + access gate
-2. **[Complete Integration Guide](./guides/complete-integration-guide.md)** — deeper walkthrough
-3. **[Authentication Guide](./authentication/authentication-guide.md)** — auth patterns (OTP, OAuth, callbacks)
-4. **[Session Management](./authentication/session-management.md)** — session lifecycle and persistence
-5. **[Logout Guide](./authentication/logout-guide.md)** — internal logout, SSO logout, and Single Logout (SLO)
-6. **[Claims Guide](./authorization/claims-guide.md)** — how claims work + constraints
-7. **[Role Management Guide](./authorization/role-management-guide.md)** — database-backed roles and permissions
-8. **[Authorization Patterns](./authorization/authorization-patterns.md)** — RBAC/permissions patterns
-9. **[RLS Policies](./authorization/rls-policies.md)** — database security using JWT claims
-10. **[Environment Configuration](./guides/environment-configuration.md)** — production deployment + redirect safety
+1. **[Quick Start](/docs/operator/quick-start)** — end-to-end sign-up/sign-in + access gate
+2. **[Complete Integration Guide](/docs/integrator/complete-integration-guide)** — deeper walkthrough
+3. **[Authentication Guide](/docs/concepts/authentication-guide)** — auth patterns (OTP, OAuth, callbacks)
+4. **[Session Management](/docs/concepts/session-management)** — session lifecycle and persistence
+5. **[Logout Guide](/docs/concepts/logout-guide)** — internal logout, SSO logout, and Single Logout (SLO)
+6. **[Claims Guide](/docs/concepts/claims-guide)** — how claims work + constraints
+7. **[Role Management Guide](/docs/concepts/role-management-guide)** — database-backed roles and permissions
+8. **[Admin Types and Permissions](/docs/concepts/admin-types)** — global vs app admin vs admin role
+9. **[Role Frontend Patterns](/docs/integrator/role-frontend-patterns)** — UI patterns for roles/permissions
+10. **[Role Management Examples](/docs/integrator/role-examples)** — copy/paste scenarios
+11. **[Authorization Patterns](/docs/concepts/authorization-patterns)** — RBAC/permissions patterns
+12. **[RLS Policies](/docs/concepts/rls-policies)** — database security using JWT claims
+13. **[Environment Configuration](/docs/operator/environment-configuration)** — production deployment + redirect safety
 
 ## Reference / Quick copy-paste
 
-- **[Glossary](./reference/glossary.md)** — definitions of terms (claims, JWT, RLS, etc.)
-- **[Auth Quick Reference](./guides/auth-quick-reference.md)**
-- **[Agent Context](./reference/agent-context.md)**
+- **[Glossary](/docs/concepts/glossary)** — definitions of terms (claims, JWT, RLS, etc.)
+- **[Auth Quick Reference](/docs/integrator/auth-quick-reference)**
+- **[Shared Auth Patterns](/docs/concepts/shared-patterns)** — canonical setup snippets
+- **[Agent Context](/docs/agent-context)**
 
 ## SSO & Auth Portal
 
-- **[SSO Integration Guide](./guides/sso-integration-guide.md)** — integrate your app with the central auth portal (simple)
-- **[Logout Guide](./authentication/logout-guide.md)** — implement logout for internal apps and SSO clients (SLO)
-- **[Auth Portal (SSO + Passkeys)](./authentication/auth-portal-sso-passkeys.md)** — technical spec (API, DB schema)
-- **[Agent Instructions: Auth Portal](./reference/auth-portal-agent-instructions.md)** — copy/paste tasks for AI agents
+- **[SSO Integration Guide](/docs/integrator/sso-integration-guide)** — integrate your app with the central auth portal
+- **[Logout Guide](/docs/concepts/logout-guide)** — implement logout for internal apps and SSO clients (SLO)
+- **[Auth Portal (SSO + Passkeys)](/docs/operator/auth-portal-sso-passkeys)** — technical spec (API, DB schema)
+- **[Agent Instructions: Auth Portal](/docs/auth-portal-agent-instructions)** — copy/paste tasks for AI agents
 
 ## Advanced topics
 
-- **[Multi-App Guide](./advanced/multi-app-guide.md)**
-- **[API Keys Guide](./advanced/api-keys-guide.md)**
-- **[Connected Accounts](./advanced/connected-accounts.md)**
-- **[App Auth Integration](./advanced/app-auth-integration.md)**
+- **[Multi-App Guide](/docs/operator/multi-app-guide)**
+- **[API Keys Guide](/docs/operator/api-keys-guide)**
+- **[Connected Accounts](/docs/operator/connected-accounts)**
+- **[App Auth Integration](/docs/integrator/app-auth-integration)**
 
 ## Contributing (codebase docs)
 
 These are intentionally separate from implementation docs:
 
-- [Architecture](./contributing/architecture.md)
-- [Development](./contributing/development.md)
-- [Contributing](./contributing/contributing.md)
+- [Architecture](/docs/architecture)
+- [Development](/docs/development)
+- [Contributing](/docs/contributing)

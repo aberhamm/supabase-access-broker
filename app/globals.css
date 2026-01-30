@@ -201,3 +201,380 @@
 .dark .prose strong {
   color: var(--color-foreground);
 }
+
+/* Documentation-specific styles */
+.docs-container {
+  --docs-max-width: 1400px;
+  --docs-content-width: 720px;
+  --docs-sidebar-width: 280px;
+  --docs-toc-width: 220px;
+}
+
+/* Track color system */
+:root {
+  --track-integrator: oklch(0.59 0.2 255);
+  --track-integrator-light: oklch(0.95 0.03 255);
+  --track-operator: oklch(0.55 0.18 155);
+  --track-operator-light: oklch(0.95 0.03 155);
+  --track-concepts: oklch(0.55 0.2 300);
+  --track-concepts-light: oklch(0.95 0.03 300);
+}
+
+.dark {
+  --track-integrator: oklch(0.7 0.18 255);
+  --track-integrator-light: oklch(0.25 0.04 255);
+  --track-operator: oklch(0.7 0.16 155);
+  --track-operator-light: oklch(0.25 0.04 155);
+  --track-concepts: oklch(0.7 0.18 300);
+  --track-concepts-light: oklch(0.25 0.04 300);
+}
+
+/* Track card hover effects */
+.track-card {
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.track-card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  pointer-events: none;
+}
+
+.track-card:hover::before {
+  opacity: 1;
+}
+
+.track-card--integrator::before {
+  background: linear-gradient(135deg, var(--track-integrator-light) 0%, transparent 60%);
+}
+
+.track-card--operator::before {
+  background: linear-gradient(135deg, var(--track-operator-light) 0%, transparent 60%);
+}
+
+.track-card--concepts::before {
+  background: linear-gradient(135deg, var(--track-concepts-light) 0%, transparent 60%);
+}
+
+.track-card:hover {
+  transform: translateY(-4px);
+}
+
+/* Journey step cards */
+.journey-step {
+  position: relative;
+  counter-increment: journey-step;
+}
+
+.journey-step::before {
+  content: counter(journey-step);
+  position: absolute;
+  left: -2rem;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 1.5rem;
+  height: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: var(--color-muted);
+  color: var(--color-muted-foreground);
+}
+
+/* Journey connector line */
+.journey-container {
+  counter-reset: journey-step;
+  position: relative;
+  padding-left: 2.5rem;
+}
+
+.journey-container::before {
+  content: '';
+  position: absolute;
+  left: 0.75rem;
+  top: 1.5rem;
+  bottom: 1.5rem;
+  width: 2px;
+  background: linear-gradient(to bottom, var(--color-border), var(--color-border) 50%, transparent);
+}
+
+/* Enhanced TOC */
+.docs-toc {
+  position: sticky;
+  top: 5rem;
+  max-height: calc(100vh - 6rem);
+  overflow-y: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+.docs-toc::-webkit-scrollbar {
+  width: 4px;
+}
+
+.docs-toc::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.docs-toc::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 2px;
+}
+
+.docs-toc-item {
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.docs-toc-item--active {
+  color: var(--color-foreground);
+  font-weight: 500;
+}
+
+.docs-toc-item--active::before {
+  content: '';
+  position: absolute;
+  left: -0.75rem;
+  top: 0.25rem;
+  bottom: 0.25rem;
+  width: 2px;
+  background: var(--color-primary);
+  border-radius: 1px;
+}
+
+/* Reading progress indicator */
+.reading-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  height: 3px;
+  background: var(--color-primary);
+  z-index: 100;
+  transition: width 0.1s linear;
+}
+
+/* Doc page layout */
+.doc-layout {
+  display: grid;
+  gap: 2rem;
+  grid-template-columns: 1fr;
+}
+
+@media (min-width: 1024px) {
+  .doc-layout {
+    grid-template-columns: 1fr var(--docs-toc-width);
+  }
+}
+
+@media (min-width: 1280px) {
+  .doc-layout--with-sidebar {
+    grid-template-columns: var(--docs-sidebar-width) 1fr var(--docs-toc-width);
+  }
+}
+
+/* Enhanced prose typography */
+.doc-content {
+  font-size: 1rem;
+  line-height: 1.75;
+}
+
+.doc-content > * + * {
+  margin-top: 1.5rem;
+}
+
+.doc-content h2 {
+  margin-top: 3rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--color-border);
+}
+
+.doc-content h2:first-child {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+.doc-content h3 {
+  margin-top: 2rem;
+}
+
+/* Mobile TOC drawer */
+.mobile-toc-trigger {
+  position: fixed;
+  bottom: 1.5rem;
+  right: 1.5rem;
+  z-index: 40;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1rem;
+  background: var(--color-card);
+  border: 1px solid var(--color-border);
+  border-radius: 9999px;
+  box-shadow: 0 4px 12px -2px oklch(0 0 0 / 0.15);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.mobile-toc-trigger:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px -2px oklch(0 0 0 / 0.2);
+}
+
+@media (min-width: 1024px) {
+  .mobile-toc-trigger {
+    display: none;
+  }
+}
+
+/* Prev/Next navigation */
+.doc-nav {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: 1fr;
+  margin-top: 4rem;
+  padding-top: 2rem;
+  border-top: 1px solid var(--color-border);
+}
+
+@media (min-width: 640px) {
+  .doc-nav {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
+.doc-nav-link {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 1rem;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  transition: all 0.2s ease;
+  text-decoration: none;
+}
+
+.doc-nav-link:hover {
+  border-color: var(--color-primary);
+  background: var(--color-muted);
+}
+
+.doc-nav-link--next {
+  text-align: right;
+  align-items: flex-end;
+}
+
+.doc-nav-label {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-muted-foreground);
+}
+
+.doc-nav-title {
+  font-weight: 500;
+  color: var(--color-foreground);
+}
+
+/* Animated underline for links */
+.animated-link {
+  position: relative;
+  text-decoration: none;
+}
+
+.animated-link::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  bottom: -2px;
+  width: 0;
+  height: 2px;
+  background: currentColor;
+  transition: width 0.3s ease;
+}
+
+.animated-link:hover::after {
+  width: 100%;
+}
+
+/* Badge enhancements */
+.track-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+}
+
+.track-badge--integrator {
+  background: var(--track-integrator-light);
+  color: var(--track-integrator);
+}
+
+.track-badge--operator {
+  background: var(--track-operator-light);
+  color: var(--track-operator);
+}
+
+.track-badge--concepts {
+  background: var(--track-concepts-light);
+  color: var(--track-concepts);
+}
+
+/* Stagger animation for cards */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.stagger-item {
+  animation: fadeInUp 0.5s ease forwards;
+  opacity: 0;
+}
+
+.stagger-item:nth-child(1) { animation-delay: 0ms; }
+.stagger-item:nth-child(2) { animation-delay: 50ms; }
+.stagger-item:nth-child(3) { animation-delay: 100ms; }
+.stagger-item:nth-child(4) { animation-delay: 150ms; }
+.stagger-item:nth-child(5) { animation-delay: 200ms; }
+.stagger-item:nth-child(6) { animation-delay: 250ms; }
+.stagger-item:nth-child(7) { animation-delay: 300ms; }
+.stagger-item:nth-child(8) { animation-delay: 350ms; }
+
+/* Help callout */
+.help-callout {
+  position: relative;
+  padding: 1.5rem;
+  border-radius: var(--radius-lg);
+  background: linear-gradient(135deg, var(--color-muted) 0%, var(--color-background) 100%);
+  border: 1px solid var(--color-border);
+}
+
+.help-callout::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 1.5rem;
+  right: 1.5rem;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--color-border), transparent);
+}

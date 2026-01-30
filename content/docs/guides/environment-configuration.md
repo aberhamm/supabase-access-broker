@@ -2,7 +2,7 @@
 title: "Environment Variables & Deployment"
 description: "Complete guide to environment configuration for development and production"
 category: "guides"
-audience: "app-developer"
+audience: "dashboard-admin"
 order: 10
 ---
 
@@ -589,8 +589,7 @@ NEXT_PUBLIC_APP_URL=https://your-domain.com  # or http://localhost:3050
 
 ## What's Next
 
-- **Docs home:** [/docs](/docs)
-- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
-- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
-- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
-- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)
+- **Quick start:** [/docs/quick-start](/docs/quick-start)
+- **Auth setup:** [/docs/authentication-guide](/docs/authentication-guide)
+- **SSO integration:** [/docs/sso-integration-guide](/docs/sso-integration-guide)
+- **Logout:** [/docs/logout-guide](/docs/logout-guide)

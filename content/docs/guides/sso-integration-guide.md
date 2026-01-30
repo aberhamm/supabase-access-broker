@@ -8,7 +8,9 @@ order: 5
 
 # SSO Integration Guide
 
-This guide explains how to integrate your application with the **central auth portal** for single sign-on (SSO).
+This guide explains how to integrate **your application** with the Access Broker's **auth portal** for SSO.
+
+**Scope:** This is for client apps consuming the SSO exchange. If you're operating the Access Broker portal itself, see [Auth Portal (SSO + Passkeys)](/docs/auth-portal-sso-passkeys).
 
 > **💡 Want to see it in action?** Check out the [Demo Guide](/DEMO_GUIDE.md) to test the SSO flow locally with the included demo page.
 

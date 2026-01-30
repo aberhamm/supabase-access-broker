@@ -2,7 +2,7 @@
 title: "Quick Start"
 description: "Implement sign-up/sign-in + app access checks in a Next.js App Router app"
 category: "getting-started"
-audience: "app-developer"
+audience: "dashboard-admin"
 order: 2
 ---
 

@@ -989,8 +989,7 @@ Start with simple policies and add complexity as needed. Remember: simpler polic
 
 ## What's Next
 
-- **Docs home:** [/docs](/docs)
-- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
-- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
+- **Claims:** [/docs/claims-guide](/docs/claims-guide)
 - **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
-- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)
+- **Roles:** [/docs/role-management-guide](/docs/role-management-guide)
+- **Multi-app:** [/docs/multi-app-guide](/docs/multi-app-guide)

@@ -116,17 +116,8 @@ After that, `make deploy-migrate` will work automatically.
 
 ---
 
-## What’s Next
-
-- **Contributing:** [Contributing](/docs/contributing)
-
-
----
-
 ## What's Next
 
+- **Contributing:** [Contributing](/docs/contributing)
+- **Architecture:** [Architecture](/docs/architecture)
 - **Docs home:** [/docs](/docs)
-- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
-- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
-- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
-- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)

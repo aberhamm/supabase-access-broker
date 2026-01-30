@@ -2,11 +2,13 @@
 title: "Auth Portal (SSO + Passkeys)"
 description: "Central auth portal for multiple apps: passkeys (Face ID/Touch ID) + SSO code exchange"
 category: "authentication"
-audience: "all"
+audience: "dashboard-admin"
 order: 7
 ---
 
 # Auth Portal (SSO + Passkeys)
+
+This page is about **operating the Access Broker portal itself** (not integrating a client app).
 
 This repo can act as a **central auth portal** for multiple applications (Option B):
 

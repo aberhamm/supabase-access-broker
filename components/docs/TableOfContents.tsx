@@ -1,7 +1,6 @@
 'use client';
 
-import { useEffect, useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { useEffect, useState, useRef } from 'react';
 
 interface TOCItem {
   id: string;
@@ -16,6 +15,8 @@ interface TableOfContentsProps {
 export function TableOfContents({ content }: TableOfContentsProps) {
   const [toc, setToc] = useState<TOCItem[]>([]);
   const [activeId, setActiveId] = useState<string>('');
+  const navRef = useRef<HTMLElement>(null);
+  const activeItemRef = useRef<HTMLAnchorElement>(null);
 
   useEffect(() => {
     // Match MarkdownRenderer behavior: the first H1 is displayed separately by the page header.
@@ -62,34 +63,56 @@ export function TableOfContents({ content }: TableOfContentsProps) {
     return () => observer.disconnect();
   }, [toc]);
 
+  // Scroll active item into view when it changes
+  useEffect(() => {
+    if (activeId && activeItemRef.current && navRef.current) {
+      const nav = navRef.current;
+      const activeItem = activeItemRef.current;
+
+      const navRect = nav.getBoundingClientRect();
+      const itemRect = activeItem.getBoundingClientRect();
+
+      // Check if item is outside the visible area of the nav
+      const isAbove = itemRect.top < navRect.top;
+      const isBelow = itemRect.bottom > navRect.bottom;
+
+      if (isAbove || isBelow) {
+        activeItem.scrollIntoView({
+          behavior: 'smooth',
+          block: 'center',
+        });
+      }
+    }
+  }, [activeId]);
+
   if (toc.length === 0) return null;
 
   return (
-    <nav className="sticky top-20 hidden lg:block">
-      <h4 className="font-semibold text-sm mb-2">On This Page</h4>
-      <ul className="space-y-2 text-sm">
-        {toc.map((item) => (
-          <li
-            key={item.id}
-            style={{ paddingLeft: `${(item.level - 1) * 0.75}rem` }}
-          >
-            <a
-              href={`#${item.id}`}
-              className={`flex items-start gap-1 hover:text-primary transition-colors ${
-                activeId === item.id
-                  ? 'text-primary font-medium'
-                  : 'text-muted-foreground'
-              }`}
+    <nav ref={navRef} className="docs-toc" aria-label="Table of contents">
+      <h4 className="text-sm font-semibold mb-4 text-foreground">On This Page</h4>
+      <ul className="space-y-1">
+        {toc.map((item) => {
+          const isActive = activeId === item.id;
+          return (
+            <li
+              key={item.id}
+              className="docs-toc-item"
+              style={{ paddingLeft: `${(item.level - 1) * 0.75}rem` }}
             >
-              {activeId === item.id && (
-                <ChevronRight className="h-4 w-4 flex-shrink-0 mt-0.5" />
-              )}
-              <span className={activeId !== item.id ? 'ml-5' : ''}>
+              <a
+                ref={isActive ? activeItemRef : null}
+                href={`#${item.id}`}
+                className={`block py-1 text-sm transition-colors leading-snug ${
+                  isActive
+                    ? 'docs-toc-item--active text-foreground font-medium'
+                    : 'text-muted-foreground hover:text-foreground'
+                }`}
+              >
                 {item.text}
-              </span>
-            </a>
-          </li>
-        ))}
+              </a>
+            </li>
+          );
+        })}
       </ul>
     </nav>
   );

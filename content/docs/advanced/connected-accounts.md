@@ -2,7 +2,7 @@
 title: "Connected Accounts"
 description: "Link external accounts like Telegram to Supabase users"
 category: "advanced"
-audience: "app-developer"
+audience: "dashboard-admin"
 order: 12
 ---
 
@@ -281,8 +281,7 @@ The same pattern can be extended for other platforms:
 
 ## What's Next
 
-- **Docs home:** [/docs](/docs)
-- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
-- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
+- **Claims:** [/docs/claims-guide](/docs/claims-guide)
 - **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
-- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)
+- **RLS policies:** [/docs/rls-policies](/docs/rls-policies)
+- **Complete integration:** [/docs/complete-integration-guide](/docs/complete-integration-guide)

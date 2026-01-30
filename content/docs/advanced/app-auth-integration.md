@@ -10,6 +10,9 @@ order: 2
 
 **Context:** This guide is part of the Supabase Access Broker documentation. It provides practical, production-ready patterns for integrating app-based roles and permissions into your authentication flow.
 
+**Scope:** Client app integration with Access Broker claims/roles.
+If you're operating the Access Broker portal itself, see [Auth Portal (SSO + Passkeys)](/docs/auth-portal-sso-passkeys).
+
 **Technology Stack:** Next.js 14+ App Router, Supabase Auth, TypeScript, PostgreSQL
 
 **Prerequisites:**
@@ -1052,8 +1055,7 @@ const handleEnterpriseSignUp = async (department: string) => {
 
 ## What's Next
 
-- **Docs home:** [/docs](/docs)
-- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
-- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
+- **Multi-app architecture:** [/docs/multi-app-guide](/docs/multi-app-guide)
+- **Claims:** [/docs/claims-guide](/docs/claims-guide)
+- **Roles:** [/docs/role-management-guide](/docs/role-management-guide)
 - **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
-- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)

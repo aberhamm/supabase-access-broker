@@ -43,18 +43,8 @@ If you’re an application developer integrating the system (not contributing to
 
 ---
 
-## What’s Next
+## What's Next
 
 - **Dev setup:** [Development](/docs/development)
 - **Contributing workflow:** [Contributing](/docs/contributing)
-
-
----
-
-## What's Next
-
 - **Docs home:** [/docs](/docs)
-- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
-- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
-- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
-- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)

@@ -8,6 +8,9 @@ order: 2
 
 # Setup Guide
 
+**Scope:** Operating the Access Broker app (dashboard + auth portal).
+For client app integration, start with [Authentication Guide](/docs/authentication-guide) or [SSO Integration Guide](/docs/sso-integration-guide).
+
 ## What You're Setting Up
 
 This dashboard manages **Supabase Custom Claims** - special user attributes stored in JWT tokens for high-performance authorization.
@@ -131,8 +134,7 @@ Refer to `README.md` (repo file at the project root) for more detailed documenta
 
 ## What's Next
 
-- **Docs home:** [/docs](/docs)
-- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
-- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
-- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
+- **Dashboard quick start:** [/docs/dashboard-quick-start](/docs/dashboard-quick-start)
+- **Claims:** [/docs/claims-guide](/docs/claims-guide)
+- **Role management:** [/docs/role-management-guide](/docs/role-management-guide)
 - **Production config:** [/docs/environment-configuration](/docs/environment-configuration)

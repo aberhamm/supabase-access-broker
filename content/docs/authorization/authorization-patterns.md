@@ -8,6 +8,14 @@ order: 7
 
 # Authorization Patterns
 
+**TL;DR:**
+- Enforce authorization at multiple layers (callback, middleware, server, RLS)
+- Store roles and permissions in `app_metadata`
+- Use app-specific claims to gate access
+- Prefer deny-by-default checks
+
+**Time to read:** 20 minutes | **Prerequisites:** [Claims Guide](/docs/claims-guide) | **Next steps:** [RLS Policies](/docs/rls-policies)
+
 **Context:** Authorization controls what authenticated users can access and do in your application. This guide shows you how to implement robust authorization patterns using Supabase Auth metadata.
 
 **Technology Stack:** Next.js 14+ App Router, Supabase Auth, TypeScript
@@ -810,27 +818,13 @@ This system has **three distinct admin concepts**:
 2. **`apps.{id}.admin`** - App-specific admin (manages one app)
 3. **"admin" role** - Regular role with admin permissions
 
-These are NOT the same thing! See **[Admin Roles and Permissions](/docs/role-management-guide#admin-roles-and-permissions)** for complete details on when to use each.
-
-**Quick example:**
-```typescript
-// Check for global super-admin
-const isGlobalAdmin = user?.app_metadata?.claims_admin === true;
-
-// Check for app-specific admin
-const isAppAdmin = user?.app_metadata?.apps?.['myapp']?.admin === true;
-
-// Check for "admin" role
-const hasAdminRole = user?.app_metadata?.apps?.['myapp']?.role === 'admin';
-
-// These are three different things!
-```
+These are NOT the same thing. For full details and examples, see **[Admin Types and Permissions](/docs/admin-types)**.
 
 ### Learn More
 
 For complete role management documentation:
 - **[Role Management Guide](/docs/role-management-guide)** - Complete guide to roles
-- **[Admin Roles and Permissions](/docs/role-management-guide#admin-roles-and-permissions)** - Understanding admin types
+- **[Admin Types and Permissions](/docs/admin-types)** - Understanding admin types
 - **[Claims Guide](/docs/claims-guide)** - Understanding custom claims
 - **[RLS Policies](/docs/rls-policies)** - Using roles in database security
 
@@ -988,8 +982,7 @@ const { data, error } = await supabase.auth.refreshSession();
 
 ## What's Next
 
-- **Docs home:** [/docs](/docs)
-- **App Quick Start:** [/docs/quick-start](/docs/quick-start)
-- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
-- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
+- **Claims:** [/docs/claims-guide](/docs/claims-guide)
+- **Roles:** [/docs/role-management-guide](/docs/role-management-guide)
+- **RLS policies:** [/docs/rls-policies](/docs/rls-policies)
 - **Production config:** [/docs/environment-configuration](/docs/environment-configuration)

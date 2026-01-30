@@ -18,6 +18,9 @@ export type DocCategory = (typeof DOC_CATEGORIES)[number];
 const DOC_AUDIENCES = ['dashboard-admin', 'app-developer', 'all'] as const;
 export type DocAudience = (typeof DOC_AUDIENCES)[number];
 
+export const DOC_TRACKS = ['integrator', 'operator', 'concepts', 'reference', 'contributing'] as const;
+export type DocTrack = (typeof DOC_TRACKS)[number];
+
 function isDocCategory(value: unknown): value is DocCategory {
   return typeof value === 'string' && (DOC_CATEGORIES as readonly string[]).includes(value);
 }
@@ -26,12 +29,21 @@ function isDocAudience(value: unknown): value is DocAudience {
   return typeof value === 'string' && (DOC_AUDIENCES as readonly string[]).includes(value);
 }
 
+function getTrack(category: DocCategory, audience: DocAudience): DocTrack {
+  if (category === 'reference') return 'reference';
+  if (category === 'contributing') return 'contributing';
+  if (audience === 'app-developer') return 'integrator';
+  if (audience === 'dashboard-admin') return 'operator';
+  return 'concepts'; // audience: all
+}
+
 export interface DocMetadata {
   slug: string;
   title: string;
   description: string;
   category: DocCategory;
   audience: DocAudience;
+  track: DocTrack;
   order: number;
   filePath: string;
 }
@@ -55,12 +67,16 @@ export async function getAllDocs(): Promise<DocMetadata[]> {
       const fileContent = fs.readFileSync(filePath, 'utf-8');
       const { data } = matter(fileContent);
 
+      const docCategory = isDocCategory(data.category) ? data.category : category;
+      const docAudience = isDocAudience(data.audience) ? data.audience : 'all';
+
       docs.push({
         slug: file.replace('.md', ''),
         title: data.title || 'Untitled',
         description: data.description || '',
-        category: isDocCategory(data.category) ? data.category : category,
-        audience: isDocAudience(data.audience) ? data.audience : 'all',
+        category: docCategory,
+        audience: docAudience,
+        track: getTrack(docCategory, docAudience),
         order: data.order || 999,
         filePath: `${category}/${file}`,
       });
@@ -117,4 +133,32 @@ export function getAllDocSlugs(): string[] {
   }
 
   return slugs;
+}
+
+export async function getDocsByTrack(track: DocTrack): Promise<DocMetadata[]> {
+  const allDocs = await getAllDocs();
+  return allDocs.filter(doc => doc.track === track);
+}
+
+export async function getDocContentByTrack(
+  track: DocTrack,
+  slug: string
+): Promise<{ content: string; metadata: DocMetadata } | null> {
+  const docs = await getDocsByTrack(track);
+  const doc = docs.find(d => d.slug === slug);
+
+  if (!doc) return null;
+
+  const fullPath = path.join(process.cwd(), 'content/docs', doc.filePath);
+  const fileContent = fs.readFileSync(fullPath, 'utf-8');
+  const { content, data } = matter(fileContent);
+
+  return {
+    content,
+    metadata: {
+      ...doc,
+      title: data.title || doc.title,
+      description: data.description || doc.description,
+    }
+  };
 }

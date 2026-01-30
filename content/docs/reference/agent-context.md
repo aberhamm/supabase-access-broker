@@ -299,5 +299,4 @@ using (
 - **Getting Started:** [Overview](/docs/overview) → [Quick Start](/docs/quick-start)
 - **Full walkthrough:** [Complete Integration Guide](/docs/complete-integration-guide)
 - **Auth patterns:** [Authentication Guide](/docs/authentication-guide)
-- **Authorization patterns:** [Authorization Patterns](/docs/authorization-patterns)
 - **Environment config:** [Environment Configuration](/docs/environment-configuration)

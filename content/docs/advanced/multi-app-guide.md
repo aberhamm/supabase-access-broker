@@ -2,11 +2,22 @@
 title: "Multi-App Architecture Guide"
 description: "Managing multiple applications with one auth system"
 category: "advanced"
-audience: "all"
+audience: "dashboard-admin"
 order: 2
 ---
 
 # Multi-App Claims Management Guide
+
+**TL;DR:**
+- One Supabase project can serve multiple apps
+- Each app gets its own `apps.{app_id}` claim block
+- App-specific admins and roles coexist with global admins
+- Use shared claims for cross-app access
+
+**Time to read:** 20 minutes | **Prerequisites:** [Claims Guide](/docs/claims-guide) | **Next steps:** [SSO Integration Guide](/docs/sso-integration-guide)
+
+**Scope:** Client app integration and architecture guidance.
+If you're operating the Access Broker portal itself, see [Auth Portal (SSO + Passkeys)](/docs/auth-portal-sso-passkeys).
 
 This guide explains how to use the multi-app claims system to manage user access across multiple applications using a single Supabase Auth instance.
 
@@ -27,6 +38,18 @@ The multi-app claims system allows you to:
 - Assign app-specific roles and permissions
 - Designate app-specific admins (in addition to global admins)
 - Keep global claims separate from app-specific claims
+
+### Multi-App Architecture
+
+```mermaid
+graph TD
+    Users[Users] --> AuthPortal[Auth Portal]
+    AuthPortal --> Supabase[Supabase Auth]
+    Supabase --> JWT[JWT Token]
+    JWT --> App1[App 1: Blog]
+    JWT --> App2[App 2: Dashboard]
+    JWT --> App3[App 3: Analytics]
+```
 
 ## Concepts
 
@@ -66,20 +89,13 @@ The multi-app claims system allows you to:
 
 ### Admin Hierarchy
 
-1. **Global Admin** (`claims_admin: true`)
-   - Can manage all users
-   - Can manage all apps
-   - Can grant/revoke app admin rights
-   - Full access to everything
+There are three distinct admin concepts in this system:
 
-2. **App Admin** (`apps.{app_id}.admin: true`)
-   - Can manage users for their specific app only
-   - Cannot grant app admin rights
-   - Cannot access other apps' data
+- **`claims_admin`** - Global super-admin
+- **`apps.{app_id}.admin`** - App-specific admin
+- **"admin" role** - Regular role with admin permissions
 
-3. **Regular User**
-   - No admin access
-   - Can only view their own claims
+For full definitions, capabilities, and examples, see **[Admin Types and Permissions](/docs/admin-types)**.
 
 ## Adding New Apps
 
@@ -496,8 +512,7 @@ For issues or questions:
 
 ## What's Next
 
-- **Docs home:** [/docs](/docs)
-- **Role Management:** [/docs/role-management-guide](/docs/role-management-guide)
-- **Auth patterns:** [/docs/authentication-guide](/docs/authentication-guide)
-- **Authorization patterns:** [/docs/authorization-patterns](/docs/authorization-patterns)
-- **Production config:** [/docs/environment-configuration](/docs/environment-configuration)
+- **Implementation patterns:** [/docs/app-auth-integration](/docs/app-auth-integration)
+- **Role management:** [/docs/role-management-guide](/docs/role-management-guide)
+- **Claims:** [/docs/claims-guide](/docs/claims-guide)
+- **SSO integration:** [/docs/sso-integration-guide](/docs/sso-integration-guide)
