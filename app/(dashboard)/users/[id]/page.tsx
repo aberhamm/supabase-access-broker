@@ -1,36 +1,29 @@
 export const dynamic = 'force-dynamic';
 
 import { createAdminClient } from '@/lib/supabase/server';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import Link from 'next/link';
-import { ArrowLeft, ShieldCheck } from 'lucide-react';
 import { redirect } from 'next/navigation';
+import { UserProfileHeaderServer } from '@/components/users/UserProfileHeaderServer';
+import { EnhancedUserInfoCard } from '@/components/users/EnhancedUserInfoCard';
+import { EnhancedMFACard } from '@/components/users/EnhancedMFACard';
+import { EnhancedQuickActions } from '@/components/users/EnhancedQuickActions';
+import { UserActivityTimeline } from '@/components/users/UserActivityTimeline';
+import { UserInsightsPanelServer } from '@/components/users/UserInsightsPanelServer';
+import { UserStatusCard } from '@/components/users/UserStatusCard';
+import { TelegramLink } from '@/components/users/TelegramLink';
+import { AppAccessCard } from '@/components/apps/AppAccessCard';
 import { ClaimsList } from '@/components/claims/ClaimsList';
 import { AddClaimButton } from '@/components/claims/AddClaimButton';
-import { ToggleAdminButton } from '@/components/users/ToggleAdminButton';
-import { ResetPasswordButton } from '@/components/users/ResetPasswordButton';
-import { CopyButton } from '@/components/users/CopyButton';
-import { DeleteUserDialog } from '@/components/users/DeleteUserDialog';
-import { TelegramLink } from '@/components/users/TelegramLink';
-import { EditProfileDialog } from '@/components/users/EditProfileDialog';
-import { MFAFactorsList } from '@/components/users/MFAFactorsList';
-import { UserStatusCard } from '@/components/users/UserStatusCard';
-import { TelegramData } from '@/app/actions/telegram';
-import { AppAccessCard } from '@/components/apps/AppAccessCard';
 import { AppClaimsList } from '@/components/apps/AppClaimsList';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { TelegramData } from '@/app/actions/telegram';
 import { getApps } from '@/lib/apps-service';
 import { listUserMFAFactors } from '@/app/actions/users';
-import { format } from 'date-fns';
-
-// Logout is now handled by /auth/logout route for reliable cookie clearing
+import { getUserCustomClaimsCount } from '@/types/claims';
 
 async function getUserDetails(userId: string) {
   const adminSupabase = await createAdminClient();
-
-  // Get specific user by ID (efficient, doesn't load all users)
   const { data: userData, error: userError } =
     await adminSupabase.auth.admin.getUserById(userId);
 
@@ -54,174 +47,63 @@ export default async function UserDetailPage({
     redirect('/users');
   }
 
-  // Use the app_metadata directly from the user object
-  // This is more reliable than calling the RPC function
   const claims = user.app_metadata || {};
   const isAdmin = user.app_metadata?.claims_admin === true;
   const userApps = user.app_metadata?.apps || {};
-  const isGlobalAdmin = user.app_metadata?.claims_admin === true;
   const telegramData = user.app_metadata?.telegram as TelegramData | undefined;
 
-  // Fetch available apps and MFA factors
   const [availableApps, mfaResult] = await Promise.all([
     getApps(),
     listUserMFAFactors(id),
   ]);
 
   const mfaFactors = mfaResult.success ? mfaResult.factors || [] : [];
+  const claimsCount = getUserCustomClaimsCount(claims);
+  const appsCount = Object.keys(userApps).length;
+
+  const lastSignInDays = user.last_sign_in_at
+    ? Math.floor((Date.now() - new Date(user.last_sign_in_at).getTime()) / (1000 * 60 * 60 * 24))
+    : 999;
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <Link href="/users">
-            <Button variant="ghost" size="sm">
-              <ArrowLeft className="mr-2 h-4 w-4" />
-              Back
-            </Button>
-          </Link>
-          <div>
-            <h2 className="text-3xl font-bold tracking-tight">User Details</h2>
-            <p className="text-muted-foreground">{user.email}</p>
-          </div>
-        </div>
-      </div>
+      {/* Hero Header */}
+      <UserProfileHeaderServer
+        userId={id}
+        email={user.email || ''}
+        isAdmin={isAdmin}
+        emailConfirmed={!!user.email_confirmed_at}
+        lastSignIn={user.last_sign_in_at}
+      />
 
-      <div className="grid gap-8 lg:grid-cols-3">
-        <div className="space-y-6 lg:col-span-1">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-              <CardTitle>User Information</CardTitle>
-              <EditProfileDialog
-                userId={id}
-                currentEmail={user.email || ''}
-                currentPhone={user.phone || ''}
-                currentDisplayName={user.user_metadata?.display_name as string}
-              />
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Email
-                </p>
-                <p className="text-sm">{user.email}</p>
-              </div>
-
-              {user.phone && (
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Phone
-                  </p>
-                  <p className="text-sm">{user.phone}</p>
-                </div>
-              )}
-
-              {user.user_metadata?.display_name && (
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Display Name
-                  </p>
-                  <p className="text-sm">
-                    {user.user_metadata.display_name as string}
-                  </p>
-                </div>
-              )}
-
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  User ID
-                </p>
-                <div className="flex items-center gap-2">
-                  <code className="rounded bg-muted px-2 py-1 text-xs">
-                    {user.id}
-                  </code>
-                  <CopyButton text={user.id} />
-                </div>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Status
-                </p>
-                <div className="mt-1">
-                  {isAdmin ? (
-                    <Badge variant="default">Claims Admin</Badge>
-                  ) : (
-                    <Badge variant="outline">Standard User</Badge>
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">
-                  Created
-                </p>
-                <p className="text-sm">
-                  {format(new Date(user.created_at), 'PPP')}
-                </p>
-              </div>
-
-              {user.last_sign_in_at && (
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">
-                    Last Sign In
-                  </p>
-                  <p className="text-sm">
-                    {format(new Date(user.last_sign_in_at), 'PPP p')}
-                  </p>
-                </div>
-              )}
-            </CardContent>
-          </Card>
+      <div className="grid gap-8 lg:grid-cols-12">
+        {/* Left Sidebar - 4 columns */}
+        <div className="space-y-6 lg:col-span-4">
+          <EnhancedUserInfoCard
+            email={user.email || ''}
+            phone={user.phone}
+            displayName={user.user_metadata?.display_name as string}
+            userId={id}
+            isAdmin={isAdmin}
+            createdAt={user.created_at}
+            lastSignIn={user.last_sign_in_at}
+          />
 
           <UserStatusCard
             userId={id}
             userEmail={user.email || ''}
             emailConfirmedAt={user.email_confirmed_at}
-            bannedUntil={
-              (user as { banned_until?: string | null }).banned_until
-            }
+            bannedUntil={(user as { banned_until?: string | null }).banned_until}
           />
 
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <ShieldCheck className="h-5 w-5" />
-                MFA Factors
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <MFAFactorsList factors={mfaFactors} userId={id} />
-            </CardContent>
-          </Card>
+          <EnhancedMFACard factors={mfaFactors} userId={id} />
 
-          <Card>
-            <CardHeader>
-              <CardTitle>Quick Actions</CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-3">
-              <ToggleAdminButton userId={id} isAdmin={isAdmin} />
+          <EnhancedQuickActions
+            userId={id}
+            isAdmin={isAdmin}
+          />
 
-              <ResetPasswordButton userEmail={user.email || ''} />
-
-              <div className="rounded-lg border p-3">
-                <p className="text-sm font-medium">Session Refresh</p>
-                <p className="mt-1 text-xs text-muted-foreground">
-                  Users need to log out and back in (or call{' '}
-                  <code className="rounded bg-muted px-1">
-                    refreshSession()
-                  </code>
-                  ) to see updated claims.
-                </p>
-              </div>
-
-              <div className="pt-4 border-t">
-                <DeleteUserDialog userId={id} userEmail={user.email || ''} />
-              </div>
-            </CardContent>
-          </Card>
-
-          <Card>
+          <Card className="animate-reveal" style={{ animationDelay: '0.3s' }}>
             <CardHeader>
               <CardTitle>Connected Accounts</CardTitle>
             </CardHeader>
@@ -231,47 +113,66 @@ export default async function UserDetailPage({
           </Card>
         </div>
 
-        <div className="lg:col-span-2">
-          <div className="space-y-6">
-            <AppAccessCard
-              userId={id}
-              userApps={userApps}
-              availableApps={availableApps}
-              isGlobalAdmin={isGlobalAdmin}
-            />
+        {/* Main Content - 5 columns */}
+        <div className="space-y-6 lg:col-span-5">
+          <AppAccessCard
+            userId={id}
+            userApps={userApps}
+            availableApps={availableApps}
+            isGlobalAdmin={isAdmin}
+          />
 
-            <Card>
-              <CardHeader>
-                <CardTitle>Custom Claims</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <Tabs defaultValue="global" className="w-full">
-                  <TabsList className="grid w-full grid-cols-2">
-                    <TabsTrigger value="global">Global Claims</TabsTrigger>
-                    <TabsTrigger value="apps">
-                      App Claims
-                      {Object.keys(userApps).length > 0 && (
-                        <Badge variant="secondary" className="ml-2">
-                          {Object.keys(userApps).length}
-                        </Badge>
-                      )}
-                    </TabsTrigger>
-                  </TabsList>
+          <Card className="animate-reveal" style={{ animationDelay: '0.1s' }}>
+            <CardHeader>
+              <CardTitle>Custom Claims</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <Tabs defaultValue="global" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                  <TabsTrigger value="global">Global Claims</TabsTrigger>
+                  <TabsTrigger value="apps">
+                    App Claims
+                    {appsCount > 0 && (
+                      <Badge variant="secondary" className="ml-2">
+                        {appsCount}
+                      </Badge>
+                    )}
+                  </TabsTrigger>
+                </TabsList>
 
-                  <TabsContent value="global" className="mt-6">
-                    <div className="flex justify-end mb-4">
-                      <AddClaimButton userId={id} />
-                    </div>
-                    <ClaimsList claims={claims} userId={id} />
-                  </TabsContent>
+                <TabsContent value="global" className="mt-6">
+                  <div className="flex justify-end mb-4">
+                    <AddClaimButton userId={id} />
+                  </div>
+                  <ClaimsList claims={claims} userId={id} />
+                </TabsContent>
 
-                  <TabsContent value="apps" className="mt-6">
-                    <AppClaimsList userId={id} apps={userApps} />
-                  </TabsContent>
-                </Tabs>
-              </CardContent>
-            </Card>
-          </div>
+                <TabsContent value="apps" className="mt-6">
+                  <AppClaimsList userId={id} apps={userApps} />
+                </TabsContent>
+              </Tabs>
+            </CardContent>
+          </Card>
+
+          <UserActivityTimeline
+            userId={id}
+            createdAt={user.created_at}
+            lastSignIn={user.last_sign_in_at}
+            isAdmin={isAdmin}
+          />
+        </div>
+
+        {/* Right Sidebar - 3 columns */}
+        <div className="space-y-6 lg:col-span-3">
+          <UserInsightsPanelServer
+            userId={user.email || id}
+            isAdmin={isAdmin}
+            claimsCount={claimsCount}
+            appsCount={appsCount}
+            hasMFA={mfaFactors.length > 0}
+            emailVerified={!!user.email_confirmed_at}
+            lastSignInDays={lastSignInDays}
+          />
         </div>
       </div>
     </div>

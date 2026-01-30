@@ -92,6 +92,31 @@ export function hasAnyAppAdmin(apps: Record<string, AppClaim> | Record<string, u
   return Object.values(apps).some((app) => (app as AppClaim)?.role === 'admin');
 }
 
+// Helper functions for claims counting/display
+const SYSTEM_APP_METADATA_KEYS_FOR_CLAIMS_COUNT = new Set([
+  // Supabase auth provider bookkeeping
+  'provider',
+  'providers',
+  // This app's reserved/system fields
+  'telegram',
+  'apps',
+  'claims_admin',
+]);
+
+/**
+ * Count "custom claims" stored in `user.app_metadata`, excluding system/reserved fields.
+ *
+ * Note: This is a UI-level helper used to keep claims count consistent across pages.
+ */
+export function getUserCustomClaimsCount(
+  appMetadata: Record<string, unknown> | null | undefined
+): number {
+  if (!appMetadata) return 0;
+  return Object.keys(appMetadata).filter(
+    (key) => !SYSTEM_APP_METADATA_KEYS_FOR_CLAIMS_COUNT.has(key)
+  ).length;
+}
+
 export interface AppInfo {
   id: string;
   name: string;

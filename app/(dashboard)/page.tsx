@@ -2,7 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { createClient } from '@/lib/supabase/server';
 import { Button } from '@/components/ui/button';
-import { DashboardStats } from '@/components/dashboard/DashboardStats';
+import { EnhancedDashboardStats } from '@/components/dashboard/EnhancedDashboardStats';
 import Link from 'next/link';
 import { Users, AppWindow } from 'lucide-react';
 import { redirect } from 'next/navigation';
@@ -42,8 +42,8 @@ export default async function DashboardPage() {
   }
 
   return (
-    <>
-      <div className="flex items-center justify-between">
+    <div className="space-y-8">
+      <div className="flex items-center justify-between animate-reveal">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
           <p className="text-muted-foreground">
@@ -53,14 +53,14 @@ export default async function DashboardPage() {
         <div className="flex gap-2">
           {(isGlobalAdmin || isAppAdmin) && (
             <Link href="/apps">
-              <Button variant="outline">
+              <Button variant="outline" className="btn-press">
                 <AppWindow className="mr-2 h-4 w-4" />
                 Manage Apps
               </Button>
             </Link>
           )}
           <Link href="/users">
-            <Button>
+            <Button className="btn-press">
               <Users className="mr-2 h-4 w-4" />
               View All Users
             </Button>
@@ -70,13 +70,13 @@ export default async function DashboardPage() {
 
       {/* Claims-admin-only stats (these rely on JWT claims for DB RPC access) */}
       {isClaimsAdminJwt ? (
-        <DashboardStats />
+        <EnhancedDashboardStats />
       ) : (
-        <div className="rounded-lg border p-6 text-sm text-muted-foreground">
+        <div className="rounded-lg border p-6 text-sm text-muted-foreground animate-reveal">
           Dashboard stats are only available to{' '}
           <code className="rounded bg-muted px-1 py-0.5">claims_admin</code> users.
         </div>
       )}
-    </>
+    </div>
   );
 }

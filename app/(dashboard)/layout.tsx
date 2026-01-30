@@ -1,10 +1,12 @@
 export const dynamic = 'force-dynamic';
 
 import { redirect } from 'next/navigation';
-import { DashboardNav } from '@/components/layout/DashboardNav';
+import { EnhancedDashboardNav } from '@/components/layout/EnhancedDashboardNav';
+import { DashboardFooter } from '@/components/layout/DashboardFooter';
 import { createClient } from '@/lib/supabase/server';
 import { isClaimsAdmin } from '@/lib/claims';
 import { hasAnyAppAdmin } from '@/types/claims';
+import { KeyboardShortcutsDialog } from '@/components/KeyboardShortcutsDialog';
 
 export default async function DashboardLayout({
   children,
@@ -33,11 +35,13 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-background">
-      <DashboardNav email={email} showApps={isGlobalAdmin || isAppAdmin} />
-      <main className="container mx-auto space-y-8 p-4 py-8">
+    <div className="min-h-screen bg-background flex flex-col">
+      <EnhancedDashboardNav email={email} showApps={isGlobalAdmin || isAppAdmin} />
+      <main className="container mx-auto space-y-8 p-4 py-8 flex-1">
         {children}
       </main>
+      <DashboardFooter />
+      <KeyboardShortcutsDialog />
     </div>
   );
 }

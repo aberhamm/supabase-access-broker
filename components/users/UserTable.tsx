@@ -61,8 +61,8 @@ export function UserTable({ users }: UserTableProps) {
         )}
       </div>
 
-      <div className="rounded-md border">
-        <Table>
+      <div className="rounded-md border overflow-hidden">
+        <Table className="data-table">
           <TableHeader>
             <TableRow>
               <TableHead>Email</TableHead>
@@ -86,7 +86,9 @@ export function UserTable({ users }: UserTableProps) {
                     <div className="flex items-center gap-2">
                       {user.email}
                       {user.app_metadata?.claims_admin === true && (
-                        <Badge variant="secondary">Admin</Badge>
+                        <span className="badge-enhanced badge-admin">
+                          Admin
+                        </span>
                       )}
                     </div>
                   </TableCell>

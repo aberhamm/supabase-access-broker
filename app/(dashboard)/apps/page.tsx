@@ -4,7 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getApps } from '@/lib/apps-service';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Plus } from 'lucide-react';
+import { Plus, AppWindow } from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { isClaimsAdmin } from '@/lib/claims';
@@ -26,7 +26,7 @@ export default async function AppsPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
+      <div className="flex items-center justify-between animate-reveal">
         <div>
           <h2 className="text-3xl font-bold tracking-tight">App Management</h2>
           <p className="text-muted-foreground">
@@ -34,7 +34,7 @@ export default async function AppsPage() {
           </p>
         </div>
         <Link href="/apps/create">
-          <Button>
+          <Button className="btn-press">
             <Plus className="mr-2 h-4 w-4" />
             Create App
           </Button>
@@ -42,9 +42,12 @@ export default async function AppsPage() {
       </div>
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-        <Card>
+        <Card className="card-hover animate-reveal">
           <CardHeader>
-            <CardTitle>Total Apps</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <AppWindow className="h-5 w-5 text-primary" />
+              Total Apps
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{apps.length}</div>
@@ -54,9 +57,12 @@ export default async function AppsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="card-hover animate-reveal">
           <CardHeader>
-            <CardTitle>Enabled Apps</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <div className="w-2 h-2 rounded-full bg-success animate-pulse" />
+              Enabled Apps
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">
@@ -68,7 +74,7 @@ export default async function AppsPage() {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="card-hover animate-reveal">
           <CardHeader>
             <CardTitle>Configuration</CardTitle>
           </CardHeader>
@@ -79,7 +85,8 @@ export default async function AppsPage() {
                   Using fallback config
                 </span>
               ) : (
-                <span className="text-green-600 dark:text-green-400">
+                <span className="flex items-center gap-1.5 text-success">
+                  <div className="w-2 h-2 rounded-full bg-success" />
                   Database configured
                 </span>
               )}
