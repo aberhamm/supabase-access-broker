@@ -27,7 +27,6 @@ export default async function UsersPage() {
   }
 
   const users = paginatedData.data || [];
-  const totalCount = users.length > 0 ? users[0].total_count : 0;
 
   // Parse stats
   const statsData = statsResult.data as {

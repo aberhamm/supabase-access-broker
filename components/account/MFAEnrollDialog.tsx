@@ -17,6 +17,7 @@ import { toast } from 'sonner';
 import { ShieldPlus, Copy, Check } from 'lucide-react';
 import { enrollTOTP, verifyTOTP } from '@/app/actions/account';
 import { useRouter } from 'next/navigation';
+import Image from 'next/image';
 import type { TOTPEnrollment } from '@/types/claims';
 
 interface MFAEnrollDialogProps {
@@ -168,10 +169,13 @@ export function MFAEnrollDialog({ onEnrolled }: MFAEnrollDialogProps) {
             <div className="flex flex-col items-center space-y-4">
               {/* QR Code */}
               <div className="rounded-lg border p-4 bg-white">
-                <img
+                <Image
                   src={enrollment.totp.qr_code}
                   alt="QR Code for authenticator setup"
+                  width={192}
+                  height={192}
                   className="w-48 h-48"
+                  unoptimized
                 />
               </div>
 
@@ -236,5 +240,3 @@ export function MFAEnrollDialog({ onEnrolled }: MFAEnrollDialogProps) {
     </Dialog>
   );
 }
-
-

@@ -9,7 +9,7 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Badge } from '@/components/ui/badge';
-import { Command, Search, User, Keyboard } from 'lucide-react';
+import { Command, Keyboard } from 'lucide-react';
 
 export function KeyboardShortcutsDialog() {
   const [isOpen, setIsOpen] = useState(false);

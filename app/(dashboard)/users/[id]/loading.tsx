@@ -1,5 +1,5 @@
 import { SkeletonCard } from '@/components/ui/skeleton-card';
-import { Card, CardContent } from '@/components/ui/card';
+import { Card } from '@/components/ui/card';
 
 export default function UserDetailLoading() {
   return (

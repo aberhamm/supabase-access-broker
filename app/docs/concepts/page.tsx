@@ -1,6 +1,6 @@
 import { Metadata } from 'next';
 import Link from 'next/link';
-import { Home, BookOpen, ArrowRight, Code2, Server, Shield, Key, Users, Lock } from 'lucide-react';
+import { Home, BookOpen, ArrowRight, Code2, Server, Shield, Key } from 'lucide-react';
 import { getDocsByTrack } from '@/lib/docs';
 import {
   Breadcrumb,

@@ -73,7 +73,7 @@ export default async function UserDetailPage({
         email={user.email || ''}
         isAdmin={isAdmin}
         emailConfirmed={!!user.email_confirmed_at}
-        lastSignIn={user.last_sign_in_at}
+        lastSignIn={user.last_sign_in_at ?? null}
       />
 
       <div className="grid gap-8 lg:grid-cols-12">
@@ -86,7 +86,7 @@ export default async function UserDetailPage({
             userId={id}
             isAdmin={isAdmin}
             createdAt={user.created_at}
-            lastSignIn={user.last_sign_in_at}
+            lastSignIn={user.last_sign_in_at ?? null}
           />
 
           <UserStatusCard
@@ -157,7 +157,7 @@ export default async function UserDetailPage({
           <UserActivityTimeline
             userId={id}
             createdAt={user.created_at}
-            lastSignIn={user.last_sign_in_at}
+            lastSignIn={user.last_sign_in_at ?? null}
             isAdmin={isAdmin}
           />
         </div>

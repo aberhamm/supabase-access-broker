@@ -130,7 +130,7 @@ export function UserActivityTimeline({
   };
 
   return (
-    <Card className="animate-reveal" style={{ animationDelay: '0.3s' }}>
+    <Card className="animate-reveal" style={{ animationDelay: '0.3s' }} data-user-id={userId}>
       <CardHeader>
         <CardTitle className="flex items-center gap-2">
           <Clock className="h-5 w-5" />

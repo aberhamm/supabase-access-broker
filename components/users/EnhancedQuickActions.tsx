@@ -32,7 +32,7 @@ export function EnhancedQuickActions({
   onDelete,
 }: EnhancedQuickActionsProps) {
   return (
-    <Card className="animate-reveal" style={{ animationDelay: '0.2s' }}>
+    <Card className="animate-reveal" style={{ animationDelay: '0.2s' }} data-user-id={userId}>
       <CardHeader>
         <CardTitle className="text-lg">Quick Actions</CardTitle>
       </CardHeader>

@@ -58,7 +58,15 @@ export function AppAccessCard({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>App Access</CardTitle>
+        <div className="flex items-center justify-between gap-3">
+          <CardTitle>App Access</CardTitle>
+          {isGlobalAdmin && (
+            <Badge variant="secondary" className="text-xs gap-1">
+              <Shield className="h-3 w-3" />
+              Global Admin
+            </Badge>
+          )}
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         {availableApps.map((app) => {

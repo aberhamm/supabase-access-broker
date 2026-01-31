@@ -4,14 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { EnhancedClaimBadge } from '@/components/claims/EnhancedClaimBadge';
-import { Shield, Users, Activity, TrendingUp, Star, Key } from 'lucide-react';
+import { Users, Activity, TrendingUp } from 'lucide-react';
 
 export default function DesignShowcasePage() {
   return (
     <div className="min-h-screen p-8 space-y-12">
       {/* Hero Section */}
       <div className="text-center space-y-4 animate-reveal">
-        <h1 className="text-5xl font-bold tracking-tight bg-gradient-to-r from-primary via-primary to-primary/70 bg-clip-text text-transparent">
+        <h1 className="text-5xl font-bold tracking-tight bg-linear-to-r from-primary via-primary to-primary/70 bg-clip-text text-transparent">
           Design System Showcase
         </h1>
         <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
@@ -225,7 +225,7 @@ export default function DesignShowcasePage() {
                 </div>
                 <div className="relative w-full bg-muted rounded-full h-2 overflow-hidden">
                   <div
-                    className={`absolute inset-y-0 left-0 bg-gradient-to-r ${item.color} rounded-full transition-all duration-500 group-hover:shadow-lg`}
+                    className={`absolute inset-y-0 left-0 bg-linear-to-r ${item.color} rounded-full transition-all duration-500 group-hover:shadow-lg`}
                     style={{ width: `${item.value}%` }}
                   />
                 </div>

@@ -10,8 +10,6 @@ import {
   AppWindow,
   BookOpen,
   Link2,
-  UserCircle,
-  Command,
   Bell,
   Search,
 } from 'lucide-react';
@@ -74,7 +72,7 @@ export function EnhancedDashboardNav({
   const avatarLetter = email.charAt(0).toUpperCase();
 
   return (
-    <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-backdrop-filter:bg-background/60">
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between gap-4">
           {/* Left: Logo and Navigation */}
@@ -82,10 +80,10 @@ export function EnhancedDashboardNav({
             {/* Logo */}
             <Link href="/" className="flex items-center gap-3 shrink-0 group">
               <div className="relative">
-                <div className="h-10 w-10 rounded-lg bg-gradient-to-br from-primary to-primary/60 flex items-center justify-center font-bold text-primary-foreground shadow-lg ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all">
+                <div className="h-10 w-10 rounded-lg bg-linear-to-br from-primary to-primary/60 flex items-center justify-center font-bold text-primary-foreground shadow-lg ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all">
                   S
                 </div>
-                <div className="absolute -inset-1 bg-gradient-to-br from-primary to-primary/60 rounded-lg opacity-0 group-hover:opacity-20 blur transition-opacity" />
+                <div className="absolute -inset-1 bg-linear-to-br from-primary to-primary/60 rounded-lg opacity-0 group-hover:opacity-20 blur transition-opacity" />
               </div>
               <div className="hidden lg:block">
                 <h1 className="text-lg font-bold tracking-tight">Access Broker</h1>

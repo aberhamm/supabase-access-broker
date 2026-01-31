@@ -4,15 +4,6 @@ import { debugLog, debugWarn, debugTrace } from '@/lib/auth-debug';
 // Singleton browser client to prevent multiple instances causing conflicts
 let browserClient: ReturnType<typeof createBrowserClient> | null = null;
 
-// Cookie helper functions for browser
-function getCookie(name: string): string | undefined {
-  if (typeof document === 'undefined') return undefined;
-  const value = `; ${document.cookie}`;
-  const parts = value.split(`; ${name}=`);
-  if (parts.length === 2) return parts.pop()?.split(';').shift();
-  return undefined;
-}
-
 function setCookie(
   name: string,
   value: string,
@@ -48,11 +39,6 @@ function setCookie(
     console.error(`[${ts}] [setCookie] MISMATCH! Cookie value was not stored correctly`);
     console.error(`[${ts}] [setCookie] Expected length:`, value.length, 'Got:', storedValue.length);
   }
-}
-
-function deleteCookie(name: string) {
-  if (typeof document === 'undefined') return;
-  document.cookie = `${name}=; Max-Age=0; Path=/`;
 }
 
 export function createClient() {

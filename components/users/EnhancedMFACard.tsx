@@ -5,16 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ShieldCheck, Smartphone, Key, CheckCircle2, Clock, Plus, AlertCircle } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
-
-interface MFAFactor {
-  id: string;
-  factor_type: string;
-  friendly_name?: string;
-  status: string;
-  created_at: string;
-  updated_at: string;
-  last_challenged_at?: string | null;
-}
+import type { MFAFactor } from '@/types/claims';
 
 interface EnhancedMFACardProps {
   factors: MFAFactor[];
@@ -48,22 +39,11 @@ export function EnhancedMFACard({ factors, userId }: EnhancedMFACardProps) {
     }
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status.toLowerCase()) {
-      case 'verified':
-        return 'default';
-      case 'unverified':
-        return 'warning';
-      default:
-        return 'outline';
-    }
-  };
-
   const securityScore = factors.filter((f) => f.status.toLowerCase() === 'verified').length;
   const maxScore = 3; // TOTP, Phone, WebAuthn
 
   return (
-    <Card className="animate-reveal" style={{ animationDelay: '0.1s' }}>
+    <Card className="animate-reveal" style={{ animationDelay: '0.1s' }} data-user-id={userId}>
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
@@ -130,6 +110,7 @@ export function EnhancedMFACard({ factors, userId }: EnhancedMFACardProps) {
             {factors.map((factor) => {
               const Icon = getFactorIcon(factor.factor_type);
               const isVerified = factor.status.toLowerCase() === 'verified';
+              const statusLower = factor.status.toLowerCase();
 
               return (
                 <div
@@ -151,8 +132,14 @@ export function EnhancedMFACard({ factors, userId }: EnhancedMFACardProps) {
                           {factor.friendly_name || getFactorLabel(factor.factor_type)}
                         </p>
                         <Badge
-                          variant={getStatusColor(factor.status) as 'default' | 'outline' | 'warning'}
-                          className="text-xs"
+                          variant="outline"
+                          className={`text-xs ${
+                            statusLower === 'verified'
+                              ? 'text-success border-success/30 bg-success/10'
+                              : statusLower === 'unverified'
+                                ? 'text-warning border-warning/30 bg-warning/10'
+                                : ''
+                          }`}
                         >
                           {isVerified && <CheckCircle2 className="h-3 w-3 mr-1" />}
                           {factor.status}
@@ -164,11 +151,11 @@ export function EnhancedMFACard({ factors, userId }: EnhancedMFACardProps) {
                           <Clock className="h-3 w-3" />
                           Added {formatDistanceToNow(new Date(factor.created_at), { addSuffix: true })}
                         </div>
-                        {factor.last_challenged_at && (
+                        {factor.updated_at && factor.updated_at !== factor.created_at && (
                           <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                             <CheckCircle2 className="h-3 w-3" />
-                            Last used{' '}
-                            {formatDistanceToNow(new Date(factor.last_challenged_at), {
+                            Updated{' '}
+                            {formatDistanceToNow(new Date(factor.updated_at), {
                               addSuffix: true,
                             })}
                           </div>

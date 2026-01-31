@@ -8,12 +8,6 @@ import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { User, UserStats, ClaimDistribution } from '@/types/claims';
 import { TrendingUp, Users, Shield, Activity, Clock } from 'lucide-react';
 
-interface EnhancedDashboardStatsContentProps {
-  stats: UserStats;
-  recentUsers: User[];
-  claimDistribution: ClaimDistribution[];
-}
-
 function EnhancedDashboardStatsContent() {
   const [stats, setStats] = useState<UserStats | null>(null);
   const [recentUsers, setRecentUsers] = useState<User[]>([]);
@@ -187,7 +181,7 @@ function EnhancedDashboardStatsContent() {
         <CardContent className="pt-6">
           <p className="text-destructive text-center">{error || 'Failed to load data'}</p>
           {errorDetail && (
-            <p className="mt-2 text-xs text-muted-foreground text-center break-words">
+            <p className="mt-2 text-xs text-muted-foreground text-center wrap-break-word">
               {errorDetail}
             </p>
           )}
@@ -214,7 +208,7 @@ function EnhancedDashboardStatsContent() {
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-4">
         {/* Primary metric - larger, with gradient */}
         <Card className="relative overflow-hidden md:col-span-2 card-hover group animate-reveal">
-          <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-primary/3 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          <div className="absolute inset-0 bg-linear-to-br from-primary/10 via-transparent to-primary/3 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
           <CardContent className="relative p-6">
             <div className="flex items-center justify-between mb-4">
               <div className="flex items-center gap-3">
@@ -342,7 +336,7 @@ function EnhancedDashboardStatsContent() {
                     </div>
                     <div className="relative w-full bg-muted rounded-full h-2 overflow-hidden">
                       <div
-                        className="absolute inset-y-0 left-0 bg-gradient-to-r from-primary via-primary to-primary/80 rounded-full transition-all duration-500 group-hover:shadow-lg"
+                        className="absolute inset-y-0 left-0 bg-linear-to-r from-primary via-primary to-primary/80 rounded-full transition-all duration-500 group-hover:shadow-lg"
                         style={{
                           width: `${stats.totalUsers > 0 ? (count / stats.totalUsers) * 100 : 0}%`,
                         }}

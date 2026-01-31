@@ -23,8 +23,8 @@ import {
   LayoutList,
   Table as TableIcon,
   ShieldCheck,
+  Activity,
   Clock,
-  Mail,
   Copy,
   Check,
   ChevronDown,
@@ -508,7 +508,7 @@ function UserCard({
         className="group relative overflow-hidden rounded-lg border p-6 card-hover animate-reveal"
         style={{ animationDelay: `${index * 0.05}s` }}
       >
-        <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+        <div className="absolute inset-0 bg-linear-to-br from-primary/5 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
 
         <div className="relative space-y-4">
           <div className="flex items-start justify-between">
