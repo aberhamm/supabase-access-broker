@@ -131,16 +131,16 @@ export function PasskeyManager({ initialPasskeys, onDelete }: PasskeyManagerProp
             <p className="text-sm text-muted-foreground">No passkeys registered yet.</p>
           ) : (
             passkeys.map((p) => (
-              <div key={p.id} className="flex items-center justify-between rounded border p-3">
+              <div key={p.id} className="flex flex-col gap-3 rounded border p-3 sm:flex-row sm:items-center sm:justify-between">
                 <div className="min-w-0">
                   <div className="truncate text-sm font-medium">{p.name || 'Unnamed passkey'}</div>
-                  <div className="text-xs text-muted-foreground">
+                  <div className="text-xs text-muted-foreground break-words">
                     {p.device_type ? `${p.device_type} · ` : ''}
                     Added {new Date(p.created_at).toLocaleString()}
                     {p.last_used_at ? ` · Last used ${new Date(p.last_used_at).toLocaleString()}` : ''}
                   </div>
                 </div>
-                <Button type="button" variant="destructive" onClick={() => handleDelete(p.id)}>
+                <Button type="button" variant="destructive" onClick={() => handleDelete(p.id)} className="sm:w-auto">
                   Remove
                 </Button>
               </div>

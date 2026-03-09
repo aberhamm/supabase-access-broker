@@ -2,6 +2,51 @@ import crypto from 'crypto';
 import { debugLog } from '@/lib/auth-debug';
 import { createAdminClient } from '@/lib/supabase/server';
 
+export interface SsoAppAuthConfig {
+  id: string;
+  enabled: boolean | null;
+  ssoClientSecretHash: string | null;
+}
+
+export function sha256Hex(input: string): string {
+  return crypto.createHash('sha256').update(input, 'utf8').digest('hex');
+}
+
+export function timingSafeEqualHex(a: string, b: string): boolean {
+  try {
+    const aBuf = Buffer.from(a, 'hex');
+    const bBuf = Buffer.from(b, 'hex');
+    if (aBuf.length !== bBuf.length) return false;
+    return crypto.timingSafeEqual(aBuf, bBuf);
+  } catch {
+    return false;
+  }
+}
+
+export async function getSsoAppAuthConfig(appId: string): Promise<SsoAppAuthConfig | null> {
+  const supabase = await createAdminClient();
+  const { data, error } = await supabase
+    .schema('access_broker_app')
+    .from('apps')
+    .select('id,enabled,sso_client_secret_hash')
+    .eq('id', appId)
+    .maybeSingle();
+
+  if (error) {
+    throw error;
+  }
+
+  if (!data?.id) {
+    return null;
+  }
+
+  return {
+    id: data.id,
+    enabled: data.enabled,
+    ssoClientSecretHash: data.sso_client_secret_hash,
+  };
+}
+
 function isAllowedInsecureRedirect(url: URL): boolean {
   const host = url.hostname;
   return host === 'localhost' || host === '127.0.0.1';

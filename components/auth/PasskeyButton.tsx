@@ -5,6 +5,7 @@ import { startAuthentication } from '@simplewebauthn/browser';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { debugError, debugLog } from '@/lib/auth-debug';
+import { createClient } from '@/lib/supabase/client';
 
 type PasskeyButtonProps = {
   next?: string;
@@ -90,11 +91,13 @@ function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promi
 
 export function PasskeyButton({ next = '/', className }: PasskeyButtonProps) {
   const [loading, setLoading] = useState(false);
+  const supabase = createClient();
 
   const handlePasskeySignIn = async () => {
     try {
       setLoading(true);
       debugLog('[Passkey] Starting authentication...');
+      await supabase.auth.signOut();
 
       const optionsRes = await fetch('/api/auth/passkey/login/options', {
         method: 'POST',

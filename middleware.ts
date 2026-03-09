@@ -5,6 +5,37 @@ import { debugLog, debugWarn, debugTrace, isDebugAuthEnabled } from '@/lib/auth-
 import { PUBLIC_ROUTE_PREFIXES, PORTAL_ROUTE_PREFIXES } from '@/lib/auth-routes';
 import { hasAnyAppAdmin } from '@/types/claims';
 
+type AuthErrorLike = {
+  code?: string | null;
+  message?: string | null;
+  status?: number | null;
+};
+
+function isDefinitiveAuthFailure(error: AuthErrorLike | null | undefined): boolean {
+  if (!error) return false;
+
+  const code = (error.code || '').toLowerCase();
+  const message = (error.message || '').toLowerCase();
+  const status = error.status ?? 0;
+
+  if (status === 401 || status === 403) {
+    return true;
+  }
+
+  return (
+    code.includes('jwt') ||
+    code.includes('token') ||
+    code.includes('session') ||
+    code === 'bad_jwt' ||
+    code === 'session_not_found' ||
+    code === 'refresh_token_not_found' ||
+    message.includes('jwt') ||
+    message.includes('token') ||
+    message.includes('session') ||
+    message.includes('auth session missing')
+  );
+}
+
 export async function middleware(request: NextRequest) {
   const response = NextResponse.next();
   const debugAuth = isDebugAuthEnabled();
@@ -128,12 +159,28 @@ export async function middleware(request: NextRequest) {
     console.error('[MIDDLEWARE] getUser error:', userError.message, userError.code);
   }
 
-  // Fallback: if getUser() fails but session exists, use session user
-  // This can happen when the token is valid but getUser() fails for other reasons
-  const user = verifiedUser || (sessionData?.session?.user ?? null);
+  const hasDefinitiveAuthFailure = isDefinitiveAuthFailure(userError);
 
-  if (!verifiedUser && sessionData?.session?.user) {
+  // Only trust getSession() as a fallback for transient/non-auth getUser failures.
+  // If getUser() reports an auth failure, treating the session as valid creates
+  // redirect loops for /login SSO flows because middleware keeps auto-redirecting
+  // with stale cookies that the server rejects.
+  const fallbackUser = !verifiedUser && !hasDefinitiveAuthFailure
+    ? (sessionData?.session?.user ?? null)
+    : null;
+
+  const user = verifiedUser || fallbackUser;
+
+  if (!verifiedUser && fallbackUser) {
     console.warn('[MIDDLEWARE] Using session user as fallback (getUser failed but session exists)');
+  }
+
+  if (!verifiedUser && sessionData?.session?.user && hasDefinitiveAuthFailure) {
+    console.warn('[MIDDLEWARE] Rejecting session fallback due to definitive auth failure', {
+      status: userError?.status,
+      code: userError?.code,
+      message: userError?.message,
+    });
   }
 
   // Debug: Log session vs user mismatch
@@ -158,14 +205,24 @@ export async function middleware(request: NextRequest) {
   // 1. No user AND no session (both checks passed, not errored)
   // 2. No session error (if there was an error, the session might be valid but we couldn't verify)
   // 3. No user error (same reason)
-  const shouldClearCookies = !user && !sessionData?.session && hasAuthCookies &&
+  const shouldClearMissingSessionCookies = !user && !sessionData?.session && hasAuthCookies &&
     !sessionError && !userError;
+
+  // Also clear cookies when getSession() still returns a session but getUser()
+  // definitively rejects it. This recovers from stale/invalid auth cookies that
+  // would otherwise keep bouncing SSO users back into /sso/complete.
+  const shouldClearRejectedSessionCookies = !verifiedUser && !!sessionData?.session && hasAuthCookies &&
+    hasDefinitiveAuthFailure;
+
+  const shouldClearCookies = shouldClearMissingSessionCookies || shouldClearRejectedSessionCookies;
 
   if (shouldClearCookies) {
     if (debugAuth) {
       debugWarn('[MIDDLEWARE] Skipping cookie cleanup because DEBUG_AUTH is enabled');
     } else {
-      debugWarn('[MIDDLEWARE] Clearing invalid auth cookies');
+      debugWarn('[MIDDLEWARE] Clearing invalid auth cookies', {
+        reason: shouldClearRejectedSessionCookies ? 'rejected_session' : 'missing_session',
+      });
       const cookiesToClear = request.cookies.getAll()
         .filter(c => c.name.includes('sb-') && (c.name.includes('-auth-token') || c.name.includes('-code-verifier')));
       cookiesToClear.forEach(c => {

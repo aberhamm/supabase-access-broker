@@ -1,22 +1,7 @@
-import crypto from 'crypto';
 import { NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
+import { getSsoAppAuthConfig, sha256Hex, timingSafeEqualHex } from '@/lib/sso-service';
 import { logSSOEvent, extractClientIP } from '@/lib/audit-service';
-
-function sha256Hex(input: string): string {
-  return crypto.createHash('sha256').update(input, 'utf8').digest('hex');
-}
-
-function timingSafeEqualHex(a: string, b: string): boolean {
-  try {
-    const aBuf = Buffer.from(a, 'hex');
-    const bBuf = Buffer.from(b, 'hex');
-    if (aBuf.length !== bBuf.length) return false;
-    return crypto.timingSafeEqual(aBuf, bBuf);
-  } catch {
-    return false;
-  }
-}
 
 export async function POST(request: Request) {
   // Common audit context
@@ -72,19 +57,9 @@ export async function POST(request: Request) {
       );
     }
 
-    const supabase = await createAdminClient();
+    const appConfig = await getSsoAppAuthConfig(appId);
 
-    // Verify app credentials
-    const { data: appRow, error: appErr } = await supabase
-      .schema('access_broker_app')
-      .from('apps')
-      .select('id,enabled,sso_client_secret_hash')
-      .eq('id', appId)
-      .maybeSingle();
-
-    if (appErr) throw appErr;
-
-    if (!appRow?.id) {
+    if (!appConfig?.id) {
       logSSOEvent({
         eventType: 'user_lookup_error',
         appId,
@@ -94,7 +69,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unknown app_id' }, { status: 400 });
     }
 
-    if (appRow.enabled === false) {
+    if (appConfig.enabled === false) {
       logSSOEvent({
         eventType: 'user_lookup_error',
         appId,
@@ -104,30 +79,40 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'App is disabled' }, { status: 403 });
     }
 
-    // If a secret hash is configured, require and verify it.
-    if (appRow.sso_client_secret_hash) {
-      if (!appSecret) {
-        logSSOEvent({
-          eventType: 'user_lookup_error',
-          appId,
-          errorCode: 'missing_secret',
-          ...auditContext,
-        });
-        return NextResponse.json({ error: 'Missing app_secret' }, { status: 401 });
-      }
-      const computed = sha256Hex(appSecret);
-      const ok = timingSafeEqualHex(computed, appRow.sso_client_secret_hash);
-      if (!ok) {
-        logSSOEvent({
-          eventType: 'user_lookup_error',
-          appId,
-          errorCode: 'invalid_secret',
-          ...auditContext,
-          metadata: { reason: 'secret_mismatch' },
-        });
-        return NextResponse.json({ error: 'Invalid app_secret' }, { status: 401 });
-      }
+    if (!appConfig.ssoClientSecretHash) {
+      logSSOEvent({
+        eventType: 'user_lookup_error',
+        appId,
+        errorCode: 'secret_not_configured',
+        ...auditContext,
+      });
+      return NextResponse.json({ error: 'App secret is not configured' }, { status: 403 });
     }
+
+    if (!appSecret) {
+      logSSOEvent({
+        eventType: 'user_lookup_error',
+        appId,
+        errorCode: 'missing_secret',
+        ...auditContext,
+      });
+      return NextResponse.json({ error: 'Missing app_secret' }, { status: 401 });
+    }
+
+    const computed = sha256Hex(appSecret);
+    const ok = timingSafeEqualHex(computed, appConfig.ssoClientSecretHash);
+    if (!ok) {
+      logSSOEvent({
+        eventType: 'user_lookup_error',
+        appId,
+        errorCode: 'invalid_secret',
+        ...auditContext,
+        metadata: { reason: 'secret_mismatch' },
+      });
+      return NextResponse.json({ error: 'Invalid app_secret' }, { status: 401 });
+    }
+
+    const supabase = await createAdminClient();
 
     // Look up user by identifier
     let user: { id: string; email: string; raw_app_meta_data: Record<string, unknown> } | null =
@@ -177,7 +162,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Extract app claims and connected accounts
+    // Extract app claims only. Keep the machine contract minimal.
     const appMetadata = user.raw_app_meta_data as unknown;
     const apps =
       appMetadata && typeof appMetadata === 'object' && 'apps' in (appMetadata as Record<string, unknown>)
@@ -186,13 +171,6 @@ export async function POST(request: Request) {
     const appClaims =
       apps && typeof apps === 'object'
         ? ((apps as Record<string, unknown>)[appId] ?? null)
-        : null;
-    const telegram =
-      appMetadata &&
-      typeof appMetadata === 'object' &&
-      'telegram' in (appMetadata as Record<string, unknown>) &&
-      typeof (appMetadata as Record<string, unknown>).telegram === 'object'
-        ? ((appMetadata as Record<string, unknown>).telegram as Record<string, unknown>)
         : null;
 
     // Log successful lookup
@@ -208,9 +186,6 @@ export async function POST(request: Request) {
       user: {
         id: user.id,
         email: user.email,
-        connected_accounts: {
-          telegram,
-        },
       },
       app_claims: appClaims,
     });

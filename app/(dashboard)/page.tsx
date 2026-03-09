@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic';
 
 import { createClient } from '@/lib/supabase/server';
 import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { EnhancedDashboardStats } from '@/components/dashboard/EnhancedDashboardStats';
 import Link from 'next/link';
 import { Users, AppWindow } from 'lucide-react';
@@ -43,14 +44,11 @@ export default async function DashboardPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between animate-reveal">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">Dashboard</h2>
-          <p className="text-muted-foreground">
-            Manage users and custom claims for your Supabase project
-          </p>
-        </div>
-        <div className="flex gap-2">
+      <PageHeader
+        title="Dashboard"
+        description="Manage users and custom claims for your Supabase project"
+        actions={
+          <>
           {(isGlobalAdmin || isAppAdmin) && (
             <Link href="/apps">
               <Button variant="outline" className="btn-press">
@@ -65,8 +63,9 @@ export default async function DashboardPage() {
               View All Users
             </Button>
           </Link>
-        </div>
-      </div>
+          </>
+        }
+      />
 
       {/* Claims-admin-only stats (these rely on JWT claims for DB RPC access) */}
       {isClaimsAdminJwt ? (

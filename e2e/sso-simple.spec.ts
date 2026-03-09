@@ -2,7 +2,6 @@ import { test, expect } from '@playwright/test';
 import {
   ensureTestUser,
   createTestApp,
-  deleteTestApp,
   grantUserAppAccess,
   TEST_USER,
   TEST_APP,
@@ -113,6 +112,7 @@ test.describe('SSO Integration - Simplified E2E', () => {
       data: {
         code,
         app_id: TEST_APP.id,
+        app_secret: TEST_APP.secret,
       },
     });
 
@@ -178,6 +178,7 @@ test.describe('SSO Integration - Simplified E2E', () => {
       data: {
         code,
         app_id: TEST_APP.id,
+        app_secret: TEST_APP.secret,
       },
     });
 
@@ -188,6 +189,7 @@ test.describe('SSO Integration - Simplified E2E', () => {
       data: {
         code,
         app_id: TEST_APP.id,
+        app_secret: TEST_APP.secret,
       },
     });
 

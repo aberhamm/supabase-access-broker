@@ -15,6 +15,7 @@ import {
   KeyRound,
 } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
+import { PageHeaderActions } from '@/components/layout/PageHeader';
 
 interface UserProfileHeaderProps {
   userId: string;
@@ -42,14 +43,14 @@ export function UserProfileHeader({
     : false;
 
   return (
-    <div className="relative overflow-hidden rounded-lg border bg-gradient-to-br from-background via-primary/3 to-background p-8 animate-reveal">
+    <div className="relative overflow-hidden rounded-lg border bg-gradient-to-br from-background via-primary/3 to-background p-5 animate-reveal sm:p-8">
       {/* Background decoration */}
       <div className="absolute top-0 right-0 w-96 h-96 bg-primary/5 rounded-full blur-3xl -z-10" />
       <div className="absolute bottom-0 left-0 w-64 h-64 bg-accent-vivid/5 rounded-full blur-3xl -z-10" />
 
       <div className="relative">
         {/* Breadcrumb */}
-        <div className="flex items-center gap-2 text-sm text-muted-foreground mb-6">
+        <div className="mb-6 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
           <Link
             href="/users"
             className="hover:text-foreground transition-colors flex items-center gap-1"
@@ -58,12 +59,12 @@ export function UserProfileHeader({
             Users
           </Link>
           <span>/</span>
-          <span className="text-foreground font-medium truncate max-w-xs">{email}</span>
+          <span className="max-w-full truncate font-medium text-foreground sm:max-w-xs">{email}</span>
         </div>
 
         <div className="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-6">
           {/* Left: Avatar and Info */}
-          <div className="flex items-start gap-6">
+          <div className="flex min-w-0 flex-col gap-4 sm:flex-row sm:items-start sm:gap-6">
             {/* Large Avatar */}
             <div className="relative group">
               <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-primary/60 text-background font-bold text-3xl shrink-0 ring-4 ring-primary/20 shadow-lg">
@@ -77,10 +78,10 @@ export function UserProfileHeader({
             </div>
 
             {/* Info */}
-            <div className="space-y-3">
+            <div className="min-w-0 space-y-3">
               <div>
-                <h1 className="text-3xl font-bold tracking-tight mb-1">{email}</h1>
-                <p className="text-sm text-muted-foreground font-mono">
+                <h1 className="mb-1 break-words text-2xl font-bold tracking-tight sm:text-3xl">{email}</h1>
+                <p className="break-all text-sm font-mono text-muted-foreground">
                   ID: {userId.substring(0, 16)}...
                 </p>
               </div>
@@ -121,7 +122,7 @@ export function UserProfileHeader({
 
               {/* Last Activity */}
               {lastSignIn && (
-                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                <div className="flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
                   <Clock className="h-4 w-4" />
                   <span>
                     Last active{' '}
@@ -133,7 +134,7 @@ export function UserProfileHeader({
           </div>
 
           {/* Right: Quick Actions */}
-          <div className="flex flex-wrap lg:flex-nowrap items-center gap-2">
+          <PageHeaderActions className="lg:w-auto lg:flex-nowrap">
             {onEdit && (
               <Button variant="outline" size="sm" onClick={onEdit} className="gap-2">
                 <Edit className="h-4 w-4" />
@@ -157,7 +158,7 @@ export function UserProfileHeader({
                 Delete
               </Button>
             )}
-          </div>
+          </PageHeaderActions>
         </div>
       </div>
     </div>

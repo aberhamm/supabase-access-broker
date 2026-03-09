@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { createClient, SupabaseClient } from '@supabase/supabase-js';
 
 let _supabase: SupabaseClient | null = null;
@@ -24,18 +25,18 @@ function getSupabase() {
 
 export const supabase = new Proxy({} as SupabaseClient, {
   get(_target, prop) {
-    return (getSupabase() as any)[prop];
+    return Reflect.get(getSupabase() as object, prop);
   },
 });
 
 /**
  * Test user credentials
- * By default, uses the real admin user from environment
+ * By default, uses an isolated test identity.
  * You can override by setting TEST_USER_EMAIL and TEST_USER_PASSWORD env vars
  */
 export const TEST_USER = {
-  email: process.env.TEST_USER_EMAIL || 'matthew.aberham@gmail.com',
-  password: process.env.TEST_USER_PASSWORD,
+  email: process.env.TEST_USER_EMAIL || 'test-sso@example.com',
+  password: process.env.TEST_USER_PASSWORD || 'test-password-change-me',
 };
 
 export const TEST_APP = {
@@ -43,10 +44,12 @@ export const TEST_APP = {
   name: 'Demo Application',
   description: 'Test app for SSO integration',
   color: '#06b6d4',
+  secret: process.env.TEST_APP_SECRET || 'demo-app-secret-for-tests',
 };
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3050';
 const DEMO_CALLBACK = `${APP_URL}/demo/sso-demo.html`;
+const TEST_APP_SECRET_HASH = createHash('sha256').update(TEST_APP.secret, 'utf8').digest('hex');
 
 /**
  * Get or ensure test user exists
@@ -135,7 +138,7 @@ export async function createTestApp() {
       .update({
         enabled: true,
         allowed_callback_urls: [DEMO_CALLBACK],
-        sso_client_secret_hash: null,
+        sso_client_secret_hash: TEST_APP_SECRET_HASH,
       })
       .eq('id', TEST_APP.id);
 
@@ -151,7 +154,7 @@ export async function createTestApp() {
     color: TEST_APP.color,
     enabled: true,
     allowed_callback_urls: [DEMO_CALLBACK],
-    sso_client_secret_hash: null,
+    sso_client_secret_hash: TEST_APP_SECRET_HASH,
   }).select().single();
 
   if (error) {

@@ -11,6 +11,7 @@ import { EditProfileDialog } from '@/components/users/EditProfileDialog';
 import { MFAFactorsList } from '@/components/users/MFAFactorsList';
 import { MFAEnrollDialog } from '@/components/account/MFAEnrollDialog';
 import { ChangePasswordDialog } from '@/components/account/ChangePasswordDialog';
+import { PageHeader } from '@/components/layout/PageHeader';
 
 export default async function AccountPage() {
   const supabase = await createClient();
@@ -46,21 +47,24 @@ export default async function AccountPage() {
   const mfaFactors = mfaResult.success ? mfaResult.factors || [] : [];
 
   return (
-    <div className="mx-auto max-w-2xl space-y-6 p-6">
-      <div className="flex items-center justify-between">
-        <h1 className="text-2xl font-semibold">Account</h1>
-        <Link href="/auth/logout" prefetch={false}>
-          <Button variant="outline" size="sm">
-            <LogOut className="h-4 w-4 mr-2" />
-            Sign Out
-          </Button>
-        </Link>
-      </div>
+    <div className="mx-auto max-w-2xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+      <PageHeader
+        title="Account"
+        description="Manage your profile, security settings, and passkeys."
+        actions={
+          <Link href="/auth/logout" prefetch={false}>
+            <Button variant="outline" size="sm">
+              <LogOut className="h-4 w-4 mr-2" />
+              Sign Out
+            </Button>
+          </Link>
+        }
+      />
 
       {/* User Info Card */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <div>
+        <CardHeader className="flex flex-col gap-3 space-y-0 pb-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <CardTitle className="text-lg flex items-center gap-2">
               <User className="h-5 w-5" />
               Profile
@@ -144,7 +148,7 @@ export default async function AccountPage() {
         <CardContent className="space-y-6">
           {/* Password Section */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2">
                 <Key className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm font-medium">Password</span>
@@ -158,8 +162,8 @@ export default async function AccountPage() {
 
           <div className="border-t pt-4">
             {/* MFA Section */}
-            <div className="flex items-center justify-between mb-4">
-              <div>
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <div className="min-w-0">
                 <p className="text-sm font-medium">Two-Factor Authentication</p>
                 <p className="text-xs text-muted-foreground">
                   Add extra security to your account with an authenticator app.

@@ -50,6 +50,7 @@ type ActivityFilter = 'all' | 'active' | 'inactive';
 export function EnhancedUserTable({ users }: EnhancedUserTableProps) {
   const [searchTerm, setSearchTerm] = useState('');
   const [viewMode, setViewMode] = useState<ViewMode>('table');
+  const [hasManualViewMode, setHasManualViewMode] = useState(false);
   const [roleFilter, setRoleFilter] = useState<RoleFilter>('all');
   const [activityFilter, setActivityFilter] = useState<ActivityFilter>('all');
   const [copiedId, setCopiedId] = useState<string | null>(null);
@@ -73,6 +74,19 @@ export function EnhancedUserTable({ users }: EnhancedUserTableProps) {
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, []);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(max-width: 767px)');
+    const syncViewMode = () => {
+      if (hasManualViewMode) return;
+      setViewMode(mediaQuery.matches ? 'compact' : 'table');
+    };
+
+    syncViewMode();
+    mediaQuery.addEventListener('change', syncViewMode);
+
+    return () => mediaQuery.removeEventListener('change', syncViewMode);
+  }, [hasManualViewMode]);
 
   const getClaimsCount = useCallback((user: User) => {
     return getUserCustomClaimsCount(user.app_metadata);
@@ -134,10 +148,11 @@ export function EnhancedUserTable({ users }: EnhancedUserTableProps) {
 
   if (viewMode === 'grid') {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4" data-view-mode={viewMode}>
         <ViewControls
           viewMode={viewMode}
           setViewMode={setViewMode}
+          setHasManualViewMode={setHasManualViewMode}
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           roleFilter={roleFilter}
@@ -176,10 +191,11 @@ export function EnhancedUserTable({ users }: EnhancedUserTableProps) {
 
   if (viewMode === 'compact') {
     return (
-      <div className="space-y-4">
+      <div className="space-y-4" data-view-mode={viewMode}>
         <ViewControls
           viewMode={viewMode}
           setViewMode={setViewMode}
+          setHasManualViewMode={setHasManualViewMode}
           searchTerm={searchTerm}
           setSearchTerm={setSearchTerm}
           roleFilter={roleFilter}
@@ -216,10 +232,11 @@ export function EnhancedUserTable({ users }: EnhancedUserTableProps) {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-4" data-view-mode={viewMode}>
       <ViewControls
         viewMode={viewMode}
         setViewMode={setViewMode}
+        setHasManualViewMode={setHasManualViewMode}
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}
         roleFilter={roleFilter}
@@ -339,6 +356,7 @@ export function EnhancedUserTable({ users }: EnhancedUserTableProps) {
 function ViewControls({
   viewMode,
   setViewMode,
+  setHasManualViewMode,
   searchTerm,
   setSearchTerm,
   roleFilter,
@@ -352,6 +370,7 @@ function ViewControls({
 }: {
   viewMode: ViewMode;
   setViewMode: (mode: ViewMode) => void;
+  setHasManualViewMode: (value: boolean) => void;
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   roleFilter: RoleFilter;
@@ -378,103 +397,112 @@ function ViewControls({
           />
         </div>
 
-        <div className="flex items-center gap-2 flex-wrap w-full sm:w-auto">
-        <DropdownMenu>
-          <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="gap-2">
-              <Filter className="h-4 w-4" />
-              Filters
-              {hasActiveFilters && (
-                <Badge variant="secondary" className="ml-1 h-5 w-5 rounded-full p-0 flex items-center justify-center">
-                  !
-                </Badge>
-              )}
-              <ChevronDown className="h-3 w-3" />
+        <div className="flex w-full flex-wrap items-center gap-2 sm:w-auto">
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" size="sm" className="gap-2 max-sm:flex-1">
+                <Filter className="h-4 w-4" />
+                Filters
+                {hasActiveFilters && (
+                  <Badge variant="secondary" className="ml-1 flex h-5 w-5 items-center justify-center rounded-full p-0">
+                    !
+                  </Badge>
+                )}
+                <ChevronDown className="h-3 w-3" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end" className="w-56">
+              <DropdownMenuLabel>Role</DropdownMenuLabel>
+              <DropdownMenuCheckboxItem
+                checked={roleFilter === 'all'}
+                onCheckedChange={() => setRoleFilter('all')}
+              >
+                All Users
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={roleFilter === 'admin'}
+                onCheckedChange={() => setRoleFilter('admin')}
+              >
+                Admins Only
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={roleFilter === 'user'}
+                onCheckedChange={() => setRoleFilter('user')}
+              >
+                Standard Users
+              </DropdownMenuCheckboxItem>
+
+              <DropdownMenuSeparator />
+
+              <DropdownMenuLabel>Activity</DropdownMenuLabel>
+              <DropdownMenuCheckboxItem
+                checked={activityFilter === 'all'}
+                onCheckedChange={() => setActivityFilter('all')}
+              >
+                All
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={activityFilter === 'active'}
+                onCheckedChange={() => setActivityFilter('active')}
+              >
+                Active (7 days)
+              </DropdownMenuCheckboxItem>
+              <DropdownMenuCheckboxItem
+                checked={activityFilter === 'inactive'}
+                onCheckedChange={() => setActivityFilter('inactive')}
+              >
+                Inactive
+              </DropdownMenuCheckboxItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+
+          {hasActiveFilters && (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={clearFilters}
+              className="gap-2 max-sm:flex-1"
+            >
+              <X className="h-4 w-4" />
+              Clear
             </Button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent align="end" className="w-56">
-            <DropdownMenuLabel>Role</DropdownMenuLabel>
-            <DropdownMenuCheckboxItem
-              checked={roleFilter === 'all'}
-              onCheckedChange={() => setRoleFilter('all')}
-            >
-              All Users
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem
-              checked={roleFilter === 'admin'}
-              onCheckedChange={() => setRoleFilter('admin')}
-            >
-              Admins Only
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem
-              checked={roleFilter === 'user'}
-              onCheckedChange={() => setRoleFilter('user')}
-            >
-              Standard Users
-            </DropdownMenuCheckboxItem>
+          )}
 
-            <DropdownMenuSeparator />
-
-            <DropdownMenuLabel>Activity</DropdownMenuLabel>
-            <DropdownMenuCheckboxItem
-              checked={activityFilter === 'all'}
-              onCheckedChange={() => setActivityFilter('all')}
+          <div className="flex items-center gap-1 rounded-lg border p-1 max-sm:w-full">
+            <Button
+              variant={viewMode === 'table' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => {
+                setHasManualViewMode(true);
+                setViewMode('table');
+              }}
+              className="h-8 w-8 p-0 max-sm:flex-1"
             >
-              All
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem
-              checked={activityFilter === 'active'}
-              onCheckedChange={() => setActivityFilter('active')}
+              <TableIcon className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'grid' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => {
+                setHasManualViewMode(true);
+                setViewMode('grid');
+              }}
+              className="h-8 w-8 p-0 max-sm:flex-1"
             >
-              Active (7 days)
-            </DropdownMenuCheckboxItem>
-            <DropdownMenuCheckboxItem
-              checked={activityFilter === 'inactive'}
-              onCheckedChange={() => setActivityFilter('inactive')}
+              <LayoutGrid className="h-4 w-4" />
+            </Button>
+            <Button
+              variant={viewMode === 'compact' ? 'default' : 'ghost'}
+              size="sm"
+              onClick={() => {
+                setHasManualViewMode(true);
+                setViewMode('compact');
+              }}
+              className="h-8 w-8 p-0 max-sm:flex-1"
             >
-              Inactive
-            </DropdownMenuCheckboxItem>
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        {hasActiveFilters && (
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={clearFilters}
-            className="gap-2"
-          >
-            <X className="h-4 w-4" />
-            Clear
-          </Button>
-        )}
-
-        <div className="flex items-center gap-1 border rounded-lg p-1">
-          <Button
-            variant={viewMode === 'table' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setViewMode('table')}
-            className="h-8 w-8 p-0"
-          >
-            <TableIcon className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={viewMode === 'grid' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setViewMode('grid')}
-            className="h-8 w-8 p-0"
-          >
-            <LayoutGrid className="h-4 w-4" />
-          </Button>
-          <Button
-            variant={viewMode === 'compact' ? 'default' : 'ghost'}
-            size="sm"
-            onClick={() => setViewMode('compact')}
-            className="h-8 w-8 p-0"
-          >
-            <LayoutList className="h-4 w-4" />
-          </Button>
-        </div>
+              <LayoutList className="h-4 w-4" />
+            </Button>
+          </div>
         </div>
       </div>
 
@@ -584,7 +612,7 @@ function CompactUserRow({
         <Badge variant="outline" className="font-mono shrink-0 text-xs">
           {claimsCount}
         </Badge>
-        <span className="text-xs text-muted-foreground shrink-0 w-24 text-right">
+        <span className="hidden w-24 shrink-0 text-right text-xs text-muted-foreground sm:block">
           {user.last_sign_in_at
             ? formatDistanceToNow(new Date(user.last_sign_in_at), { addSuffix: true })
             : 'Never'}

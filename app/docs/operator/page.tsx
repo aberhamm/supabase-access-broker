@@ -43,7 +43,7 @@ export default async function OperatorLandingPage() {
 
   return (
     <div className="docs-container min-h-screen">
-      <div className="mx-auto max-w-5xl px-6 py-8">
+      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
         {/* Breadcrumb */}
         <Breadcrumb className="mb-12">
           <BreadcrumbList>
@@ -67,18 +67,18 @@ export default async function OperatorLandingPage() {
 
         {/* Hero */}
         <div className="mb-12">
-          <div className="flex items-start gap-4 mb-6">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start">
             <div className="p-3 rounded-xl bg-emerald-500/10">
               <Server className="h-8 w-8 text-emerald-600 dark:text-emerald-400" />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="track-badge track-badge--operator mb-2">Operator Track</div>
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
                 Deploy & Manage
               </h1>
             </div>
           </div>
-          <p className="text-lg text-muted-foreground max-w-3xl leading-relaxed">
+          <p className="max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg">
             Set up, configure, and operate the Access Broker platform for your organization. This guide covers everything from initial deployment to multi-app management.
           </p>
         </div>
@@ -106,7 +106,7 @@ export default async function OperatorLandingPage() {
 
         {/* Learning Journey */}
         <div className="mb-16">
-          <div className="flex items-center justify-between mb-6">
+          <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-2xl font-semibold">Deployment Journey</h2>
               <p className="text-muted-foreground mt-1">Follow this path to deploy and configure the platform</p>
@@ -177,7 +177,7 @@ export default async function OperatorLandingPage() {
 
         {/* Related Concepts */}
         <div className="mb-12">
-          <div className="flex items-center justify-between mb-4">
+          <div className="mb-4 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <h2 className="text-xl font-semibold">Foundational Concepts</h2>
             <Link
               href="/docs/concepts"

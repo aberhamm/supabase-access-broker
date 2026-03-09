@@ -5,8 +5,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 export default function AppsLoading() {
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between">
-        <div>
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+        <div className="min-w-0">
           <Skeleton className="h-9 w-48 mb-2" />
           <Skeleton className="h-5 w-64" />
         </div>

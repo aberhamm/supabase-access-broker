@@ -37,7 +37,7 @@ export default async function DashboardLayout({
   return (
     <div className="min-h-screen bg-background flex flex-col">
       <EnhancedDashboardNav email={email} showApps={isGlobalAdmin || isAppAdmin} />
-      <main className="container mx-auto space-y-8 p-4 py-8 flex-1">
+      <main className="container mx-auto flex-1 space-y-6 px-4 py-6 sm:space-y-8 sm:py-8">
         {children}
       </main>
       <DashboardFooter />

@@ -21,6 +21,7 @@ export function SocialButtons({ next = '/', enableGoogle, enableGitHub }: Social
   const signIn = async (provider: 'google' | 'github') => {
     try {
       setLoading(provider);
+      await supabase.auth.signOut();
       const { error } = await supabase.auth.signInWithOAuth({
         provider,
         options: { redirectTo },

@@ -1,10 +1,8 @@
-import { FullConfig } from '@playwright/test';
-
 /**
  * Global setup runs once before all tests
  * Use this to ensure test environment is ready
  */
-async function globalSetup(config: FullConfig) {
+async function globalSetup() {
   console.log('🚀 Starting global test setup...');
 
   // Verify environment variables

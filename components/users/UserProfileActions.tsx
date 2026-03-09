@@ -1,6 +1,7 @@
 'use client';
 
 import { Button } from '@/components/ui/button';
+import { PageHeaderActions } from '@/components/layout/PageHeader';
 import { Edit, Trash2, KeyRound } from 'lucide-react';
 
 interface UserProfileActionsProps {
@@ -25,7 +26,7 @@ export function UserProfileActions({ userId }: UserProfileActionsProps) {
   };
 
   return (
-    <div className="flex flex-wrap lg:flex-nowrap items-center gap-2">
+    <PageHeaderActions className="lg:w-auto lg:flex-nowrap">
       <Button variant="outline" size="sm" onClick={handleEdit} className="gap-2">
         <Edit className="h-4 w-4" />
         Edit
@@ -43,6 +44,6 @@ export function UserProfileActions({ userId }: UserProfileActionsProps) {
         <Trash2 className="h-4 w-4" />
         Delete
       </Button>
-    </div>
+    </PageHeaderActions>
   );
 }

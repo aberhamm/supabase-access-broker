@@ -86,7 +86,7 @@ export default async function ConceptsLandingPage() {
 
   return (
     <div className="docs-container min-h-screen">
-      <div className="mx-auto max-w-5xl px-6 py-8">
+      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
         {/* Breadcrumb */}
         <Breadcrumb className="mb-12">
           <BreadcrumbList>
@@ -110,18 +110,18 @@ export default async function ConceptsLandingPage() {
 
         {/* Hero */}
         <div className="mb-12">
-          <div className="flex items-start gap-4 mb-6">
+          <div className="mb-6 flex flex-col gap-4 sm:flex-row sm:items-start">
             <div className="p-3 rounded-xl bg-violet-500/10">
               <BookOpen className="h-8 w-8 text-violet-600 dark:text-violet-400" />
             </div>
-            <div>
+            <div className="min-w-0">
               <div className="track-badge track-badge--concepts mb-2">Concepts Track</div>
               <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
                 Foundational Concepts
               </h1>
             </div>
           </div>
-          <p className="text-lg text-muted-foreground max-w-3xl leading-relaxed">
+          <p className="max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg">
             Understand how authentication, authorization, claims, and roles work in Access Broker. These concepts apply whether you&apos;re integrating an app or operating the platform.
           </p>
         </div>

@@ -4,17 +4,17 @@ import { User, ShieldCheck, Key } from 'lucide-react';
 
 export default function AccountLoading() {
   return (
-    <div className="mx-auto max-w-2xl space-y-6 p-6">
+    <div className="mx-auto max-w-2xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
         <h1 className="text-2xl font-semibold">Account</h1>
         <Skeleton className="h-8 w-24" />
       </div>
 
       {/* Profile Card */}
       <Card>
-        <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-          <div>
+        <CardHeader className="flex flex-col gap-3 space-y-0 pb-2 sm:flex-row sm:items-center sm:justify-between">
+          <div className="min-w-0">
             <CardTitle className="text-lg flex items-center gap-2">
               <User className="h-5 w-5" />
               Profile
@@ -73,7 +73,7 @@ export default function AccountLoading() {
         <CardContent className="space-y-6">
           {/* Password Section */}
           <div className="space-y-3">
-            <div className="flex items-center justify-between">
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div className="flex items-center gap-2">
                 <Key className="h-4 w-4 text-muted-foreground" />
                 <span className="text-sm font-medium">Password</span>
@@ -87,7 +87,7 @@ export default function AccountLoading() {
 
           <div className="border-t pt-4">
             {/* MFA Section */}
-            <div className="flex items-center justify-between mb-4">
+            <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
               <div>
                 <p className="text-sm font-medium">Two-Factor Authentication</p>
                 <p className="text-xs text-muted-foreground">

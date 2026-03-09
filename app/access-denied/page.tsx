@@ -77,9 +77,9 @@ export default function AccessDeniedPage() {
             {!loading && userInfo && (
               <div className="space-y-4">
                 <div className="bg-muted p-4 rounded-lg space-y-2">
-                  <div className="flex items-center justify-between">
+                  <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                     <p className="text-sm font-medium">Your User ID:</p>
-                    <Button onClick={copyUserId} variant="ghost" size="sm">
+                    <Button onClick={copyUserId} variant="ghost" size="sm" className="sm:w-auto">
                       <Copy className="h-4 w-4 mr-1" />
                       Copy
                     </Button>
@@ -112,9 +112,9 @@ export default function AccessDeniedPage() {
 
             {userInfo && (
               <div className="bg-muted p-4 rounded-lg space-y-2">
-                <div className="flex items-center justify-between">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                   <p className="text-sm font-medium">SQL Command:</p>
-                  <Button onClick={copySqlCommand} variant="ghost" size="sm">
+                  <Button onClick={copySqlCommand} variant="ghost" size="sm" className="sm:w-auto">
                     <Copy className="h-4 w-4 mr-1" />
                     Copy
                   </Button>
@@ -127,7 +127,7 @@ WHERE id = '${userInfo.id}'::uuid;`}
               </div>
             )}
 
-            <div className="flex gap-2">
+            <div className="flex flex-col gap-2 sm:flex-row">
               <Button onClick={() => router.push('/refresh-session')} className="flex-1">
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Refresh Session

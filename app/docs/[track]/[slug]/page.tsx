@@ -114,7 +114,7 @@ export default async function TrackDocPage({ params }: TrackDocPageProps) {
       <ReadingProgress />
 
       <div className="docs-container min-h-screen">
-        <div className="mx-auto max-w-5xl px-6 py-8">
+        <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
           {/* Breadcrumb */}
           <Breadcrumb className="mb-8">
             <BreadcrumbList>
@@ -137,7 +137,7 @@ export default async function TrackDocPage({ params }: TrackDocPageProps) {
               </BreadcrumbItem>
               <BreadcrumbSeparator />
               <BreadcrumbItem>
-                <BreadcrumbPage className="font-medium truncate max-w-[200px]">
+                <BreadcrumbPage className="max-w-[12rem] truncate font-medium sm:max-w-[200px]">
                   {metadata.title}
                 </BreadcrumbPage>
               </BreadcrumbItem>
@@ -170,14 +170,14 @@ export default async function TrackDocPage({ params }: TrackDocPageProps) {
                   </p>
                 )}
 
-                <div className="flex flex-wrap gap-3">
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap">
                   <CopyDocButton content={content} />
 
                   <Link
                     href={`https://github.com/supabase-community/supabase-custom-claims/blob/main/admin-dashboard/content/docs/${metadata.filePath}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex items-center gap-2 px-3 py-2 text-sm rounded-lg border hover:bg-muted transition-colors"
+                    className="inline-flex w-full items-center justify-center gap-2 rounded-lg border px-3 py-2 text-sm transition-colors hover:bg-muted sm:w-auto"
                   >
                     <ExternalLink className="h-4 w-4" />
                     Edit on GitHub

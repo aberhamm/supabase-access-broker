@@ -1,6 +1,8 @@
 'use server';
 
-import { createAdminClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
+import { isClaimsAdmin } from '@/lib/claims';
+import { getAppUrl } from '@/lib/app-url';
 import { revalidatePath } from 'next/cache';
 import type { BanDuration, MFAFactor, UpdateProfileData } from '@/types/claims';
 
@@ -15,12 +17,36 @@ export interface InviteUserParams {
   isClaimsAdmin?: boolean;
 }
 
+async function requireClaimsAdmin() {
+  const sessionClient = await createClient();
+  const {
+    data: { user },
+    error: userError,
+  } = await sessionClient.auth.getUser();
+
+  if (userError || !user) {
+    throw new Error('Unauthorized: You must be signed in');
+  }
+
+  const { data: isAdmin, error: adminError } = await isClaimsAdmin(sessionClient);
+
+  if (adminError) {
+    throw new Error(adminError.message || 'Failed to verify admin access');
+  }
+
+  if (!isAdmin) {
+    throw new Error('Unauthorized: You must be a claims_admin');
+  }
+
+  return createAdminClient();
+}
+
 /**
  * Create a new user with password (admin only)
  */
 export async function createUserWithPassword(params: CreateUserParams) {
   try {
-    const supabase = await createAdminClient();
+    const supabase = await requireClaimsAdmin();
 
     // Create user with password
     const { data, error } = await supabase.auth.admin.createUser({
@@ -50,10 +76,10 @@ export async function createUserWithPassword(params: CreateUserParams) {
  */
 export async function inviteUserWithEmail(params: InviteUserParams) {
   try {
-    const supabase = await createAdminClient();
+    const supabase = await requireClaimsAdmin();
 
     // Get the origin for the redirect URL
-    const origin = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3050';
+    const origin = getAppUrl();
 
     // Create user without password and send invite email
     const { data, error } = await supabase.auth.admin.createUser({
@@ -94,10 +120,10 @@ export async function inviteUserWithEmail(params: InviteUserParams) {
  */
 export async function triggerPasswordReset(userEmail: string) {
   try {
-    const supabase = await createAdminClient();
+    const supabase = await requireClaimsAdmin();
 
     // Get the origin for the redirect URL
-    const origin = process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3050';
+    const origin = getAppUrl();
 
     // Generate and send password recovery email
     const { error } = await supabase.auth.resetPasswordForEmail(userEmail, {
@@ -120,7 +146,7 @@ export async function triggerPasswordReset(userEmail: string) {
  */
 export async function deleteUser(userId: string) {
   try {
-    const supabase = await createAdminClient();
+    const supabase = await requireClaimsAdmin();
 
     const { error } = await supabase.auth.admin.deleteUser(userId);
 
@@ -147,7 +173,7 @@ export async function updateUserProfileAdmin(
   data: UpdateProfileData
 ) {
   try {
-    const supabase = await createAdminClient();
+    const supabase = await requireClaimsAdmin();
 
     const updateData: {
       email?: string;
@@ -207,7 +233,7 @@ export async function listUserMFAFactors(userId: string): Promise<{
   error?: string;
 }> {
   try {
-    const supabase = await createAdminClient();
+    const supabase = await requireClaimsAdmin();
 
     const { data, error } = await supabase.auth.admin.mfa.listFactors({
       userId,
@@ -243,7 +269,7 @@ export async function deleteMFAFactorAdmin(
   factorId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = await createAdminClient();
+    const supabase = await requireClaimsAdmin();
 
     const { error } = await supabase.auth.admin.mfa.deleteFactor({
       userId,
@@ -274,7 +300,7 @@ export async function banUser(
   duration: BanDuration
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = await createAdminClient();
+    const supabase = await requireClaimsAdmin();
 
     const { error } = await supabase.auth.admin.updateUserById(userId, {
       ban_duration: duration,
@@ -299,7 +325,7 @@ export async function unbanUser(
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = await createAdminClient();
+    const supabase = await requireClaimsAdmin();
 
     const { error } = await supabase.auth.admin.updateUserById(userId, {
       ban_duration: 'none',
@@ -324,7 +350,7 @@ export async function confirmUserEmail(
   userId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = await createAdminClient();
+    const supabase = await requireClaimsAdmin();
 
     const { error } = await supabase.auth.admin.updateUserById(userId, {
       email_confirm: true,
@@ -349,7 +375,7 @@ export async function resendConfirmationEmail(
   userEmail: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = await createAdminClient();
+    const supabase = await requireClaimsAdmin();
 
     const { error } = await supabase.auth.resend({
       type: 'signup',

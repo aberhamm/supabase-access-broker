@@ -1,24 +1,8 @@
-import crypto from 'crypto';
 import { NextResponse } from 'next/server';
 import { debugLog, debugWarn } from '@/lib/auth-debug';
 import { createAdminClient } from '@/lib/supabase/server';
-import { consumeAuthCode } from '@/lib/sso-service';
+import { consumeAuthCode, getSsoAppAuthConfig, sha256Hex, timingSafeEqualHex } from '@/lib/sso-service';
 import { logSSOEvent, extractClientIP } from '@/lib/audit-service';
-
-function sha256Hex(input: string): string {
-  return crypto.createHash('sha256').update(input, 'utf8').digest('hex');
-}
-
-function timingSafeEqualHex(a: string, b: string): boolean {
-  try {
-    const aBuf = Buffer.from(a, 'hex');
-    const bBuf = Buffer.from(b, 'hex');
-    if (aBuf.length !== bBuf.length) return false;
-    return crypto.timingSafeEqual(aBuf, bBuf);
-  } catch {
-    return false;
-  }
-}
 
 export async function POST(request: Request) {
   // Common audit context
@@ -44,17 +28,9 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing code or app_id' }, { status: 400 });
     }
 
-    const supabase = await createAdminClient();
-    const { data: appRow, error: appErr } = await supabase
-      .schema('access_broker_app')
-      .from('apps')
-      .select('id,enabled,sso_client_secret_hash')
-      .eq('id', appId)
-      .maybeSingle();
+    const appConfig = await getSsoAppAuthConfig(appId);
 
-    if (appErr) throw appErr;
-
-    if (!appRow?.id) {
+    if (!appConfig?.id) {
       logSSOEvent({
         eventType: 'token_exchange_error',
         appId,
@@ -64,7 +40,7 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unknown app_id' }, { status: 400 });
     }
 
-    if (appRow.enabled === false) {
+    if (appConfig.enabled === false) {
       logSSOEvent({
         eventType: 'token_exchange_error',
         appId,
@@ -74,31 +50,40 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'App is disabled' }, { status: 403 });
     }
 
-    // If a secret hash is configured, require and verify it.
-    if (appRow.sso_client_secret_hash) {
-      if (!appSecret) {
-        logSSOEvent({
-          eventType: 'token_exchange_error',
-          appId,
-          errorCode: 'missing_secret',
-          ...auditContext,
-        });
-        return NextResponse.json({ error: 'Missing app_secret' }, { status: 401 });
-      }
-      const computed = sha256Hex(appSecret);
-      const ok = timingSafeEqualHex(computed, appRow.sso_client_secret_hash);
-      if (!ok) {
-        logSSOEvent({
-          eventType: 'token_exchange_error',
-          appId,
-          errorCode: 'invalid_secret',
-          ...auditContext,
-          metadata: { reason: 'secret_mismatch' },
-        });
-        return NextResponse.json({ error: 'Invalid app_secret' }, { status: 401 });
-      }
+    if (!appConfig.ssoClientSecretHash) {
+      logSSOEvent({
+        eventType: 'token_exchange_error',
+        appId,
+        errorCode: 'secret_not_configured',
+        ...auditContext,
+      });
+      return NextResponse.json({ error: 'App secret is not configured' }, { status: 403 });
     }
 
+    if (!appSecret) {
+      logSSOEvent({
+        eventType: 'token_exchange_error',
+        appId,
+        errorCode: 'missing_secret',
+        ...auditContext,
+      });
+      return NextResponse.json({ error: 'Missing app_secret' }, { status: 401 });
+    }
+
+    const computed = sha256Hex(appSecret);
+    const ok = timingSafeEqualHex(computed, appConfig.ssoClientSecretHash);
+    if (!ok) {
+      logSSOEvent({
+        eventType: 'token_exchange_error',
+        appId,
+        errorCode: 'invalid_secret',
+        ...auditContext,
+        metadata: { reason: 'secret_mismatch' },
+      });
+      return NextResponse.json({ error: 'Invalid app_secret' }, { status: 401 });
+    }
+
+    const supabase = await createAdminClient();
     const { userId } = await consumeAuthCode({ code, appId });
 
     debugLog('[SSO Exchange] Auth code consumed', {
@@ -158,14 +143,6 @@ export async function POST(request: Request) {
       apps && typeof apps === 'object'
         ? ((apps as Record<string, unknown>)[appId] ?? null)
         : null;
-    const telegram =
-      appMetadata &&
-      typeof appMetadata === 'object' &&
-      'telegram' in (appMetadata as Record<string, unknown>) &&
-      typeof (appMetadata as Record<string, unknown>).telegram === 'object'
-        ? ((appMetadata as Record<string, unknown>).telegram as Record<string, unknown>)
-        : null;
-
     // Log successful exchange
     logSSOEvent({
       eventType: 'token_exchange_success',
@@ -178,9 +155,6 @@ export async function POST(request: Request) {
       user: {
         id: user.id,
         email: user.email,
-        connected_accounts: {
-          telegram,
-        },
       },
       app_id: appId,
       app_claims: appClaims,

@@ -32,33 +32,10 @@
   }
 
   async function exchangeCode(params) {
-    params = params || {};
-    var portalUrl = (params.portalUrl || defaultPortalUrl() || "").trim();
-    var code = requireParam("code", params.code);
-    var appId = requireParam("appId", params.appId);
-    var appSecret = params.appSecret;
-
-    if (!portalUrl) throw new Error("Missing portalUrl. Pass { portalUrl } or set window.__AUTH_PORTAL_URL__");
-
-    var res = await fetch(portalUrl.replace(/\/+$/, "") + "/api/auth/exchange", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        code: code,
-        app_id: appId,
-        app_secret: appSecret || undefined,
-      }),
-    });
-
-    if (!res.ok) {
-      var err = {};
-      try {
-        err = await res.json();
-      } catch {}
-      throw new Error(err.error || "Code exchange failed");
-    }
-
-    return await res.json();
+    void params;
+    throw new Error(
+      "AuthPortal.exchangeCode must run on your server. POST the code, app_id, and app_secret to /api/auth/exchange from a trusted backend."
+    );
   }
 
   global.AuthPortal = {

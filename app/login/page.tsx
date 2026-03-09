@@ -108,6 +108,40 @@ export default function LoginPage() {
     return safeNextPath(rawNext, '/');
   }, []);
 
+  const shouldForceReauth = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    const params = new URLSearchParams(window.location.search);
+    return params.get('reauth') === '1';
+  }, []);
+
+  const clearExistingSession = useCallback(async (reason: string) => {
+    try {
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) return;
+
+      debugLog('[Login] Clearing existing session before auth action', {
+        reason,
+        currentEmail: session.user?.email,
+      });
+
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        debugWarn('[Login] Failed to clear existing session before auth action', {
+          reason,
+          error: error.message,
+        });
+      }
+    } catch (error) {
+      debugWarn('[Login] Unable to inspect existing session before auth action', {
+        reason,
+        error,
+      });
+    }
+  }, [supabase]);
+
   // Handle token_hash in URL (from magic links that got redirected here)
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
@@ -124,7 +158,13 @@ export default function LoginPage() {
     }
   }, [nextPath]);
 
-  const handleSwitchAccount = useCallback(() => {
+  useEffect(() => {
+    if (!shouldForceReauth) return;
+    void clearExistingSession('reauth_param');
+  }, [clearExistingSession, shouldForceReauth]);
+
+  const handleSwitchAccount = useCallback(async () => {
+    await clearExistingSession('switch_account');
     setShowRemembered(false);
     setEmail('');
     setPassword('');
@@ -132,7 +172,7 @@ export default function LoginPage() {
     setOtpStep('email');
     // Focus email input after animation
     setTimeout(() => emailInputRef.current?.focus(), 150);
-  }, []);
+  }, [clearExistingSession]);
 
   const handleUseRemembered = useCallback(() => {
     if (rememberedEmail) {
@@ -161,6 +201,7 @@ export default function LoginPage() {
 
     try {
       setLoading(true);
+      await clearExistingSession('magic_link');
 
       const { error } = await supabase.auth.signInWithOtp({
         email,
@@ -203,6 +244,7 @@ export default function LoginPage() {
 
     try {
       setLoading(true);
+      await clearExistingSession('password');
       const { error } = await supabase.auth.signInWithPassword({ email, password });
       if (error) throw error;
 
@@ -225,6 +267,7 @@ export default function LoginPage() {
 
     try {
       setLoading(true);
+      await clearExistingSession('otp_request');
       const { error } = await supabase.auth.signInWithOtp({
         email,
         options: {

@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { getApps } from '@/lib/apps-service';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { PageHeader } from '@/components/layout/PageHeader';
 import { Plus, AppWindow } from 'lucide-react';
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
@@ -26,20 +27,18 @@ export default async function AppsPage() {
 
   return (
     <div className="space-y-8">
-      <div className="flex items-center justify-between animate-reveal">
-        <div>
-          <h2 className="text-3xl font-bold tracking-tight">App Management</h2>
-          <p className="text-muted-foreground">
-            Manage applications, roles, and permissions
-          </p>
-        </div>
-        <Link href="/apps/create">
-          <Button className="btn-press">
-            <Plus className="mr-2 h-4 w-4" />
-            Create App
-          </Button>
-        </Link>
-      </div>
+      <PageHeader
+        title="App Management"
+        description="Manage applications, roles, and permissions"
+        actions={
+          <Link href="/apps/create">
+            <Button className="btn-press">
+              <Plus className="mr-2 h-4 w-4" />
+              Create App
+            </Button>
+          </Link>
+        }
+      />
 
       <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
         <Card className="card-hover animate-reveal">

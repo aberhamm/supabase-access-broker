@@ -63,7 +63,7 @@ const tracks = [
 export default function DocsHomePage() {
   return (
     <div className="docs-container min-h-screen">
-      <div className="mx-auto max-w-5xl px-6 py-8">
+      <div className="mx-auto max-w-5xl px-4 py-6 sm:px-6 sm:py-8">
         {/* Breadcrumb */}
         <Breadcrumb className="mb-12">
           <BreadcrumbList>
@@ -80,7 +80,7 @@ export default function DocsHomePage() {
         </Breadcrumb>
 
         {/* Hero */}
-        <div className="mb-16 text-center">
+        <div className="mb-12 text-center sm:mb-16">
           <div className="inline-flex items-center gap-2 px-3 py-1 mb-6 text-xs font-medium rounded-full bg-muted text-muted-foreground">
             <Sparkles className="h-3 w-3" />
             Choose your learning path
@@ -88,7 +88,7 @@ export default function DocsHomePage() {
           <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
             Documentation
           </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto leading-relaxed">
+          <p className="mx-auto max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
             Select the track that matches your role. Each path is tailored to get you productive as quickly as possible.
           </p>
         </div>

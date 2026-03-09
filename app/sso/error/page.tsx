@@ -55,7 +55,7 @@ function SSOErrorContent() {
 
   // Build "Back to Login" URL preserving SSO params if present
   const loginUrl = canRetry
-    ? `/login?app_id=${encodeURIComponent(appId)}&redirect_uri=${encodeURIComponent(redirectUri)}${state ? `&state=${encodeURIComponent(state)}` : ''}`
+    ? `/login?app_id=${encodeURIComponent(appId)}&redirect_uri=${encodeURIComponent(redirectUri)}${state ? `&state=${encodeURIComponent(state)}` : ''}&reauth=1`
     : '/login';
 
   return (
@@ -148,6 +148,5 @@ export default function SSOErrorPage() {
     </Suspense>
   );
 }
-
 
 

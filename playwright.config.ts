@@ -50,14 +50,19 @@ export default defineConfig({
       name: 'chromium',
       use: { ...devices['Desktop Chrome'] },
     },
+    {
+      name: 'mobile-chromium',
+      testMatch: /responsive-smoke\.spec\.ts/,
+      use: { ...devices['Pixel 5'] },
+    },
   ],
 
-  /* Run your local dev server before starting the tests */
+  /* Run a production-style server before tests to avoid flaky dev manifest errors */
   webServer: {
-    command: 'pnpm dev',
+    command: 'pnpm build && PORT=3050 NEXT_PUBLIC_APP_URL=http://localhost:3050 pnpm start',
     url: 'http://localhost:3050',
-    reuseExistingServer: !process.env.CI,
-    timeout: 120 * 1000,
+    reuseExistingServer: false,
+    timeout: 300 * 1000,
     env: {
       PORT: '3050',
       NEXT_PUBLIC_APP_URL: 'http://localhost:3050',

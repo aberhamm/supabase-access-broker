@@ -10,7 +10,7 @@ const Breadcrumb = React.forwardRef<
   <nav
     ref={ref}
     aria-label="breadcrumb"
-    className={cn('flex items-center gap-2 text-sm', className)}
+    className={cn('flex min-w-0 items-center gap-2 text-sm', className)}
     {...props}
   />
 ));
@@ -22,7 +22,7 @@ const BreadcrumbList = React.forwardRef<
 >(({ className, ...props }, ref) => (
   <ol
     ref={ref}
-    className={cn('flex items-center gap-2', className)}
+    className={cn('flex min-w-0 flex-wrap items-center gap-2', className)}
     {...props}
   />
 ));
@@ -32,7 +32,7 @@ const BreadcrumbItem = React.forwardRef<
   HTMLLIElement,
   React.ComponentPropsWithoutRef<'li'>
 >(({ className, ...props }, ref) => (
-  <li ref={ref} className={cn('flex items-center gap-2', className)} {...props} />
+  <li ref={ref} className={cn('flex min-w-0 items-center gap-2', className)} {...props} />
 ));
 BreadcrumbItem.displayName = 'BreadcrumbItem';
 
@@ -87,4 +87,3 @@ export {
   BreadcrumbPage,
   BreadcrumbSeparator,
 };
-

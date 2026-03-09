@@ -24,7 +24,6 @@ async function pickPort(basePort: number): Promise<number> {
   // Keep it in a reasonable dev range
   const maxPort = 65535;
   while (port <= maxPort) {
-    // eslint-disable-next-line no-await-in-loop
     if (await isPortFree(port)) return port;
     port++;
   }
@@ -53,7 +52,6 @@ async function main() {
   const nextArgs = ['dev', '--turbopack', '--port', String(port), ...process.argv.slice(2)];
 
   // Helpful log without being noisy
-  // eslint-disable-next-line no-console
   console.log(
     `[dev] Starting Next.js on http://localhost:${port} (base=${basePort}${explicit ? ', explicit' : port !== basePort ? ', incremented' : ''})`
   );
@@ -68,7 +66,6 @@ async function main() {
 }
 
 main().catch((err) => {
-  // eslint-disable-next-line no-console
   console.error('[dev] Failed to start dev server:', err);
   process.exit(1);
 });

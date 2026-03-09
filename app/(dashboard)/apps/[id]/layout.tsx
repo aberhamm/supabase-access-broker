@@ -56,7 +56,7 @@ export default async function AppDetailLayout({
           </BreadcrumbItem>
           <BreadcrumbSeparator />
           <BreadcrumbItem>
-            <BreadcrumbPage>{app.name}</BreadcrumbPage>
+            <BreadcrumbPage className="max-w-[12rem] truncate sm:max-w-xs">{app.name}</BreadcrumbPage>
           </BreadcrumbItem>
         </BreadcrumbList>
       </Breadcrumb>
