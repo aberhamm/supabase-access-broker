@@ -1,6 +1,6 @@
 ---
 title: "Complete App Integration Guide"
-description: "Everything you need to integrate Supabase Access Broker into your application"
+description: "Everything you need to integrate access broker into your application"
 category: "guides"
 audience: "app-developer"
 order: 1
@@ -16,9 +16,9 @@ order: 1
 
 **Time to read:** 30 minutes | **Prerequisites:** [Quick Start](/docs/quick-start) | **Next steps:** [Authorization Patterns](/docs/authorization-patterns)
 
-**Purpose:** This guide provides complete, step-by-step instructions for integrating Supabase Access Broker into your application. After following this guide, you'll be able to register users to your app, authenticate them via SSO, and manage their claims.
+**Purpose:** This guide provides complete, step-by-step instructions for integrating access broker into your application. After following this guide, you'll be able to register users to your app, authenticate them via SSO, and manage their claims.
 
-**Target Audience:** Developers integrating their applications with Access Broker (not deploying the broker itself)
+**Target Audience:** Developers integrating their applications with access broker (not deploying the broker itself)
 
 **Technology Stack:** Next.js 14+ App Router, Supabase Auth, TypeScript, PostgreSQL
 

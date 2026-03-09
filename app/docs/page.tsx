@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/breadcrumb';
 
 export const metadata: Metadata = {
-  title: 'Documentation | Supabase Access Broker',
+  title: 'Documentation | access broker',
   description: 'Complete documentation for authentication, authorization, and custom claims',
 };
 
@@ -19,7 +19,7 @@ const tracks = [
   {
     id: 'integrator',
     title: 'Integrator',
-    description: "I'm building an app that uses Access Broker for authentication and authorization",
+    description: "I'm building an app that uses access broker for authentication and authorization",
     icon: Code2,
     href: '/docs/integrator',
     features: ['SSO Integration', 'Claims & Roles', 'Frontend Patterns'],
@@ -33,7 +33,7 @@ const tracks = [
   {
     id: 'operator',
     title: 'Operator',
-    description: "I'm deploying or managing the Access Broker platform for my organization",
+    description: "I'm deploying or managing the access broker platform for my organization",
     icon: Server,
     href: '/docs/operator',
     features: ['Installation & Setup', 'Configuration', 'Multi-App Management'],

@@ -1,6 +1,6 @@
 ---
 title: "Getting Started Overview"
-description: "What Supabase Access Broker is, how it works, and when to use it."
+description: "What access broker is, how it works, and when to use it."
 category: "getting-started"
 audience: "app-developer"
 order: 1
@@ -8,7 +8,7 @@ order: 1
 
 # Getting Started Overview
 
-This documentation covers **Supabase Access Broker** — a unified identity and access management platform for Supabase applications.
+This documentation covers **access broker** — a unified identity and access management platform for Supabase applications.
 
 ## Prerequisites
 
@@ -46,10 +46,10 @@ If you answered "Use Supabase Auth directly," you don't need this project yet. B
 - **Multi-app support** — one Supabase project serves multiple apps with per-app roles/permissions
 - **Admin Console** — manage users, apps, roles, API keys, and claims centrally
 
-## Mental model (Access Broker vs Your App)
+## Mental model (access broker vs Your App)
 
 - **Your App**: user-facing application where users sign in (via SSO redirect) and you enforce access control.
-- **Access Broker (this repo)**: central auth portal + admin console that manages access/claims for users across apps.
+- **access broker (this repo)**: central auth portal + admin console that manages access/claims for users across apps.
 - **Supabase**: shared auth + database, where claims live in `auth.users.raw_app_meta_data` and are surfaced to apps as `user.app_metadata`.
 
 ## Claims structure (what you’ll read in your app)

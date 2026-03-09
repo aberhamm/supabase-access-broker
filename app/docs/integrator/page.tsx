@@ -12,8 +12,8 @@ import {
 } from '@/components/ui/breadcrumb';
 
 export const metadata: Metadata = {
-  title: 'Integrator Documentation | Supabase Access Broker',
-  description: 'Connect your application to Access Broker for SSO and claims-based authorization',
+  title: 'Integrator Documentation | access broker',
+  description: 'Connect your application to access broker for SSO and claims-based authorization',
 };
 
 export default async function IntegratorLandingPage() {
@@ -79,7 +79,7 @@ export default async function IntegratorLandingPage() {
             </div>
           </div>
           <p className="max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Connect your application to Access Broker for centralized authentication and claims-based authorization. Follow this guided path to implement secure, scalable auth.
+            Connect your application to access broker for centralized authentication and claims-based authorization. Follow this guided path to implement secure, scalable auth.
           </p>
         </div>
 
@@ -97,8 +97,8 @@ export default async function IntegratorLandingPage() {
             <div className="flex items-start gap-3">
               <CheckCircle2 className="h-5 w-5 text-emerald-500 mt-0.5 flex-shrink-0" />
               <div>
-                <p className="font-medium">Access Broker URL</p>
-                <p className="text-sm text-muted-foreground">The URL of a deployed Access Broker instance</p>
+                <p className="font-medium">access broker URL</p>
+                <p className="text-sm text-muted-foreground">The URL of a deployed access broker instance</p>
               </div>
             </div>
           </div>
@@ -215,7 +215,7 @@ export default async function IntegratorLandingPage() {
             <div className="flex-1">
               <h3 className="font-semibold mb-1">Looking to deploy instead?</h3>
               <p className="text-sm text-muted-foreground">
-                If you&apos;re setting up the Access Broker platform itself, check out the Operator track.
+                If you&apos;re setting up the access broker platform itself, check out the Operator track.
               </p>
             </div>
             <Link

@@ -8,7 +8,7 @@ order: 10
 
 # Glossary
 
-Quick reference for terms used throughout the Supabase Access Broker documentation.
+Quick reference for terms used throughout the access broker documentation.
 
 ## Core Concepts
 
@@ -95,7 +95,7 @@ A passwordless login method where users click a link sent to their email instead
 
 ## Architecture Terms
 
-### Access Broker
+### access broker
 
 This project. A platform that provides centralized authentication, authorization, and user management for Supabase applications.
 

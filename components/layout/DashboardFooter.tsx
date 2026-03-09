@@ -10,7 +10,7 @@ export function DashboardFooter() {
         <div className="grid gap-8 md:grid-cols-3">
           {/* About */}
           <div className="space-y-3">
-            <h3 className="text-sm font-semibold">Supabase Access Broker</h3>
+            <h3 className="text-sm font-semibold">access broker</h3>
             <p className="text-sm text-muted-foreground">
               Manage user authentication, custom claims, and application access for your Supabase projects.
             </p>
@@ -88,7 +88,7 @@ export function DashboardFooter() {
         {/* Bottom Bar */}
         <div className="mt-8 pt-8 border-t flex flex-col sm:flex-row items-center justify-between gap-4">
           <p className="text-sm text-muted-foreground">
-            © {currentYear} Supabase Access Broker. Built with{' '}
+            © {currentYear} access broker. Built with{' '}
             <Heart className="inline h-3 w-3 text-destructive" /> for the community.
           </p>
 

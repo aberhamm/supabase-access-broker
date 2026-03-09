@@ -17,7 +17,7 @@ order: 2
 **Time to read:** 20 minutes | **Prerequisites:** [Claims Guide](/docs/claims-guide) | **Next steps:** [SSO Integration Guide](/docs/sso-integration-guide)
 
 **Scope:** Client app integration and architecture guidance.
-If you're operating the Access Broker portal itself, see [Auth Portal (SSO + Passkeys)](/docs/auth-portal-sso-passkeys).
+If you're operating the access broker portal itself, see [Auth Portal (SSO + Passkeys)](/docs/auth-portal-sso-passkeys).
 
 This guide explains how to use the multi-app claims system to manage user access across multiple applications using a single Supabase Auth instance.
 

@@ -12,8 +12,8 @@ import {
 } from '@/components/ui/breadcrumb';
 
 export const metadata: Metadata = {
-  title: 'Operator Documentation | Supabase Access Broker',
-  description: 'Deploy and manage the Access Broker platform for your organization',
+  title: 'Operator Documentation | access broker',
+  description: 'Deploy and manage the access broker platform for your organization',
 };
 
 export default async function OperatorLandingPage() {
@@ -79,7 +79,7 @@ export default async function OperatorLandingPage() {
             </div>
           </div>
           <p className="max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Set up, configure, and operate the Access Broker platform for your organization. This guide covers everything from initial deployment to multi-app management.
+            Set up, configure, and operate the access broker platform for your organization. This guide covers everything from initial deployment to multi-app management.
           </p>
         </div>
 
@@ -215,7 +215,7 @@ export default async function OperatorLandingPage() {
             <div className="flex-1">
               <h3 className="font-semibold mb-1">Looking to integrate instead?</h3>
               <p className="text-sm text-muted-foreground">
-                If you&apos;re connecting your app to Access Broker, check out the Integrator track.
+                If you&apos;re connecting your app to access broker, check out the Integrator track.
               </p>
             </div>
             <Link
