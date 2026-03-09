@@ -115,14 +115,14 @@ export async function GET(request: Request) {
     return NextResponse.redirect(new URL('/login', url.origin));
   }
 
-  // Exchange the code for user info
+  // Exchange the code for user info from your backend
   const response = await fetch(`${PORTAL_URL}/api/auth/exchange`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       code,
       app_id: APP_ID,
-      // app_secret: process.env.SSO_APP_SECRET, // optional, for extra security
+      app_secret: process.env.SSO_APP_SECRET,
     }),
   });
 
@@ -171,16 +171,7 @@ When you exchange the code (Step 2), you receive:
 {
   "user": {
     "id": "uuid",
-    "email": "user@example.com",
-    "connected_accounts": {
-      "telegram": {
-        "id": 123456789,
-        "username": "johndoe",
-        "first_name": "John",
-        "last_name": "Doe",
-        "linked_at": "2024-01-15T10:30:00.000Z"
-      }
-    }
+    "email": "user@example.com"
   },
   "app_id": "your-app-id",
   "app_claims": {
@@ -196,11 +187,16 @@ When you exchange the code (Step 2), you receive:
 
 - **`user.id`**: Unique user identifier (use this as your user ID)
 - **`user.email`**: User's email address
-- **`user.connected_accounts.telegram`**: Optional connected account data (null if not linked)
 - **`app_claims.enabled`**: **MUST be `true`** to grant access
 - **`app_claims.role`**: User's role in your app (e.g., `"admin"`, `"user"`)
 - **`app_claims.permissions`**: Array of permission strings
 - **`expires_in`**: Code validity window (usually 5 minutes)
+
+### Security Requirements
+
+- `POST /api/auth/exchange` is a backend-only endpoint.
+- `app_secret` is required on every exchange request.
+- The hosted SDK should only be used to redirect users to `/login`. Do not exchange codes in browser code.
 
 ## Optional: Use the Hosted SDK
 
@@ -453,7 +449,7 @@ WHERE id = 'your-app-id';
 
 ## User Lookup API
 
-Once a user has authenticated through SSO, your app may need to look up user information later (e.g., when receiving a Telegram message). The portal provides a `/api/users/lookup` endpoint for this purpose.
+Once a user has authenticated through SSO, your app may need to look up user information later (e.g., when receiving a Telegram message). The portal provides a backend-only `/api/users/lookup` endpoint for this purpose.
 
 ### Endpoint
 
@@ -479,16 +475,7 @@ Once a user has authenticated through SSO, your app may need to look up user inf
 {
   "user": {
     "id": "uuid",
-    "email": "user@example.com",
-    "connected_accounts": {
-      "telegram": {
-        "id": 123456789,
-        "username": "johndoe",
-        "first_name": "John",
-        "last_name": "Doe",
-        "linked_at": "2024-01-15T10:30:00.000Z"
-      }
-    }
+    "email": "user@example.com"
   },
   "app_claims": {
     "enabled": true,
@@ -535,8 +522,9 @@ const data = await response.json();
 | 400 | `Missing lookup identifier` | No user_id, email, or telegram_id provided |
 | 400 | `Provide only one lookup identifier` | Multiple identifiers provided |
 | 400 | `Unknown app_id` | App not found in database |
-| 401 | `Missing app_secret` | App requires secret but none provided |
+| 401 | `Missing app_secret` | Request omitted the required app secret |
 | 401 | `Invalid app_secret` | Secret doesn't match stored hash |
+| 403 | `App secret is not configured` | The app must have an SSO client secret configured in the broker |
 | 403 | `App is disabled` | App exists but is disabled |
 | 404 | `User not found` | No user matches the identifier |
 

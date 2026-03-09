@@ -96,14 +96,14 @@ const res = await fetch('https://access-broker.yourdomain.com/api/auth/exchange'
   body: JSON.stringify({
     code,
     app_id: 'app1',
-    app_secret: process.env.SSO_APP_SECRET, // optional
+    app_secret: process.env.SSO_APP_SECRET,
   }),
 });
 
 if (!res.ok) throw new Error(`SSO exchange failed (${res.status})`);
 const payload = await res.json();
 // payload: { user, app_id, app_claims, expires_in }
-// user: { id, email, connected_accounts: { telegram: TelegramData | null } }
+// user: { id, email }
 ```
 
 ### A4) Client app: enforce access
@@ -113,17 +113,6 @@ Treat this as the canonical access gate:
 ```ts
 if (payload.app_claims?.enabled !== true) {
   // deny access in the client app
-}
-```
-
-### A5) Client app: consume connected accounts (optional)
-
-Only use the specific connected account fields you need. Example:
-
-```ts
-const telegram = payload.user?.connected_accounts?.telegram ?? null;
-if (telegram) {
-  // Use telegram.id / username / first_name / last_name / linked_at
 }
 ```
 
@@ -159,7 +148,8 @@ WHERE id = 'app1';
 
 **Acceptance criteria (Task B):**
 
-- `/api/auth/exchange` returns 401 if `app_secret` is missing/invalid (only for apps with a stored hash)
+- `/api/auth/exchange` returns 401 if `app_secret` is missing/invalid
+- `/api/auth/exchange` returns 403 if the app has no configured secret
 
 ## Task C — Passkeys (portal-side)
 
@@ -205,7 +195,7 @@ AuthPortal.login({ appId: 'app1', redirectUri: 'https://app1.com/auth/callback',
 
 ## Task E — User lookup API integration
 
-When a client app needs to look up user information by ID, email, or Telegram ID (e.g., when handling webhooks or background jobs), use the `/api/users/lookup` endpoint.
+When a client app needs to look up user information by ID, email, or Telegram ID (e.g., when handling webhooks or background jobs), use the backend-only `/api/users/lookup` endpoint.
 
 ### E1) Client app: call user lookup endpoint
 
@@ -223,7 +213,7 @@ const response = await fetch('https://access-broker.yourdomain.com/api/users/loo
 });
 
 const data = await response.json();
-// { user: { id, email, connected_accounts }, app_claims }
+// { user: { id, email }, app_claims }
 ```
 
 ### E2) Portal implementation
@@ -232,7 +222,7 @@ const data = await response.json();
 
 - Validates app credentials (same as `/api/auth/exchange`)
 - Looks up user via `lookup_user_by_identifier()` SQL function
-- Returns safe user payload with connected accounts
+- Returns minimal user payload (`id`, `email`) plus `app_claims`
 - Logs audit events: `user_lookup_success` / `user_lookup_error`
 
 **Database function:** `lookup_user_by_identifier(p_user_id, p_email, p_telegram_id)`

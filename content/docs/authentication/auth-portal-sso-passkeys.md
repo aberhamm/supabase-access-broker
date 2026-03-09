@@ -84,7 +84,7 @@ Content-Type: application/json
 {
   "code": "…",
   "app_id": "app1",
-  "app_secret": "optional"
+  "app_secret": "required"
 }
 ```
 
@@ -99,10 +99,9 @@ Response:
 }
 ```
 
-### Optional: require an app secret
+### Required: configure an app secret
 
-If you want to prevent third parties from exchanging codes, set `public.apps.sso_client_secret_hash`
-to a SHA-256 hex of a shared secret known by the app backend:
+Set `public.apps.sso_client_secret_hash` to a SHA-256 hex of a shared secret known by the app backend:
 
 ```sql
 UPDATE public.apps
@@ -110,7 +109,7 @@ SET sso_client_secret_hash = '<sha256_hex_of_secret>'
 WHERE id = 'app1';
 ```
 
-Then include `app_secret` in `/api/auth/exchange` requests.
+Then include `app_secret` in every `/api/auth/exchange` request. Apps without a configured secret are rejected.
 
 ## Client SDK (browser helper)
 
@@ -131,7 +130,7 @@ Example usage in a client app:
 </button>
 ```
 
-Then in the client app callback page, read `code` and call `AuthPortal.exchangeCode(...)` from your backend (recommended) or from the browser for non-sensitive use cases.
+Then in the client app callback page, read `code` and send it to your backend. Your backend must call `/api/auth/exchange` with `code`, `app_id`, and `app_secret`. Do not exchange codes in browser code.
 
 ## Feature flags (rollout / testing)
 

@@ -154,6 +154,13 @@ window.location.href = ssoUrl.toString();
 
 After authentication, users are redirected back with an auth code to exchange for a session.
 
+Important integration requirements:
+
+- Perform the auth-code exchange from your backend only.
+- Always send `app_secret` to `POST /api/auth/exchange`.
+- Always send `app_secret` to `POST /api/users/lookup`.
+- Do not rely on `connected_accounts` in exchange or lookup responses.
+
 ### Reading Claims
 
 ```typescript
