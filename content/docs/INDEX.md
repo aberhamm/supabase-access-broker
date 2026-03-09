@@ -1,22 +1,22 @@
 ---
 title: "Documentation"
-description: "Supabase Access Broker — unified identity and access management for Supabase applications"
+description: "access broker — unified identity and access management for Supabase applications"
 category: "getting-started"
 audience: "all"
 order: 0
 ---
 
-# Supabase Access Broker Documentation
+# access broker Documentation
 
-Supabase Access Broker provides centralized authentication, authorization, and user management for single or multi-application environments built on Supabase.
+access broker provides centralized authentication, authorization, and user management for single or multi-application environments built on Supabase.
 
 Not sure where to start? Choose your documentation track below.
 
 ## Three Documentation Tracks
 
-**[Integrator](/docs/integrator)** — Connect your app to Access Broker for SSO and claims-based authorization
+**[Integrator](/docs/integrator)** — Connect your app to access broker for SSO and claims-based authorization
 
-**[Operator](/docs/operator)** — Deploy and manage the Access Broker platform for your organization
+**[Operator](/docs/operator)** — Deploy and manage the access broker platform for your organization
 
 **[Concepts](/docs/concepts)** — Understand authentication, authorization, claims, and roles
 
@@ -91,15 +91,15 @@ graph LR
 
 ## Choose your path
 
-### Path 1: I want to integrate my app with Access Broker
+### Path 1: I want to integrate my app with access broker
 
-You want to connect your application to Access Broker for SSO and claims-based authorization.
+You want to connect your application to access broker for SSO and claims-based authorization.
 
 **→ [Start with the Integrator Track](/docs/integrator)**
 
-### Path 2: I want to deploy and manage Access Broker
+### Path 2: I want to deploy and manage access broker
 
-You're setting up and operating the Access Broker platform for your organization.
+You're setting up and operating the access broker platform for your organization.
 
 **→ [Start with the Operator Track](/docs/operator)**
 

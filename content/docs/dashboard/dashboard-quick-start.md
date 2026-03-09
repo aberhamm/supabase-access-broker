@@ -1,16 +1,16 @@
 ---
-title: "Access Broker Quick Start"
-description: "Get Supabase Access Broker running in 5 minutes"
+title: "access broker Quick Start"
+description: "Get access broker running in 5 minutes"
 category: "dashboard"
 audience: "dashboard-admin"
 order: 1
 ---
 
-# Access Broker Quick Start
+# access broker Quick Start
 
-This guide is for **deploying Supabase Access Broker** (the admin console + auth portal), not for integrating claims into your user-facing app.
+This guide is for **deploying access broker** (the admin console + auth portal), not for integrating claims into your user-facing app.
 
-**Scope:** Operating the Access Broker app (dashboard + auth portal).
+**Scope:** Operating the access broker app (dashboard + auth portal).
 For client app integration, start with [Authentication Guide](/docs/authentication-guide) or [SSO Integration Guide](/docs/sso-integration-guide).
 
 ## Get Started in 5 Minutes

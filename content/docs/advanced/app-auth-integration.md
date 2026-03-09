@@ -8,10 +8,10 @@ order: 2
 
 # App-Based Authentication Integration Guide
 
-**Context:** This guide is part of the Supabase Access Broker documentation. It provides practical, production-ready patterns for integrating app-based roles and permissions into your authentication flow.
+**Context:** This guide is part of the access broker documentation. It provides practical, production-ready patterns for integrating app-based roles and permissions into your authentication flow.
 
-**Scope:** Client app integration with Access Broker claims/roles.
-If you're operating the Access Broker portal itself, see [Auth Portal (SSO + Passkeys)](/docs/auth-portal-sso-passkeys).
+**Scope:** Client app integration with access broker claims/roles.
+If you're operating the access broker portal itself, see [Auth Portal (SSO + Passkeys)](/docs/auth-portal-sso-passkeys).
 
 **Technology Stack:** Next.js 14+ App Router, Supabase Auth, TypeScript, PostgreSQL
 

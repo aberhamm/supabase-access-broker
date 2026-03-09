@@ -17,7 +17,7 @@ const monoFont = JetBrains_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "Supabase Access Broker",
+  title: "access broker",
   description: "Unified identity and access management for Supabase applications",
 };
 

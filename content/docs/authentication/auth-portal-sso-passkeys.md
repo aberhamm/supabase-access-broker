@@ -8,7 +8,7 @@ order: 7
 
 # Auth Portal (SSO + Passkeys)
 
-This page is about **operating the Access Broker portal itself** (not integrating a client app).
+This page is about **operating the access broker portal itself** (not integrating a client app).
 
 This repo can act as a **central auth portal** for multiple applications (Option B):
 

@@ -13,10 +13,10 @@ Use this quick decision tree to find the most relevant documentation track.
 ```
 What's your primary goal?
 
-├─ Integrate my app with Access Broker
+├─ Integrate my app with access broker
 │  └─ → Go to Integrator Track (/docs/integrator)
 │
-├─ Deploy or manage the Access Broker platform
+├─ Deploy or manage the access broker platform
 │  └─ → Go to Operator Track (/docs/operator)
 │
 └─ Understand how auth, claims, and roles work
@@ -27,7 +27,7 @@ What's your primary goal?
 
 ### [Integrator Track](/docs/integrator)
 
-**For:** App developers connecting their application to Access Broker
+**For:** App developers connecting their application to access broker
 
 **You'll learn:**
 - How to integrate SSO into your app
@@ -37,21 +37,21 @@ What's your primary goal?
 
 **Start here if:**
 - You're building a new app that needs authentication
-- You want to connect an existing app to Access Broker
+- You want to connect an existing app to access broker
 - You need to implement claims-based authorization
 
 ### [Operator Track](/docs/operator)
 
-**For:** Platform administrators deploying and managing Access Broker
+**For:** Platform administrators deploying and managing access broker
 
 **You'll learn:**
-- How to install and configure Access Broker
+- How to install and configure access broker
 - How to set up the admin dashboard
 - How to manage multiple apps and their users
 - How to configure SSO and authentication providers
 
 **Start here if:**
-- You're setting up Access Broker for the first time
+- You're setting up access broker for the first time
 - You need to configure apps and roles
 - You're managing users across multiple applications
 - You need to deploy to production
@@ -61,7 +61,7 @@ What's your primary goal?
 **For:** Anyone who wants to understand the fundamentals
 
 **You'll learn:**
-- How authentication works in Access Broker
+- How authentication works in access broker
 - What custom claims are and why they matter
 - How roles and permissions are structured
 - How RLS policies secure your database

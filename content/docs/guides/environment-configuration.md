@@ -8,7 +8,7 @@ order: 10
 
 # Environment Variables & Deployment Guide
 
-**Context:** This guide covers all environment variables needed for Supabase Access Broker, with special focus on authentication redirects and production deployment.
+**Context:** This guide covers all environment variables needed for access broker, with special focus on authentication redirects and production deployment.
 
 **Critical for Production:** Improper environment configuration is the #1 cause of auth issues in production. Follow this guide carefully.
 

@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/breadcrumb';
 
 export const metadata: Metadata = {
-  title: 'Concepts Documentation | Supabase Access Broker',
+  title: 'Concepts Documentation | access broker',
   description: 'Foundational concepts for authentication, authorization, claims, and roles',
 };
 
@@ -122,7 +122,7 @@ export default async function ConceptsLandingPage() {
             </div>
           </div>
           <p className="text-lg text-muted-foreground max-w-3xl leading-relaxed">
-            Understand how authentication, authorization, claims, and roles work in Access Broker. These concepts apply whether you&apos;re integrating an app or operating the platform.
+            Understand how authentication, authorization, claims, and roles work in access broker. These concepts apply whether you&apos;re integrating an app or operating the platform.
           </p>
         </div>
 
@@ -179,7 +179,7 @@ export default async function ConceptsLandingPage() {
                   Ready to Integrate?
                 </h3>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Apply these concepts to connect your app to Access Broker
+                  Apply these concepts to connect your app to access broker
                 </p>
                 <div className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400">
                   Go to Integrator Track

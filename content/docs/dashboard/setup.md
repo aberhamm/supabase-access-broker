@@ -8,7 +8,7 @@ order: 2
 
 # Setup Guide
 
-**Scope:** Operating the Access Broker app (dashboard + auth portal).
+**Scope:** Operating the access broker app (dashboard + auth portal).
 For client app integration, start with [Authentication Guide](/docs/authentication-guide) or [SSO Integration Guide](/docs/sso-integration-guide).
 
 ## What You're Setting Up

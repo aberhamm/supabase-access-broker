@@ -1,6 +1,6 @@
 ---
 title: "Authentication Setup Guide"
-description: "Set up Supabase Auth with Access Broker claims"
+description: "Set up Supabase Auth with access broker claims"
 category: "authentication"
 audience: "app-developer"
 order: 1
@@ -16,9 +16,9 @@ order: 1
 
 **Time to read:** 10 minutes | **Prerequisites:** [Installation](/docs/installation) | **Next steps:** [Authorization Patterns](/docs/authorization-patterns)
 
-**Context:** This guide explains how to set up Supabase Auth (not NextAuth.js) and integrate it with Access Broker claims so you can control user access during sign up and sign in.
+**Context:** This guide explains how to set up Supabase Auth (not NextAuth.js) and integrate it with access broker claims so you can control user access during sign up and sign in.
 
-**Scope:** This is for **client apps** integrating with the Access Broker. If you're operating the Access Broker portal itself, see [Auth Portal (SSO + Passkeys)](/docs/auth-portal-sso-passkeys).
+**Scope:** This is for **client apps** integrating with the access broker. If you're operating the access broker portal itself, see [Auth Portal (SSO + Passkeys)](/docs/auth-portal-sso-passkeys).
 
 **Technology Stack:** Next.js 14+ App Router, Supabase Auth, TypeScript
 
@@ -42,7 +42,7 @@ order: 1
 
 ## Overview
 
-Access Broker builds on Supabase Auth by storing authorization data in `app_metadata` claims:
+access broker builds on Supabase Auth by storing authorization data in `app_metadata` claims:
 
 ```typescript
 {

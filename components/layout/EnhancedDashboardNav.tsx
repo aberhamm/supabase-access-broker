@@ -86,7 +86,7 @@ export function EnhancedDashboardNav({
                 <div className="absolute -inset-1 bg-linear-to-br from-primary to-primary/60 rounded-lg opacity-0 group-hover:opacity-20 blur transition-opacity" />
               </div>
               <div className="hidden lg:block">
-                <h1 className="text-lg font-bold tracking-tight">Access Broker</h1>
+                <h1 className="text-lg font-bold tracking-tight">access broker</h1>
                 <p className="text-xs text-muted-foreground">Supabase</p>
               </div>
             </Link>
