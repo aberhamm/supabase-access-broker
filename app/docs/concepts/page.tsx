@@ -12,7 +12,7 @@ import {
 } from '@/components/ui/breadcrumb';
 
 export const metadata: Metadata = {
-  title: 'Concepts Documentation | access broker',
+  title: 'Concepts Documentation | Access Broker',
   description: 'Foundational concepts for authentication, authorization, claims, and roles',
 };
 
@@ -26,12 +26,13 @@ export default async function ConceptsLandingPage() {
       description: 'Sign-up, sign-in, sessions, and user identity management',
       icon: Key,
       color: 'blue',
-      docs: conceptDocs.filter(d =>
-        d.category === 'authentication' ||
-        d.slug.includes('auth') ||
-        d.slug.includes('session') ||
-        d.slug.includes('logout') ||
-        d.slug.includes('password')
+      docs: conceptDocs.filter(
+        (d) =>
+          d.category === 'authentication' ||
+          d.slug.includes('auth') ||
+          d.slug.includes('session') ||
+          d.slug.includes('logout') ||
+          d.slug.includes('password'),
       ),
     },
     {
@@ -39,19 +40,20 @@ export default async function ConceptsLandingPage() {
       description: 'Claims, roles, permissions, and access control patterns',
       icon: Shield,
       color: 'emerald',
-      docs: conceptDocs.filter(d =>
-        d.category === 'authorization' ||
-        d.slug.includes('role') ||
-        d.slug.includes('claim') ||
-        d.slug.includes('admin') ||
-        d.slug.includes('rls')
+      docs: conceptDocs.filter(
+        (d) =>
+          d.category === 'authorization' ||
+          d.slug.includes('role') ||
+          d.slug.includes('claim') ||
+          d.slug.includes('admin') ||
+          d.slug.includes('rls'),
       ),
     },
   ];
 
   // Get uncategorized docs
-  const categorizedSlugs = groups.flatMap(g => g.docs.map(d => d.slug));
-  const otherDocs = conceptDocs.filter(d => !categorizedSlugs.includes(d.slug));
+  const categorizedSlugs = groups.flatMap((g) => g.docs.map((d) => d.slug));
+  const otherDocs = conceptDocs.filter((d) => !categorizedSlugs.includes(d.slug));
 
   if (otherDocs.length > 0) {
     groups.push({
@@ -63,7 +65,10 @@ export default async function ConceptsLandingPage() {
     });
   }
 
-  const colorMap: Record<string, { bg: string; text: string; hoverBorder: string; hoverText: string }> = {
+  const colorMap: Record<
+    string,
+    { bg: string; text: string; hoverBorder: string; hoverText: string }
+  > = {
     blue: {
       bg: 'bg-blue-500/10',
       text: 'text-blue-600 dark:text-blue-400',
@@ -91,13 +96,19 @@ export default async function ConceptsLandingPage() {
         <Breadcrumb className="mb-12">
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink href="/" className="text-muted-foreground hover:text-foreground transition-colors">
+              <BreadcrumbLink
+                href="/"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
                 <Home className="h-4 w-4" />
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbLink href="/docs" className="text-muted-foreground hover:text-foreground transition-colors">
+              <BreadcrumbLink
+                href="/docs"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
                 Documentation
               </BreadcrumbLink>
             </BreadcrumbItem>
@@ -122,7 +133,8 @@ export default async function ConceptsLandingPage() {
             </div>
           </div>
           <p className="max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Understand how authentication, authorization, claims, and roles work in access broker. These concepts apply whether you&apos;re integrating an app or operating the platform.
+            Understand how authentication, authorization, claims, and roles work in Access Broker.
+            These concepts apply whether you&apos;re integrating an app or operating the platform.
           </p>
         </div>
 
@@ -154,9 +166,7 @@ export default async function ConceptsLandingPage() {
                     <h3 className={`font-medium mb-1 transition-colors ${colors.hoverText}`}>
                       {doc.title}
                     </h3>
-                    <p className="text-sm text-muted-foreground line-clamp-2">
-                      {doc.description}
-                    </p>
+                    <p className="text-sm text-muted-foreground line-clamp-2">{doc.description}</p>
                   </Link>
                 ))}
               </div>
@@ -179,7 +189,7 @@ export default async function ConceptsLandingPage() {
                   Ready to Integrate?
                 </h3>
                 <p className="text-sm text-muted-foreground mb-3">
-                  Apply these concepts to connect your app to access broker
+                  Apply these concepts to connect your app to Access Broker
                 </p>
                 <div className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 dark:text-blue-400">
                   Go to Integrator Track

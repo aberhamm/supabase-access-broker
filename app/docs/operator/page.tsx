@@ -12,8 +12,8 @@ import {
 } from '@/components/ui/breadcrumb';
 
 export const metadata: Metadata = {
-  title: 'Operator Documentation | access broker',
-  description: 'Deploy and manage the access broker platform for your organization',
+  title: 'Operator Documentation | Access Broker',
+  description: 'Deploy and manage the Access Broker platform for your organization',
 };
 
 export default async function OperatorLandingPage() {
@@ -35,8 +35,8 @@ export default async function OperatorLandingPage() {
   // Map slugs to docs
   const allDocs = [...operatorDocs, ...conceptDocs];
   const journeyDocs = curatedJourney
-    .map(item => {
-      const doc = allDocs.find(d => d.slug === item.slug);
+    .map((item) => {
+      const doc = allDocs.find((d) => d.slug === item.slug);
       return doc ? { ...doc, milestone: item.milestone } : null;
     })
     .filter((doc): doc is NonNullable<typeof doc> & { milestone: string } => doc !== null);
@@ -48,13 +48,19 @@ export default async function OperatorLandingPage() {
         <Breadcrumb className="mb-12">
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink href="/" className="text-muted-foreground hover:text-foreground transition-colors">
+              <BreadcrumbLink
+                href="/"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
                 <Home className="h-4 w-4" />
               </BreadcrumbLink>
             </BreadcrumbItem>
             <BreadcrumbSeparator />
             <BreadcrumbItem>
-              <BreadcrumbLink href="/docs" className="text-muted-foreground hover:text-foreground transition-colors">
+              <BreadcrumbLink
+                href="/docs"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
                 Documentation
               </BreadcrumbLink>
             </BreadcrumbItem>
@@ -73,19 +79,20 @@ export default async function OperatorLandingPage() {
             </div>
             <div className="min-w-0">
               <div className="track-badge track-badge--operator mb-2">Operator Track</div>
-              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">
-                Deploy & Manage
-              </h1>
+              <h1 className="text-3xl sm:text-4xl font-bold tracking-tight">Deploy & Manage</h1>
             </div>
           </div>
           <p className="max-w-3xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Set up, configure, and operate the access broker platform for your organization. This guide covers everything from initial deployment to multi-app management.
+            Set up, configure, and operate the Access Broker platform for your organization. This
+            guide covers everything from initial deployment to multi-app management.
           </p>
         </div>
 
         {/* Prerequisites */}
         <div className="mb-12 p-6 rounded-xl border bg-muted/30">
-          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">Prerequisites</h2>
+          <h2 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground mb-4">
+            Prerequisites
+          </h2>
           <div className="grid sm:grid-cols-2 gap-4">
             <div className="flex items-start gap-3">
               <CheckCircle2 className="h-5 w-5 text-emerald-500 mt-0.5 flex-shrink-0" />
@@ -98,7 +105,9 @@ export default async function OperatorLandingPage() {
               <CheckCircle2 className="h-5 w-5 text-emerald-500 mt-0.5 flex-shrink-0" />
               <div>
                 <p className="font-medium">Supabase Project</p>
-                <p className="text-sm text-muted-foreground">A Supabase project for the broker database</p>
+                <p className="text-sm text-muted-foreground">
+                  A Supabase project for the broker database
+                </p>
               </div>
             </div>
           </div>
@@ -109,7 +118,9 @@ export default async function OperatorLandingPage() {
           <div className="mb-6 flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
             <div>
               <h2 className="text-2xl font-semibold">Deployment Journey</h2>
-              <p className="text-muted-foreground mt-1">Follow this path to deploy and configure the platform</p>
+              <p className="text-muted-foreground mt-1">
+                Follow this path to deploy and configure the platform
+              </p>
             </div>
             <div className="hidden sm:block text-sm text-muted-foreground">
               {journeyDocs.length} steps
@@ -139,9 +150,7 @@ export default async function OperatorLandingPage() {
                   <h3 className="font-medium truncate group-hover:text-foreground transition-colors">
                     {doc.title}
                   </h3>
-                  <p className="text-sm text-muted-foreground truncate">
-                    {doc.description}
-                  </p>
+                  <p className="text-sm text-muted-foreground truncate">{doc.description}</p>
                 </div>
 
                 {/* Arrow */}
@@ -166,9 +175,7 @@ export default async function OperatorLandingPage() {
                   <h3 className="font-medium mb-1 group-hover:text-emerald-600 dark:group-hover:text-emerald-400 transition-colors">
                     {doc.title}
                   </h3>
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {doc.description}
-                  </p>
+                  <p className="text-sm text-muted-foreground line-clamp-2">{doc.description}</p>
                 </Link>
               ))}
             </div>
@@ -200,9 +207,7 @@ export default async function OperatorLandingPage() {
                   <h3 className="font-medium mb-1 group-hover:text-violet-600 dark:group-hover:text-violet-400 transition-colors truncate">
                     {doc.title}
                   </h3>
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {doc.description}
-                  </p>
+                  <p className="text-sm text-muted-foreground line-clamp-2">{doc.description}</p>
                 </div>
               </Link>
             ))}
@@ -215,7 +220,7 @@ export default async function OperatorLandingPage() {
             <div className="flex-1">
               <h3 className="font-semibold mb-1">Looking to integrate instead?</h3>
               <p className="text-sm text-muted-foreground">
-                If you&apos;re connecting your app to access broker, check out the Integrator track.
+                If you&apos;re connecting your app to Access Broker, check out the Integrator track.
               </p>
             </div>
             <Link

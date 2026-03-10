@@ -1,25 +1,25 @@
 ---
-title: "Getting Started Overview"
-description: "What access broker is, how it works, and when to use it."
-category: "getting-started"
-audience: "app-developer"
+title: 'Getting Started Overview'
+description: 'What Access Broker is, how it works, and when to use it.'
+category: 'getting-started'
+audience: 'app-developer'
 order: 1
 ---
 
 # Getting Started Overview
 
-This documentation covers **access broker** — a unified identity and access management platform for Supabase applications.
+This documentation covers **Access Broker** — a unified identity and access management platform for Supabase applications.
 
 ## Prerequisites
 
 Before you start, make sure you have:
 
-| Requirement | Why |
-|-------------|-----|
-| **Supabase project** | This builds on top of Supabase Auth |
-| **Supabase URL + keys** | Found in Project Settings → API |
-| **Basic Supabase knowledge** | Understanding of `supabase.auth` methods |
-| **Next.js experience** | Examples use Next.js App Router (adaptable to other frameworks) |
+| Requirement                  | Why                                                             |
+| ---------------------------- | --------------------------------------------------------------- |
+| **Supabase project**         | This builds on top of Supabase Auth                             |
+| **Supabase URL + keys**      | Found in Project Settings → API                                 |
+| **Basic Supabase knowledge** | Understanding of `supabase.auth` methods                        |
+| **Next.js experience**       | Examples use Next.js App Router (adaptable to other frameworks) |
 
 **New to Supabase?** Start with the [Supabase Quick Start](https://supabase.com/docs/guides/getting-started/quickstarts/nextjs) first.
 
@@ -28,7 +28,7 @@ Before you start, make sure you have:
 **Quick check:**
 
 | Scenario | Recommendation |
-|----------|----------------|
+| --- | --- |
 | Single app, basic auth (sign up/in) | Use Supabase Auth directly — [docs](https://supabase.com/docs/guides/auth) |
 | Single app + roles/permissions in JWT | **Use this** — install SQL functions only |
 | Multiple apps, one Supabase project | **Use this** — full platform |
@@ -46,10 +46,10 @@ If you answered "Use Supabase Auth directly," you don't need this project yet. B
 - **Multi-app support** — one Supabase project serves multiple apps with per-app roles/permissions
 - **Admin Console** — manage users, apps, roles, API keys, and claims centrally
 
-## Mental model (access broker vs Your App)
+## Mental model (Access Broker vs Your App)
 
 - **Your App**: user-facing application where users sign in (via SSO redirect) and you enforce access control.
-- **access broker (this repo)**: central auth portal + admin console that manages access/claims for users across apps.
+- **Access Broker (this repo)**: central auth portal + admin console that manages access/claims for users across apps.
 - **Supabase**: shared auth + database, where claims live in `auth.users.raw_app_meta_data` and are surfaced to apps as `user.app_metadata`.
 
 ## Claims structure (what you’ll read in your app)

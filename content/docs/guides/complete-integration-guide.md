@@ -1,14 +1,15 @@
 ---
-title: "Complete App Integration Guide"
-description: "Everything you need to integrate access broker into your application"
-category: "guides"
-audience: "app-developer"
+title: 'Complete App Integration Guide'
+description: 'Everything you need to integrate Access Broker into your application'
+category: 'guides'
+audience: 'app-developer'
 order: 1
 ---
 
 # Complete App Integration Guide
 
 **TL;DR:**
+
 - End-to-end integration for a single app
 - Includes signup, signin, claims, and access checks
 - Use shared patterns for client setup and callbacks
@@ -16,13 +17,14 @@ order: 1
 
 **Time to read:** 30 minutes | **Prerequisites:** [Quick Start](/docs/quick-start) | **Next steps:** [Authorization Patterns](/docs/authorization-patterns)
 
-**Purpose:** This guide provides complete, step-by-step instructions for integrating access broker into your application. After following this guide, you'll be able to register users to your app, authenticate them via SSO, and manage their claims.
+**Purpose:** This guide provides complete, step-by-step instructions for integrating Access Broker into your application. After following this guide, you'll be able to register users to your app, authenticate them via SSO, and manage their claims.
 
-**Target Audience:** Developers integrating their applications with access broker (not deploying the broker itself)
+**Target Audience:** Developers integrating their applications with Access Broker (not deploying the broker itself)
 
 **Technology Stack:** Next.js 14+ App Router, Supabase Auth, TypeScript, PostgreSQL
 
 **What This Guide Covers:**
+
 1. How to register a user to your specific app
 2. How to authenticate users using Supabase
 3. How to modify and manage claims attributes
@@ -50,16 +52,19 @@ order: 1
 ### Understanding the Separation
 
 **The Dashboard (Admin Panel):**
+
 - Separate codebase for administrators
 - Manages users, apps, and claims
 - Located at: `admin.yourdomain.com` (example)
 
 **Your Application (This Guide):**
+
 - Your separate application codebase
 - Where regular users sign up and sign in
 - Located at: `app.yourdomain.com` (example)
 
 **Shared Supabase Instance:**
+
 - Both use the same Supabase project
 - Authentication is centralized
 - Claims are stored in `auth.users.raw_app_meta_data`
@@ -86,11 +91,13 @@ order: 1
 ### Key Concepts
 
 **App ID:** A unique identifier for your application (e.g., `'my-app'`, `'analytics-dashboard'`)
+
 - Stored as a key in `app_metadata.apps.{app_id}`
 - Used to scope all app-specific claims
 - Must be consistent across your entire application
 
 **Claims Structure:**
+
 ```json
 {
   "app_metadata": {
@@ -157,7 +164,7 @@ import { createBrowserClient } from '@supabase/ssr';
 export function createClient() {
   return createBrowserClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
-    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
   );
 }
 ```
@@ -184,12 +191,12 @@ export async function createClient() {
         setAll(cookiesToSet) {
           try {
             cookiesToSet.forEach(({ name, value, options }) =>
-              cookieStore.set(name, value, options)
+              cookieStore.set(name, value, options),
             );
           } catch {}
         },
       },
-    }
+    },
   );
 }
 ```
@@ -217,6 +224,7 @@ export const APP_ID = 'your-app-id'; // Replace with your actual app ID
 ### How User Registration Works
 
 When a user signs up for your app, you need to:
+
 1. Create their Supabase Auth account (email + password)
 2. Assign them access to your app by setting `app_metadata.apps.{your-app-id}.enabled = true`
 3. Set their default role (e.g., `'user'`)
@@ -384,18 +392,12 @@ export async function POST(request: Request) {
 
     // Validate input
     if (!userId || !appId) {
-      return NextResponse.json(
-        { error: 'Missing userId or appId' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing userId or appId' }, { status: 400 });
     }
 
     // Security: Verify appId matches YOUR app
     if (appId !== APP_ID) {
-      return NextResponse.json(
-        { error: 'Invalid app ID' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid app ID' }, { status: 400 });
     }
 
     // Create admin client with SERVICE ROLE KEY
@@ -408,7 +410,7 @@ export async function POST(request: Request) {
           autoRefreshToken: false,
           persistSession: false,
         },
-      }
+      },
     );
 
     // Step 1: Enable app access
@@ -461,10 +463,7 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     console.error('Error in register-user:', error);
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
 ```
@@ -731,15 +730,17 @@ export async function middleware(request: NextRequest) {
             request,
           });
           cookiesToSet.forEach(({ name, value, options }) =>
-            response.cookies.set(name, value, options)
+            response.cookies.set(name, value, options),
           );
         },
       },
-    }
+    },
   );
 
   // Get the authenticated user
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // Public routes that don't require authentication
   const isPublicRoute =
@@ -801,6 +802,7 @@ export const config = {
 ### Understanding Claims Operations
 
 Claims can be modified using Supabase RPC functions:
+
 - `set_app_claim` - Set or update a claim
 - `get_app_claim` - Read a claim value
 - `delete_app_claim` - Remove a claim
@@ -822,10 +824,7 @@ export async function POST(request: Request) {
 
     // Validate input
     if (!userId || !claim || value === undefined) {
-      return NextResponse.json(
-        { error: 'Missing required fields' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
     // Create admin client
@@ -837,7 +836,7 @@ export async function POST(request: Request) {
           autoRefreshToken: false,
           persistSession: false,
         },
-      }
+      },
     );
 
     // Update the claim
@@ -861,10 +860,7 @@ export async function POST(request: Request) {
     });
   } catch (error: any) {
     console.error('Error in update claim:', error);
-    return NextResponse.json(
-      { error: error.message || 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message || 'Internal server error' }, { status: 500 });
   }
 }
 ```
@@ -952,7 +948,9 @@ if (error) {
 }
 
 // Now user.app_metadata will have updated claims
-const { data: { user } } = await supabase.auth.getUser();
+const {
+  data: { user },
+} = await supabase.auth.getUser();
 console.log('Updated claims:', user?.app_metadata);
 ```
 
@@ -1045,7 +1043,9 @@ import { APP_ID } from '@/lib/constants';
 
 export async function GET() {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -1071,7 +1071,9 @@ function hasPermission(user: any, permission: string): boolean {
 }
 
 // Usage
-const { data: { user } } = await supabase.auth.getUser();
+const {
+  data: { user },
+} = await supabase.auth.getUser();
 
 if (hasPermission(user, 'write')) {
   // Show edit button
@@ -1229,7 +1231,9 @@ await supabase.rpc('set_app_claim', {
 await supabase.auth.refreshSession();
 
 // Now claims are updated
-const { data: { user } } = await supabase.auth.getUser();
+const {
+  data: { user },
+} = await supabase.auth.getUser();
 console.log(user?.app_metadata?.apps?.[APP_ID]?.role); // 'admin'
 ```
 
@@ -1242,6 +1246,7 @@ console.log(user?.app_metadata?.apps?.[APP_ID]?.role); // 'admin'
 **Problem:** Sign in fails or shows "no access" error
 
 **Solutions:**
+
 1. Check if user exists in Supabase Dashboard → Authentication → Users
 2. Verify `app_metadata.apps.{your-app-id}.enabled` is `true`
 3. Check APP_ID matches everywhere
@@ -1252,6 +1257,7 @@ console.log(user?.app_metadata?.apps?.[APP_ID]?.role); // 'admin'
 **Problem:** Claims don't appear in `user.app_metadata`
 
 **Solutions:**
+
 1. Refresh session: `await supabase.auth.refreshSession()`
 2. Check claims in Supabase Dashboard (click user → view app_metadata)
 3. Verify custom claims functions are installed
@@ -1262,6 +1268,7 @@ console.log(user?.app_metadata?.apps?.[APP_ID]?.role); // 'admin'
 **Problem:** User should have access but gets access denied
 
 **Solutions:**
+
 1. Check middleware APP_ID matches
 2. Verify exact claim path: `app_metadata.apps.{app-id}.enabled`
 3. Check for typos in app_id (case-sensitive)
@@ -1272,6 +1279,7 @@ console.log(user?.app_metadata?.apps?.[APP_ID]?.role); // 'admin'
 **Problem:** RLS policies allow/deny incorrect access
 
 **Solutions:**
+
 1. Test JWT claims: `SELECT auth.jwt();`
 2. Check if RLS is enabled: `SELECT tablename, rowsecurity FROM pg_tables WHERE tablename = 'your_table';`
 3. Verify policy syntax is correct
@@ -1282,23 +1290,27 @@ console.log(user?.app_metadata?.apps?.[APP_ID]?.role); // 'admin'
 ## Summary
 
 ### Registration Flow
+
 1. User signs up → Create Supabase account
 2. Server API → Set `app_metadata.apps.{app-id}.enabled = true`
 3. Server API → Set `app_metadata.apps.{app-id}.role = 'user'`
 4. User can now access your app
 
 ### Authentication Flow
+
 1. User signs in → Supabase validates credentials
 2. Check → `app_metadata.apps.{app-id}.enabled === true`
 3. If true → Redirect to dashboard
 4. If false → Sign out + show error
 
 ### Claims Management
+
 1. Server API → Call `set_app_claim` RPC function
 2. User → Refresh session to see changes
 3. App → Check claims for access control
 
 ### Key Files Required
+
 - `lib/supabase/client.ts` - Client-side Supabase client
 - `lib/supabase/server.ts` - Server-side Supabase client
 - `lib/constants.ts` - App ID constant
@@ -1309,6 +1321,7 @@ console.log(user?.app_metadata?.apps?.[APP_ID]?.role); // 'admin'
 - `middleware.ts` - Route protection
 
 ### Remember
+
 - ✅ Same APP_ID everywhere
 - ✅ Service role key only server-side
 - ✅ Always check `enabled === true`

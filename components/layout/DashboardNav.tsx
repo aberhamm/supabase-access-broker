@@ -3,7 +3,15 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { LogOut, LayoutDashboard, Users, AppWindow, BookOpen, Link2, UserCircle } from 'lucide-react';
+import {
+  LogOut,
+  LayoutDashboard,
+  Users,
+  AppWindow,
+  BookOpen,
+  Link2,
+  UserCircle,
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { ThemeToggle } from '@/components/theme-toggle';
 
@@ -60,7 +68,7 @@ export function DashboardNav({ email, showApps = true }: DashboardNavProps) {
       <div className="container mx-auto flex h-16 items-center justify-between px-4">
         <div className="flex items-center gap-8">
           <div>
-            <h1 className="text-xl font-bold">access broker</h1>
+            <h1 className="text-xl font-bold">Access Broker</h1>
             <p className="text-sm text-muted-foreground">{email}</p>
           </div>
 
@@ -72,10 +80,7 @@ export function DashboardNav({ email, showApps = true }: DashboardNavProps) {
                   <Button
                     variant={item.active ? 'default' : 'ghost'}
                     size="sm"
-                    className={cn(
-                      'gap-2',
-                      item.active && 'pointer-events-none'
-                    )}
+                    className={cn('gap-2', item.active && 'pointer-events-none')}
                     aria-current={item.active ? 'page' : undefined}
                   >
                     <Icon className="h-4 w-4" />

@@ -1,16 +1,16 @@
 ---
-title: "SSO Integration Guide"
-description: "Simple guide to integrating your applications with the central auth portal for single sign-on"
-category: "guides"
-audience: "app-developer"
+title: 'SSO Integration Guide'
+description: 'Simple guide to integrating your applications with the central auth portal for single sign-on'
+category: 'guides'
+audience: 'app-developer'
 order: 5
 ---
 
 # SSO Integration Guide
 
-This guide explains how to integrate **your application** with the access broker's **auth portal** for SSO.
+This guide explains how to integrate **your application** with the Access Broker's **auth portal** for SSO.
 
-**Scope:** This is for client apps consuming the SSO exchange. If you're operating the access broker portal itself, see [Auth Portal (SSO + Passkeys)](/docs/auth-portal-sso-passkeys).
+**Scope:** This is for client apps consuming the SSO exchange. If you're operating the Access Broker portal itself, see [Auth Portal (SSO + Passkeys)](/docs/auth-portal-sso-passkeys).
 
 > **💡 Want to see it in action?** Check out the [Demo Guide](/DEMO_GUIDE.md) to test the SSO flow locally with the included demo page.
 
@@ -24,11 +24,13 @@ The auth portal is a **centralized login page** where users authenticate once an
 ### Why use it?
 
 **For users:**
+
 - Log in once, access all apps
 - Modern auth options (passkeys, social login, OTP)
 - Consistent login experience
 
 **For developers:**
+
 - No need to build login UI for each app
 - Centralized user management
 - Secure token exchange
@@ -215,13 +217,13 @@ For even simpler integration, use the portal's JavaScript SDK:
 AuthPortal.login({
   appId: 'your-app-id',
   redirectUri: 'https://yourapp.com/auth/callback',
-  state: 'optional-state-string'
+  state: 'optional-state-string',
 });
 
 // Later, when logging out (Single Logout - ends portal session)
 AuthPortal.logout({
   appId: 'your-app-id',
-  redirectUri: 'https://yourapp.com/logged-out'
+  redirectUri: 'https://yourapp.com/logged-out',
 });
 ```
 
@@ -286,6 +288,7 @@ if (payload.app_claims?.enabled !== true) {
 ### 2. Exchange the Code Server-Side (Recommended)
 
 Don't exchange the code in the browser — do it in your API route to:
+
 - Keep the exchange secure
 - Prevent code interception
 - Safely store the app secret (if used)
@@ -303,7 +306,7 @@ body: JSON.stringify({
   code,
   app_id: APP_ID,
   app_secret: process.env.SSO_APP_SECRET, // stored securely, never in browser
-})
+});
 ```
 
 The portal will verify the hash matches.
@@ -344,14 +347,14 @@ When redirected back with an error, your callback URL will receive:
 https://yourapp.com/auth/callback?error=ERROR_CODE&error_description=Human+readable+message&state=original_state
 ```
 
-| Error Code | Description |
-|------------|-------------|
-| `invalid_request` | Missing required parameters or malformed request |
-| `unauthorized_client` | Unknown `app_id` or app is disabled |
-| `invalid_redirect_uri` | The `redirect_uri` is not in the allowlist |
-| `access_denied` | User lacks permission to access the app |
-| `temporarily_unavailable` | Service temporarily unavailable |
-| `server_error` | Unexpected error occurred |
+| Error Code                | Description                                      |
+| ------------------------- | ------------------------------------------------ |
+| `invalid_request`         | Missing required parameters or malformed request |
+| `unauthorized_client`     | Unknown `app_id` or app is disabled              |
+| `invalid_redirect_uri`    | The `redirect_uri` is not in the allowlist       |
+| `access_denied`           | User lacks permission to access the app          |
+| `temporarily_unavailable` | Service temporarily unavailable                  |
+| `server_error`            | Unexpected error occurred                        |
 
 ### Handling Errors in Your Callback
 
@@ -367,9 +370,7 @@ export async function GET(request: Request) {
     console.error('[SSO Callback] Error:', error, errorDescription);
 
     // Don't retry infinitely - show an error page or redirect to login
-    return NextResponse.redirect(
-      new URL(`/login?error=${encodeURIComponent(error)}`, url.origin)
-    );
+    return NextResponse.redirect(new URL(`/login?error=${encodeURIComponent(error)}`, url.origin));
   }
 
   const code = url.searchParams.get('code');
@@ -442,6 +443,7 @@ WHERE id = 'your-app-id';
 **Cause:** Auth codes are single-use and expire after 5 minutes.
 
 **Fix:**
+
 - Don't refresh the callback page (code is consumed on first use)
 - Ensure your server clock is synchronized (use NTP)
 - Start a fresh login flow if the code fails
@@ -461,9 +463,9 @@ Once a user has authenticated through SSO, your app may need to look up user inf
 {
   "app_id": "your-app-id",
   "app_secret": "your-secret",
-  "user_id": "uuid",           // Option 1: Lookup by user ID
+  "user_id": "uuid", // Option 1: Lookup by user ID
   "email": "user@example.com", // Option 2: Lookup by email
-  "telegram_id": 123456789     // Option 3: Lookup by Telegram ID
+  "telegram_id": 123456789 // Option 3: Lookup by Telegram ID
 }
 ```
 
@@ -517,7 +519,7 @@ const data = await response.json();
 ### Error Responses
 
 | Status | Error | Description |
-|--------|-------|-------------|
+| --- | --- | --- |
 | 400 | `Missing app_id` | Request missing app_id |
 | 400 | `Missing lookup identifier` | No user_id, email, or telegram_id provided |
 | 400 | `Provide only one lookup identifier` | Multiple identifiers provided |

@@ -1,14 +1,15 @@
 ---
-title: "Authentication Setup Guide"
-description: "Set up Supabase Auth with access broker claims"
-category: "authentication"
-audience: "app-developer"
+title: 'Authentication Setup Guide'
+description: 'Set up Supabase Auth with Access Broker claims'
+category: 'authentication'
+audience: 'app-developer'
 order: 1
 ---
 
 # Authentication Setup Guide
 
 **TL;DR:**
+
 - Choose your auth method (password, passwordless, or SSO)
 - Use shared setup patterns for clients, middleware, and callbacks
 - Assign app access via claims after sign up
@@ -16,13 +17,14 @@ order: 1
 
 **Time to read:** 10 minutes | **Prerequisites:** [Installation](/docs/installation) | **Next steps:** [Authorization Patterns](/docs/authorization-patterns)
 
-**Context:** This guide explains how to set up Supabase Auth (not NextAuth.js) and integrate it with access broker claims so you can control user access during sign up and sign in.
+**Context:** This guide explains how to set up Supabase Auth (not NextAuth.js) and integrate it with Access Broker claims so you can control user access during sign up and sign in.
 
-**Scope:** This is for **client apps** integrating with the access broker. If you're operating the access broker portal itself, see [Auth Portal (SSO + Passkeys)](/docs/auth-portal-sso-passkeys).
+**Scope:** This is for **client apps** integrating with the Access Broker. If you're operating the Access Broker portal itself, see [Auth Portal (SSO + Passkeys)](/docs/auth-portal-sso-passkeys).
 
 **Technology Stack:** Next.js 14+ App Router, Supabase Auth, TypeScript
 
 **Prerequisites:**
+
 - Supabase project created
 - Custom claims functions installed (`install.sql`)
 - Basic understanding of Next.js App Router
@@ -42,7 +44,7 @@ order: 1
 
 ## Overview
 
-access broker builds on Supabase Auth by storing authorization data in `app_metadata` claims:
+Access Broker builds on Supabase Auth by storing authorization data in `app_metadata` claims:
 
 ```typescript
 {
@@ -67,10 +69,12 @@ access broker builds on Supabase Auth by storing authorization data in `app_meta
 ## Architecture: Dashboard vs Your Applications
 
 **Dashboard (this repo):**
+
 - Admin UI for managing users, apps, and claims
 - Can also serve as an auth portal for SSO
 
 **Your applications (separate codebases):**
+
 - Implement sign up/sign in
 - Use the same Supabase project
 - Enforce access with claims
@@ -78,11 +82,13 @@ access broker builds on Supabase Auth by storing authorization data in `app_meta
 ## Environment Setup
 
 Use the full environment checklist here:
+
 - [Environment Configuration](/docs/environment-configuration)
 
 ## Choose Your Auth Method
 
 Pick the method you want to implement:
+
 - **Passwordless / magic links:** [Passwordless Auth](/docs/passwordless-auth)
 - **Password auth:** [Password Auth](/docs/password-auth)
 - **SSO with auth portal:** [SSO Integration Guide](/docs/sso-integration-guide)
@@ -90,6 +96,7 @@ Pick the method you want to implement:
 ## Shared Auth Patterns
 
 Use the canonical setup patterns here:
+
 - [Shared Auth Patterns](/docs/shared-patterns)
 
 ## App Access Checks
@@ -98,7 +105,9 @@ Use claims to gate access to a specific app:
 
 ```typescript
 const APP_ID = 'your-app-id';
-const { data: { user } } = await supabase.auth.getUser();
+const {
+  data: { user },
+} = await supabase.auth.getUser();
 const hasAccess = user?.app_metadata?.apps?.[APP_ID]?.enabled === true;
 
 if (!hasAccess) {
@@ -109,6 +118,7 @@ if (!hasAccess) {
 ## Sign Up: Assign App Access
 
 After sign up, assign app access with claims. Use either:
+
 - [Claims Guide](/docs/claims-guide) for claim functions
 - [Role Management Guide](/docs/role-management-guide) for database-backed roles
 
@@ -118,7 +128,9 @@ On sign in, enforce access in middleware or server components:
 
 ```typescript
 const APP_ID = 'your-app-id';
-const { data: { user } } = await supabase.auth.getUser();
+const {
+  data: { user },
+} = await supabase.auth.getUser();
 const hasAccess = user?.app_metadata?.apps?.[APP_ID]?.enabled === true;
 
 if (!hasAccess) {
@@ -129,6 +141,7 @@ if (!hasAccess) {
 ## Advanced: Database Triggers
 
 If you want to auto-assign app access at user creation time, use a trigger:
+
 - [Complete Integration Guide](/docs/complete-integration-guide)
 
 ## Troubleshooting

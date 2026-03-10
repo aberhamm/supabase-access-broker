@@ -1,14 +1,15 @@
 ---
-title: "Multi-App Architecture Guide"
-description: "Managing multiple applications with one auth system"
-category: "advanced"
-audience: "dashboard-admin"
+title: 'Multi-App Architecture Guide'
+description: 'Managing multiple applications with one auth system'
+category: 'advanced'
+audience: 'dashboard-admin'
 order: 2
 ---
 
 # Multi-App Claims Management Guide
 
 **TL;DR:**
+
 - One Supabase project can serve multiple apps
 - Each app gets its own `apps.{app_id}` claim block
 - App-specific admins and roles coexist with global admins
@@ -16,8 +17,7 @@ order: 2
 
 **Time to read:** 20 minutes | **Prerequisites:** [Claims Guide](/docs/claims-guide) | **Next steps:** [SSO Integration Guide](/docs/sso-integration-guide)
 
-**Scope:** Client app integration and architecture guidance.
-If you're operating the access broker portal itself, see [Auth Portal (SSO + Passkeys)](/docs/auth-portal-sso-passkeys).
+**Scope:** Client app integration and architecture guidance. If you're operating the Access Broker portal itself, see [Auth Portal (SSO + Passkeys)](/docs/auth-portal-sso-passkeys).
 
 This guide explains how to use the multi-app claims system to manage user access across multiple applications using a single Supabase Auth instance.
 
@@ -34,6 +34,7 @@ This guide explains how to use the multi-app claims system to manage user access
 ## Overview
 
 The multi-app claims system allows you to:
+
 - Manage user access to multiple applications from one dashboard
 - Assign app-specific roles and permissions
 - Designate app-specific admins (in addition to global admins)
@@ -56,11 +57,13 @@ graph TD
 ### Global Claims vs App Claims
 
 **Global Claims** (stored at `app_metadata` root level):
+
 - Available to all applications
 - Example: `claims_admin`, `company_id`, `user_level`
 - Best for organization-wide data
 
 **App Claims** (stored at `app_metadata.apps.{app_id}`):
+
 - Specific to one application
 - Example: `apps.app1.role`, `apps.app2.permissions`
 - Best for app-specific permissions and data
@@ -69,12 +72,12 @@ graph TD
 
 ```json
 {
-  "claims_admin": true,          // Global super-admin
-  "company_id": "acme-corp",     // Global claim
+  "claims_admin": true, // Global super-admin
+  "company_id": "acme-corp", // Global claim
   "apps": {
     "app1": {
-      "enabled": true,           // Required: grants access to app1
-      "role": "admin",           // App-specific role (grants dashboard + permissions)
+      "enabled": true, // Required: grants access to app1
+      "role": "admin", // App-specific role (grants dashboard + permissions)
       "permissions": ["read", "write", "delete"],
       "custom_field": "value"
     },
@@ -104,10 +107,10 @@ Edit `lib/apps-config.ts`:
 ```typescript
 export const APPS: AppInfo[] = [
   {
-    id: 'my-new-app',           // Unique identifier (use kebab-case)
-    name: 'My New App',          // Display name
-    description: 'Description',  // Optional
-    color: 'purple',             // Optional: for UI badges
+    id: 'my-new-app', // Unique identifier (use kebab-case)
+    name: 'My New App', // Display name
+    description: 'Description', // Optional
+    color: 'purple', // Optional: for UI badges
   },
   // ... existing apps
 ];
@@ -127,6 +130,7 @@ For new installations, just run `install.sql` - it includes everything.
 ### 3. That's it!
 
 The app will immediately appear in:
+
 - User detail page (App Access card)
 - App selector dropdowns
 - Claims management interface
@@ -139,7 +143,9 @@ Each application should verify access using the `enabled` flag:
 
 ```javascript
 // Example: Check if user has access to your app
-const { data: { user } } = await supabase.auth.getUser();
+const {
+  data: { user },
+} = await supabase.auth.getUser();
 const appId = 'my-app';
 const hasAccess = user?.app_metadata?.apps?.[appId]?.enabled === true;
 
@@ -175,7 +181,7 @@ const roles = await getRoles('blog-app');
 
 // Find user's role definition
 const userRoleName = user?.app_metadata?.apps?.['blog-app']?.role;
-const userRole = roles.find(r => r.name === userRoleName);
+const userRole = roles.find((r) => r.name === userRoleName);
 
 // Check permissions
 if (userRole?.permissions.includes('publish')) {
@@ -209,7 +215,9 @@ const APP_ID = 'my-app'; // Your app's ID from apps-config.ts
 
 export async function middleware(request: NextRequest) {
   const supabase = createServerClient(/* ... */);
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   // Check if user has access to this app
   const hasAccess = user?.app_metadata?.apps?.[APP_ID]?.enabled === true;
@@ -238,7 +246,9 @@ export function ProtectedFeature() {
   useEffect(() => {
     async function loadUserRole() {
       const supabase = createClient();
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       const userRole = user?.app_metadata?.apps?.[APP_ID]?.role;
       setRole(userRole);
     }
@@ -279,6 +289,7 @@ USING (
 If you have existing claims, they'll continue to work as global claims. To migrate to app-specific claims:
 
 #### Option 1: Keep as Global Claims
+
 Do nothing! Global claims work across all apps automatically.
 
 #### Option 2: Move to App-Specific Claims
@@ -311,14 +322,14 @@ async function migrateToAppStructure(appId: string) {
         uid: user.id,
         app_id: appId,
         claim: 'enabled',
-        value: true
+        value: true,
       });
 
       await supabase.rpc('set_app_claim', {
         uid: user.id,
         app_id: appId,
         claim: 'role',
-        value: role
+        value: role,
       });
     }
   }
@@ -402,6 +413,7 @@ export const APPS: AppInfo[] = [
 ```
 
 This user can:
+
 - ✅ View and manage users for app1
 - ✅ Set claims for app1 users
 - ❌ Cannot manage global claims
@@ -433,16 +445,19 @@ This user can:
 ## Troubleshooting
 
 ### Users can't access my app
+
 - Check `apps.{app_id}.enabled` is `true`
 - Verify app ID matches exactly (case-sensitive)
 - Ensure app is defined in `apps-config.ts`
 
 ### Changes not reflecting
+
 - Users need to refresh their session: `supabase.auth.refreshSession()`
 - Or log out and back in
 - JWT tokens cache claims
 
 ### App admin can't see users
+
 - Verify they have `apps.{app_id}.role: "admin"`
 - Check middleware allows app admins
 - Ensure RPC functions are deployed
@@ -500,6 +515,7 @@ await deleteAppClaimAction(userId, appId, claimKey);
 ## Support
 
 For issues or questions:
+
 1. Check the main README.md
 2. Review the implementation in source code
 3. Check Supabase Auth documentation

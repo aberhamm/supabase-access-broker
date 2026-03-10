@@ -1,21 +1,21 @@
 ---
-title: "App Authentication Integration Guide"
-description: "Advanced integration patterns for authentication"
-category: "advanced"
-audience: "app-developer"
+title: 'App Authentication Integration Guide'
+description: 'Advanced integration patterns for authentication'
+category: 'advanced'
+audience: 'app-developer'
 order: 2
 ---
 
 # App-Based Authentication Integration Guide
 
-**Context:** This guide is part of the access broker documentation. It provides practical, production-ready patterns for integrating app-based roles and permissions into your authentication flow.
+**Context:** This guide is part of the Access Broker documentation. It provides practical, production-ready patterns for integrating app-based roles and permissions into your authentication flow.
 
-**Scope:** Client app integration with access broker claims/roles.
-If you're operating the access broker portal itself, see [Auth Portal (SSO + Passkeys)](/docs/auth-portal-sso-passkeys).
+**Scope:** Client app integration with Access Broker claims/roles. If you're operating the Access Broker portal itself, see [Auth Portal (SSO + Passkeys)](/docs/auth-portal-sso-passkeys).
 
 **Technology Stack:** Next.js 14+ App Router, Supabase Auth, TypeScript, PostgreSQL
 
 **Prerequisites:**
+
 - Read AUTHENTICATION_GUIDE.md first
 - Supabase project with custom claims functions installed
 - Understanding of Next.js App Router and Server Components
@@ -23,6 +23,7 @@ If you're operating the access broker portal itself, see [Auth Portal (SSO + Pas
 **What This Guide Covers:** Real-world authentication patterns including self-service sign up, invite systems, multi-tenancy, and more.
 
 **Key Concepts:**
+
 - **Self-Service Sign Up**: Users choose which apps to access during registration
 - **Invite-Only**: Users need an invitation code/link to sign up
 - **Multi-Tenancy**: Multiple organizations/companies using the same system
@@ -46,6 +47,7 @@ If you're operating the access broker portal itself, see [Auth Portal (SSO + Pas
 ## Overview
 
 This dashboard supports app-based access control where users can have:
+
 - Access to one or multiple applications
 - Different roles in each application
 - App-specific permissions and metadata
@@ -55,9 +57,7 @@ This dashboard supports app-based access control where users can have:
 
 ### Pattern 1: Single App with Roles
 
-**Use Case:** Simple applications with one product
-**Best For:** MVPs, single-product SaaS, simple applications
-**Complexity:** Low
+**Use Case:** Simple applications with one product **Best For:** MVPs, single-product SaaS, simple applications **Complexity:** Low
 
 **Data Structure Example:**
 
@@ -76,9 +76,7 @@ This dashboard supports app-based access control where users can have:
 
 ### Pattern 2: Multiple Apps, Selective Access
 
-**Use Case:** SaaS platforms with multiple products
-**Best For:** Multi-product platforms, feature-based access control
-**Complexity:** Medium
+**Use Case:** SaaS platforms with multiple products **Best For:** Multi-product platforms, feature-based access control **Complexity:** Medium
 
 **Data Structure Example:**
 
@@ -103,9 +101,7 @@ This dashboard supports app-based access control where users can have:
 
 ### Pattern 3: Organization-Based Multi-Tenancy
 
-**Use Case:** B2B applications with organizations/tenants
-**Best For:** Enterprise B2B, team-based applications
-**Complexity:** High
+**Use Case:** B2B applications with organizations/tenants **Best For:** Enterprise B2B, team-based applications **Complexity:** High
 
 **Data Structure Example:**
 
@@ -134,6 +130,7 @@ Allow users to sign up and choose which app(s) they want access to.
 **File Location:** `app/signup/page.tsx` (example)
 
 **Flow:**
+
 1. User enters email/password
 2. User selects one or more apps
 3. Component creates Supabase account
@@ -271,6 +268,7 @@ export default function SignUpWithAppSelection() {
 **Security:** Uses SUPABASE_SERVICE_ROLE_KEY - only accessible server-side
 
 **What It Does:**
+
 1. Receives userId and array of appIds
 2. Validates input
 3. For each app: enables access, sets default role, adds permissions
@@ -286,16 +284,13 @@ export async function POST(request: Request) {
     const { userId, appIds } = await request.json();
 
     if (!userId || !Array.isArray(appIds)) {
-      return NextResponse.json(
-        { error: 'Invalid request' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid request' }, { status: 400 });
     }
 
     // Create admin client
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
     );
 
     // Grant access to each selected app
@@ -328,10 +323,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Error setting up user apps:', error);
-    return NextResponse.json(
-      { error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 ```
@@ -347,6 +339,7 @@ Restrict sign up to users who have been invited by an admin.
 **Run Location:** Supabase SQL Editor
 
 **Schema Features:**
+
 - Tracks who invited whom
 - Supports app-specific invites with roles
 - Has expiration dates
@@ -535,7 +528,7 @@ export async function POST(request: Request) {
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
     );
 
     // Get invite details
@@ -547,10 +540,7 @@ export async function POST(request: Request) {
       .single();
 
     if (inviteError || !invite) {
-      return NextResponse.json(
-        { error: 'Invalid invite' },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'Invalid invite' }, { status: 400 });
     }
 
     // Set up app access based on invite
@@ -580,10 +570,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true });
   } catch (error: any) {
     console.error('Error claiming invite:', error);
-    return NextResponse.json(
-      { error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 ```
@@ -720,7 +707,7 @@ export async function POST(request: Request) {
 
     const supabase = createClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
-      process.env.SUPABASE_SERVICE_ROLE_KEY!
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
     );
 
     // Create organization
@@ -760,10 +747,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ success: true, organization: org });
   } catch (error: any) {
     console.error('Error creating organization:', error);
-    return NextResponse.json(
-      { error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 }
 ```
@@ -892,44 +876,31 @@ const APP_ID = 'your-app-id';
 
 export async function GET(request: Request) {
   const supabase = await createClient();
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json(
-      { error: 'Unauthorized' },
-      { status: 401 }
-    );
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
   // Check app access
   const appData = user.app_metadata?.apps?.[APP_ID];
   if (!appData?.enabled) {
-    return NextResponse.json(
-      { error: 'No access to this app' },
-      { status: 403 }
-    );
+    return NextResponse.json({ error: 'No access to this app' }, { status: 403 });
   }
 
   // Check role permissions
   const role = appData.role;
   if (role !== 'admin' && role !== 'viewer') {
-    return NextResponse.json(
-      { error: 'Insufficient permissions' },
-      { status: 403 }
-    );
+    return NextResponse.json({ error: 'Insufficient permissions' }, { status: 403 });
   }
 
   // Fetch data based on user's access
-  const { data, error } = await supabase
-    .from('data_table')
-    .select('*')
-    .eq('app_id', APP_ID);
+  const { data, error } = await supabase.from('data_table').select('*').eq('app_id', APP_ID);
 
   if (error) {
-    return NextResponse.json(
-      { error: error.message },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: error.message }, { status: 500 });
   }
 
   return NextResponse.json({ data });
@@ -967,9 +938,8 @@ const handleEducationSignUp = async (userType: 'student' | 'teacher') => {
   const { data, error } = await supabase.auth.signUp({ email, password });
 
   if (data.user) {
-    const apps = userType === 'teacher'
-      ? ['classroom', 'grading', 'analytics']
-      : ['classroom', 'assignments'];
+    const apps =
+      userType === 'teacher' ? ['classroom', 'grading', 'analytics'] : ['classroom', 'assignments'];
 
     await fetch('/api/setup-education-user', {
       method: 'POST',
@@ -993,10 +963,10 @@ const handleEnterpriseSignUp = async (department: string) => {
   if (data.user) {
     // Map departments to apps
     const departmentApps = {
-      'sales': ['crm', 'analytics'],
-      'marketing': ['analytics', 'campaigns'],
-      'engineering': ['project-mgmt', 'code-review'],
-      'hr': ['hr-portal', 'recruitment'],
+      sales: ['crm', 'analytics'],
+      marketing: ['analytics', 'campaigns'],
+      engineering: ['project-mgmt', 'code-review'],
+      hr: ['hr-portal', 'recruitment'],
     };
 
     await fetch('/api/setup-enterprise-user', {

@@ -81,12 +81,12 @@ export function EnhancedDashboardNav({
             <Link href="/" className="flex items-center gap-3 shrink-0 group">
               <div className="relative">
                 <div className="h-10 w-10 rounded-lg bg-linear-to-br from-primary to-primary/60 flex items-center justify-center font-bold text-primary-foreground shadow-lg ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all">
-                  S
+                  ABx
                 </div>
                 <div className="absolute -inset-1 bg-linear-to-br from-primary to-primary/60 rounded-lg opacity-0 group-hover:opacity-20 blur transition-opacity" />
               </div>
               <div className="hidden lg:block">
-                <h1 className="text-lg font-bold tracking-tight">access broker</h1>
+                <h1 className="text-lg font-bold tracking-tight">Access Broker</h1>
                 <p className="text-xs text-muted-foreground">Supabase</p>
               </div>
             </Link>
@@ -102,7 +102,7 @@ export function EnhancedDashboardNav({
                       size="sm"
                       className={cn(
                         'gap-2 relative transition-all',
-                        item.active && 'bg-primary/10 text-primary hover:bg-primary/15'
+                        item.active && 'bg-primary/10 text-primary hover:bg-primary/15',
                       )}
                       aria-current={item.active ? 'page' : undefined}
                     >
@@ -158,7 +158,10 @@ export function EnhancedDashboardNav({
             {/* User Menu */}
             <div className="flex items-center gap-2">
               {/* User Avatar & Email */}
-              <Link href="/account" className="group hidden lg:flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors">
+              <Link
+                href="/account"
+                className="group hidden lg:flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors"
+              >
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all">
                   {avatarLetter}
                 </div>
@@ -203,10 +206,7 @@ export function EnhancedDashboardNav({
                 <Button
                   variant={item.active ? 'secondary' : 'ghost'}
                   size="sm"
-                  className={cn(
-                    'gap-2 relative',
-                    item.active && 'bg-primary/10 text-primary'
-                  )}
+                  className={cn('gap-2 relative', item.active && 'bg-primary/10 text-primary')}
                 >
                   <Icon className="h-4 w-4" />
                   {item.label}

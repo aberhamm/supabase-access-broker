@@ -1,14 +1,14 @@
 ---
-title: "Environment Variables & Deployment"
-description: "Complete guide to environment configuration for development and production"
-category: "guides"
-audience: "dashboard-admin"
+title: 'Environment Variables & Deployment'
+description: 'Complete guide to environment configuration for development and production'
+category: 'guides'
+audience: 'dashboard-admin'
 order: 10
 ---
 
 # Environment Variables & Deployment Guide
 
-**Context:** This guide covers all environment variables needed for access broker, with special focus on authentication redirects and production deployment.
+**Context:** This guide covers all environment variables needed for Access Broker, with special focus on authentication redirects and production deployment.
 
 **Critical for Production:** Improper environment configuration is the #1 cause of auth issues in production. Follow this guide carefully.
 
@@ -28,7 +28,7 @@ order: 10
 The dashboard requires different environment variables depending on where it's running:
 
 | Environment | Required Variables | Optional Variables |
-|-------------|-------------------|-------------------|
+| --- | --- | --- |
 | **Development** | `NEXT_PUBLIC_SUPABASE_URL`<br>`NEXT_PUBLIC_SUPABASE_ANON_KEY`<br>`SUPABASE_SERVICE_ROLE_KEY` | `NEXT_PUBLIC_APP_URL` (auto-detects localhost) |
 | **Production** | All development vars<br>**+ `NEXT_PUBLIC_APP_URL`** | `PORT`, `HOSTNAME` |
 
@@ -37,6 +37,7 @@ The dashboard requires different environment variables depending on where it's r
 ### Core Supabase Variables
 
 #### `NEXT_PUBLIC_SUPABASE_URL`
+
 - **Required:** Yes (all environments)
 - **Type:** Public (client-side accessible)
 - **Description:** Your Supabase project URL
@@ -44,6 +45,7 @@ The dashboard requires different environment variables depending on where it's r
 - **Where to find:** Supabase Dashboard → Settings → API → Project URL
 
 #### `NEXT_PUBLIC_SUPABASE_ANON_KEY`
+
 - **Required:** Yes (all environments)
 - **Type:** Public (client-side accessible)
 - **Description:** Supabase anonymous/public key
@@ -51,6 +53,7 @@ The dashboard requires different environment variables depending on where it's r
 - **Where to find:** Supabase Dashboard → Settings → API → Project API keys → `anon` `public`
 
 #### `SUPABASE_SERVICE_ROLE_KEY`
+
 - **Required:** Yes (all environments)
 - **Type:** Secret (server-side only)
 - **Description:** Supabase service role key with admin privileges
@@ -61,6 +64,7 @@ The dashboard requires different environment variables depending on where it's r
 ### Auth Redirect Variable (Critical for Production)
 
 #### `NEXT_PUBLIC_APP_URL`
+
 - **Required:** **YES for Production** (optional for development)
 - **Type:** Public (client-side accessible)
 - **Description:** The full URL where your app is accessible
@@ -71,6 +75,7 @@ The dashboard requires different environment variables depending on where it's r
   - Docker local: `http://localhost:3050`
 
 **Common Production Values:**
+
 ```bash
 # Vercel
 NEXT_PUBLIC_APP_URL=https://access-broker.vercel.app
@@ -88,6 +93,7 @@ NEXT_PUBLIC_APP_URL=https://access-broker.home.arpa
 ### Optional Variables
 
 #### `NEXT_PUBLIC_AUTH_PORTAL_URL`
+
 - **Default:** Falls back to `NEXT_PUBLIC_APP_URL`
 - **Type:** Public (client-side accessible)
 - **Description:** The public-facing URL of the auth portal for SSO integrations
@@ -98,14 +104,17 @@ NEXT_PUBLIC_APP_URL=https://access-broker.home.arpa
 - **Where it's used:** Displayed on the SSO Settings page for external apps to use
 
 #### `PORT`
+
 - **Default:** `3050` (development), `3050` (Docker)
 - **Description:** Port the app runs on
 
 #### `HOSTNAME`
+
 - **Default:** `localhost` (development), `0.0.0.0` (Docker)
 - **Description:** Hostname to bind to
 
 #### `NODE_ENV`
+
 - **Default:** `development`
 - **Production:** Set to `production`
 - **Description:** Node environment mode
@@ -282,24 +291,28 @@ Site URL: https://admin.yourdomain.com
 Add **ALL** environments where your app runs:
 
 **Development:**
+
 ```
 http://localhost:3050/auth/callback
 http://localhost:3050/**
 ```
 
 **Docker Local:**
+
 ```
 http://localhost:3050/auth/callback
 http://localhost:3050/**
 ```
 
 **Production:**
+
 ```
 https://admin.yourdomain.com/auth/callback
 https://admin.yourdomain.com/**
 ```
 
 **Multiple Environments Example:**
+
 ```
 ✅ http://localhost:3050/**
 ✅ http://localhost:3050/**
@@ -321,6 +334,7 @@ See: **[Auth Portal (SSO + Passkeys)](/docs/auth-portal-sso-passkeys)**.
 ### Why Wildcards (`/**`) Are Important
 
 The `/**` pattern allows Supabase to redirect to any path on your domain after authentication, including:
+
 - `/auth/callback?next=/users` - redirect to specific page
 - `/auth/callback?next=/apps/123` - deep linking
 - `/` - home page
@@ -336,12 +350,14 @@ Without the wildcard, only exact matches work.
 **Cause:** `NEXT_PUBLIC_APP_URL` not set
 
 **Fix:**
+
 ```env
 # Add to production environment
 NEXT_PUBLIC_APP_URL=https://your-actual-domain.com
 ```
 
 **For Docker:**
+
 ```bash
 # Add to .env file
 NEXT_PUBLIC_APP_URL=https://admin.yourdomain.com
@@ -358,6 +374,7 @@ docker-compose up -d
 **Cause:** Redirect URL not whitelisted in Supabase
 
 **Fix:**
+
 1. Go to Supabase Dashboard → Authentication → URL Configuration
 2. Add your domain to Redirect URLs:
    ```
@@ -371,11 +388,13 @@ docker-compose up -d
 **Symptom:** `error=access_denied&error_code=otp_expired`
 
 **Causes:**
+
 1. Link was clicked after expiration (default: 1 hour)
 2. Incorrect redirect URL caused Supabase to reject it
 3. User clicked an old link after requesting a new one
 
 **Fix:**
+
 1. Verify `NEXT_PUBLIC_APP_URL` is correct
 2. Verify redirect URLs in Supabase
 3. Request a fresh magic link
@@ -388,6 +407,7 @@ docker-compose up -d
 **Fixes:**
 
 **Development:**
+
 ```bash
 # Restart dev server
 # Stop (Ctrl+C) then:
@@ -395,6 +415,7 @@ pnpm dev
 ```
 
 **Docker:**
+
 ```bash
 # Rebuild and restart
 docker-compose down
@@ -403,6 +424,7 @@ docker-compose up -d
 ```
 
 **Production Build:**
+
 ```bash
 # Rebuild app
 pnpm build
@@ -410,6 +432,7 @@ pnpm start
 ```
 
 **Vercel/Cloud:**
+
 - Update environment variables in platform dashboard
 - Trigger new deployment
 
@@ -429,6 +452,7 @@ pnpm start
 ```
 
 Each can have different `NEXT_PUBLIC_APP_URL`:
+
 ```env
 # .env.local
 NEXT_PUBLIC_APP_URL=http://localhost:3050
@@ -450,6 +474,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3050
    - Set `NEXT_PUBLIC_APP_URL` to your Vercel URL or custom domain
 
 2. **Example:**
+
    ```
    NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
    NEXT_PUBLIC_SUPABASE_ANON_KEY=eyJhbG...
@@ -468,6 +493,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3050
 ### AWS/DigitalOcean/VPS
 
 1. **Set environment variables** in your deployment config:
+
    ```bash
    export NEXT_PUBLIC_SUPABASE_URL="https://..."
    export NEXT_PUBLIC_SUPABASE_ANON_KEY="..."
@@ -476,6 +502,7 @@ NEXT_PUBLIC_APP_URL=http://localhost:3050
    ```
 
 2. **Or use a .env.production file:**
+
    ```bash
    # Copy to server
    scp .env.production user@server:/app/.env.production
@@ -497,9 +524,9 @@ kind: ConfigMap
 metadata:
   name: access-broker-config
 data:
-  NEXT_PUBLIC_SUPABASE_URL: "https://your-project.supabase.co"
-  NEXT_PUBLIC_SUPABASE_ANON_KEY: "your-anon-key"
-  NEXT_PUBLIC_APP_URL: "https://admin.yourdomain.com"
+  NEXT_PUBLIC_SUPABASE_URL: 'https://your-project.supabase.co'
+  NEXT_PUBLIC_SUPABASE_ANON_KEY: 'your-anon-key'
+  NEXT_PUBLIC_APP_URL: 'https://admin.yourdomain.com'
 
 ---
 apiVersion: v1
@@ -508,7 +535,7 @@ metadata:
   name: access-broker-secrets
 type: Opaque
 stringData:
-  SUPABASE_SERVICE_ROLE_KEY: "your-service-role-key"
+  SUPABASE_SERVICE_ROLE_KEY: 'your-service-role-key'
 ```
 
 ## Verification Checklist
@@ -554,6 +581,7 @@ Before deploying to production:
 ## Quick Reference
 
 ### Minimal Development Setup
+
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
@@ -561,6 +589,7 @@ SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
 ```
 
 ### Minimal Production Setup
+
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
@@ -570,6 +599,7 @@ NODE_ENV=production
 ```
 
 ### Minimal Docker Setup
+
 ```env
 NEXT_PUBLIC_SUPABASE_URL=https://your-project.supabase.co
 NEXT_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
@@ -580,6 +610,7 @@ NEXT_PUBLIC_APP_URL=https://your-domain.com  # or http://localhost:3050
 ---
 
 **Next Steps:**
+
 - Set up your environment variables
 - Configure Supabase redirect URLs
 - Test magic link authentication

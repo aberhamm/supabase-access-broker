@@ -1,15 +1,14 @@
 ---
-title: "Setup Guide"
-description: "Detailed setup instructions for the dashboard"
-category: "dashboard"
-audience: "dashboard-admin"
+title: 'Setup Guide'
+description: 'Detailed setup instructions for the dashboard'
+category: 'dashboard'
+audience: 'dashboard-admin'
 order: 2
 ---
 
 # Setup Guide
 
-**Scope:** Operating the access broker app (dashboard + auth portal).
-For client app integration, start with [Authentication Guide](/docs/authentication-guide) or [SSO Integration Guide](/docs/sso-integration-guide).
+**Scope:** Operating the Access Broker app (dashboard + auth portal). For client app integration, start with [Authentication Guide](/docs/authentication-guide) or [SSO Integration Guide](/docs/sso-integration-guide).
 
 ## What You're Setting Up
 
@@ -54,6 +53,7 @@ NEXT_PUBLIC_AUTH_MAGIC_LINK=true
 ```
 
 **Where to find these values:**
+
 1. Go to your [Supabase Dashboard](https://app.supabase.com)
 2. Select your project
 3. Go to Settings → API
@@ -85,6 +85,7 @@ select set_claim('YOUR-USER-ID', 'claims_admin', 'true');
 ```
 
 **To find your User ID:**
+
 1. Sign up for an account in your app (or use magic link to sign in)
 2. Go to Authentication → Users in your Supabase dashboard
 3. Find your email and copy the User ID
@@ -103,6 +104,7 @@ Open [http://localhost:3050](http://localhost:3050) and sign in with your email.
 ### Can't sign in / Access Denied
 
 Make sure you've:
+
 1. ✅ Installed the custom claims functions (`install.sql`)
 2. ✅ Granted yourself claims_admin access (step 4 above)
 3. ✅ Set the correct environment variables
@@ -111,6 +113,7 @@ Make sure you've:
 ### Still having issues?
 
 Try these steps:
+
 1. Verify your Supabase URL and anon key are correct
 2. Check that you can sign in to your Supabase project in the dashboard
 3. Verify the claims functions are installed by running:
@@ -123,6 +126,7 @@ Try these steps:
 ## Next Steps
 
 Once you're signed in:
+
 - View the dashboard to see user statistics
 - Click "View All Users" to see all registered users
 - Click on any user to manage their custom claims

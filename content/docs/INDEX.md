@@ -1,22 +1,22 @@
 ---
-title: "Documentation"
-description: "access broker — unified identity and access management for Supabase applications"
-category: "getting-started"
-audience: "all"
+title: 'Documentation'
+description: 'Access Broker — unified identity and access management for Supabase applications'
+category: 'getting-started'
+audience: 'all'
 order: 0
 ---
 
-# access broker Documentation
+# Access Broker Documentation
 
-access broker provides centralized authentication, authorization, and user management for single or multi-application environments built on Supabase.
+Access Broker provides centralized authentication, authorization, and user management for single or multi-application environments built on Supabase.
 
 Not sure where to start? Choose your documentation track below.
 
 ## Three Documentation Tracks
 
-**[Integrator](/docs/integrator)** — Connect your app to access broker for SSO and claims-based authorization
+**[Integrator](/docs/integrator)** — Connect your app to Access Broker for SSO and claims-based authorization
 
-**[Operator](/docs/operator)** — Deploy and manage the access broker platform for your organization
+**[Operator](/docs/operator)** — Deploy and manage the Access Broker platform for your organization
 
 **[Concepts](/docs/concepts)** — Understand authentication, authorization, claims, and roles
 
@@ -25,7 +25,7 @@ Not sure where to start? Choose your documentation track below.
 **Answer these questions first:**
 
 | Question | If YES | If NO |
-|----------|--------|-------|
+| --- | --- | --- |
 | Do you have **multiple apps** sharing one Supabase project? | This is for you | Maybe overkill |
 | Do you need **per-app roles/permissions** (not just global roles)? | This is for you | Use vanilla Supabase Auth |
 | Do you want a **central SSO portal** for all your apps? | This is for you | Use Supabase Auth directly |
@@ -48,7 +48,9 @@ const { data, error } = await supabase.auth.signUp({ email, password });
 const { data, error } = await supabase.auth.signInWithPassword({ email, password });
 
 // Get user
-const { data: { user } } = await supabase.auth.getUser();
+const {
+  data: { user },
+} = await supabase.auth.getUser();
 
 // Protect routes in middleware
 if (!user) redirect('/login');
@@ -57,6 +59,7 @@ if (!user) redirect('/login');
 See [Supabase Auth Docs](https://supabase.com/docs/guides/auth) for the official guide.
 
 **Come back here when you need:**
+
 - Multiple apps with different access levels
 - Custom claims in JWT tokens for RLS policies
 - Centralized user management dashboard
@@ -67,7 +70,7 @@ See [Supabase Auth Docs](https://supabase.com/docs/guides/auth) for the official
 ## What this project provides
 
 | Component | What it does |
-|-----------|--------------|
+| --- | --- |
 | **SQL Functions** | `set_claim`, `set_app_claim`, etc. — manage JWT claims stored in `app_metadata` |
 | **Admin Dashboard** | Web UI to manage users, apps, roles, and permissions |
 | **Auth Portal** | Optional SSO hub with passkeys, OAuth, MFA for multi-app environments |
@@ -91,15 +94,15 @@ graph LR
 
 ## Choose your path
 
-### Path 1: I want to integrate my app with access broker
+### Path 1: I want to integrate my app with Access Broker
 
-You want to connect your application to access broker for SSO and claims-based authorization.
+You want to connect your application to Access Broker for SSO and claims-based authorization.
 
 **→ [Start with the Integrator Track](/docs/integrator)**
 
-### Path 2: I want to deploy and manage access broker
+### Path 2: I want to deploy and manage Access Broker
 
-You're setting up and operating the access broker platform for your organization.
+You're setting up and operating the Access Broker platform for your organization.
 
 **→ [Start with the Operator Track](/docs/operator)**
 

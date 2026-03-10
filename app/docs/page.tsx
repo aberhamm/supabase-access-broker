@@ -11,7 +11,7 @@ import {
 } from '@/components/ui/breadcrumb';
 
 export const metadata: Metadata = {
-  title: 'Documentation | access broker',
+  title: 'Documentation | Access Broker',
   description: 'Complete documentation for authentication, authorization, and custom claims',
 };
 
@@ -19,7 +19,7 @@ const tracks = [
   {
     id: 'integrator',
     title: 'Integrator',
-    description: "I'm building an app that uses access broker for authentication and authorization",
+    description: "I'm building an app that uses Access Broker for authentication and authorization",
     icon: Code2,
     href: '/docs/integrator',
     features: ['SSO Integration', 'Claims & Roles', 'Frontend Patterns'],
@@ -33,7 +33,7 @@ const tracks = [
   {
     id: 'operator',
     title: 'Operator',
-    description: "I'm deploying or managing the access broker platform for my organization",
+    description: "I'm deploying or managing the Access Broker platform for my organization",
     icon: Server,
     href: '/docs/operator',
     features: ['Installation & Setup', 'Configuration', 'Multi-App Management'],
@@ -68,7 +68,10 @@ export default function DocsHomePage() {
         <Breadcrumb className="mb-12">
           <BreadcrumbList>
             <BreadcrumbItem>
-              <BreadcrumbLink href="/" className="text-muted-foreground hover:text-foreground transition-colors">
+              <BreadcrumbLink
+                href="/"
+                className="text-muted-foreground hover:text-foreground transition-colors"
+              >
                 <Home className="h-4 w-4" />
               </BreadcrumbLink>
             </BreadcrumbItem>
@@ -85,11 +88,10 @@ export default function DocsHomePage() {
             <Sparkles className="h-3 w-3" />
             Choose your learning path
           </div>
-          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">
-            Documentation
-          </h1>
+          <h1 className="text-4xl sm:text-5xl font-bold tracking-tight mb-4">Documentation</h1>
           <p className="mx-auto max-w-2xl text-base leading-relaxed text-muted-foreground sm:text-lg">
-            Select the track that matches your role. Each path is tailored to get you productive as quickly as possible.
+            Select the track that matches your role. Each path is tailored to get you productive as
+            quickly as possible.
           </p>
         </div>
 
@@ -105,10 +107,14 @@ export default function DocsHomePage() {
                 style={{ animationDelay: `${index * 100}ms` }}
               >
                 {/* Gradient overlay */}
-                <div className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${track.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none`} />
+                <div
+                  className={`absolute inset-0 rounded-2xl bg-gradient-to-br ${track.gradient} opacity-0 group-hover:opacity-100 transition-opacity duration-300 pointer-events-none`}
+                />
 
                 {/* Icon */}
-                <div className={`relative flex-shrink-0 p-4 rounded-xl ${track.iconBg} transition-colors duration-300`}>
+                <div
+                  className={`relative flex-shrink-0 p-4 rounded-xl ${track.iconBg} transition-colors duration-300`}
+                >
                   <Icon className={`h-8 w-8 ${track.iconColor}`} />
                 </div>
 
@@ -117,14 +123,15 @@ export default function DocsHomePage() {
                   <h2 className="text-2xl font-semibold mb-2 group-hover:text-foreground transition-colors">
                     {track.title}
                   </h2>
-                  <p className="text-muted-foreground mb-4 leading-relaxed">
-                    {track.description}
-                  </p>
+                  <p className="text-muted-foreground mb-4 leading-relaxed">{track.description}</p>
 
                   {/* Features */}
                   <div className="flex flex-wrap gap-x-4 gap-y-2 mb-4">
                     {track.features.map((feature) => (
-                      <div key={feature} className="flex items-center gap-2 text-sm text-muted-foreground">
+                      <div
+                        key={feature}
+                        className="flex items-center gap-2 text-sm text-muted-foreground"
+                      >
                         <div className={`w-1.5 h-1.5 rounded-full ${track.dotColor}`} />
                         <span>{feature}</span>
                       </div>
@@ -148,7 +155,9 @@ export default function DocsHomePage() {
             <div className="flex-1">
               <h3 className="text-lg font-semibold mb-1">Not sure where to start?</h3>
               <p className="text-sm text-muted-foreground leading-relaxed">
-                <strong>Integrator</strong> if you&apos;re connecting an app. <strong>Operator</strong> if you&apos;re setting up the platform. <strong>Concepts</strong> to learn the fundamentals first.
+                <strong>Integrator</strong> if you&apos;re connecting an app.{' '}
+                <strong>Operator</strong> if you&apos;re setting up the platform.{' '}
+                <strong>Concepts</strong> to learn the fundamentals first.
               </p>
             </div>
             <Link

@@ -1,14 +1,14 @@
 ---
-title: "Auth Portal (SSO + Passkeys)"
-description: "Central auth portal for multiple apps: passkeys (Face ID/Touch ID) + SSO code exchange"
-category: "authentication"
-audience: "dashboard-admin"
+title: 'Auth Portal (SSO + Passkeys)'
+description: 'Central auth portal for multiple apps: passkeys (Face ID/Touch ID) + SSO code exchange'
+category: 'authentication'
+audience: 'dashboard-admin'
 order: 7
 ---
 
 # Auth Portal (SSO + Passkeys)
 
-This page is about **operating the access broker portal itself** (not integrating a client app).
+This page is about **operating the Access Broker portal itself** (not integrating a client app).
 
 This repo can act as a **central auth portal** for multiple applications (Option B):
 
@@ -125,7 +125,9 @@ Example usage in a client app:
 </script>
 <script src="https://access-broker.yourdomain.com/sdk/auth-portal.js"></script>
 
-<button onclick="AuthPortal.login({ appId: 'app1', redirectUri: 'https://app1.com/auth/callback', state: 'xyz' })">
+<button
+  onclick="AuthPortal.login({ appId: 'app1', redirectUri: 'https://app1.com/auth/callback', state: 'xyz' })"
+>
   Sign in
 </button>
 ```

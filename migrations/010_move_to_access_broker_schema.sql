@@ -1,5 +1,5 @@
 -- Migration: Move Access Broker Tables to Dedicated Schema
--- Description: Moves access broker app tables from public to access_broker_app schema
+-- Description: Moves Access Broker app tables from public to access_broker_app schema
 -- for better organization and portability across Supabase instances.
 -- Safe to re-run: NO - this migration should only be run once
 

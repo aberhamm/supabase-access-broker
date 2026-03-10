@@ -63,6 +63,8 @@ export default function LoginPage() {
   const [loading, setLoading] = useState(false);
   const [otpStep, setOtpStep] = useState<'email' | 'code'>('email');
   const [otpCode, setOtpCode] = useState('');
+  const [codeSentTo, setCodeSentTo] = useState<string | null>(null);
+  const [resendCountdown, setResendCountdown] = useState(0);
   const [password, setPassword] = useState('');
   const [rememberEmail, setRememberEmail] = useState(true);
   const [rememberedEmail, setRememberedEmail] = useState<string | null>(null);
@@ -163,6 +165,12 @@ export default function LoginPage() {
     void clearExistingSession('reauth_param');
   }, [clearExistingSession, shouldForceReauth]);
 
+  useEffect(() => {
+    if (resendCountdown <= 0) return;
+    const timer = setTimeout(() => setResendCountdown(c => c - 1), 1000);
+    return () => clearTimeout(timer);
+  }, [resendCountdown]);
+
   const handleSwitchAccount = useCallback(async () => {
     await clearExistingSession('switch_account');
     setShowRemembered(false);
@@ -258,8 +266,7 @@ export default function LoginPage() {
     }
   };
 
-  const handleSendOtp = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const sendOtp = useCallback(async () => {
     if (!email) {
       toast.error('Please enter your email');
       return;
@@ -272,12 +279,13 @@ export default function LoginPage() {
         email,
         options: {
           shouldCreateUser: false,
-          // For email OTP code flow, we verify via supabase.auth.verifyOtp()
         },
       });
       if (error) throw error;
 
       setOtpStep('code');
+      setCodeSentTo(email);
+      setResendCountdown(30);
       toast.success('Check your email for the 6-digit code');
     } catch (error) {
       const err = error as { error_description?: string; message?: string };
@@ -286,6 +294,11 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
+  }, [email, clearExistingSession, supabase]);
+
+  const handleSendOtp = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await sendOtp();
   };
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
@@ -503,20 +516,37 @@ export default function LoginPage() {
               )}
 
               {mode === 'otp' && AUTH_FEATURES.EMAIL_OTP && otpStep === 'code' && (
-                <div className="space-y-2 animate-in fade-in-0 slide-in-from-bottom-2 duration-200">
-                  <Label>Verification code</Label>
-                  <OTPInput value={otpCode} onChange={setOtpCode} disabled={loading} />
-                  <button
-                    type="button"
-                    className="text-sm text-muted-foreground hover:text-foreground transition-colors"
-                    onClick={() => {
-                      setOtpStep('email');
-                      setOtpCode('');
-                    }}
-                    disabled={loading}
-                  >
-                    ← Use a different email
-                  </button>
+                <div className="space-y-3 animate-in fade-in-0 slide-in-from-bottom-2 duration-200">
+                  {codeSentTo && (
+                    <p className="text-sm text-emerald-600 dark:text-emerald-400 font-medium">
+                      Code sent to {maskEmail(codeSentTo)}
+                    </p>
+                  )}
+                  <div className="space-y-2">
+                    <Label>Verification code</Label>
+                    <OTPInput value={otpCode} onChange={setOtpCode} disabled={loading} />
+                  </div>
+                  <div className="flex items-center justify-between text-sm">
+                    <button
+                      type="button"
+                      className="text-muted-foreground hover:text-foreground transition-colors"
+                      onClick={() => {
+                        setOtpStep('email');
+                        setOtpCode('');
+                      }}
+                      disabled={loading}
+                    >
+                      ← Use a different email
+                    </button>
+                    <button
+                      type="button"
+                      className="text-muted-foreground hover:text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                      onClick={() => void sendOtp()}
+                      disabled={loading || resendCountdown > 0}
+                    >
+                      {resendCountdown > 0 ? `Resend in ${resendCountdown}s` : 'Resend code'}
+                    </button>
+                  </div>
                 </div>
               )}
 
@@ -550,47 +580,59 @@ export default function LoginPage() {
 
               {/* Mode switcher */}
               {[AUTH_FEATURES.PASSWORD_LOGIN, AUTH_FEATURES.EMAIL_OTP, AUTH_FEATURES.MAGIC_LINK].filter(Boolean).length > 1 && (
-                <div className="flex justify-center gap-1 text-sm text-muted-foreground">
-                  <span>Or sign in with</span>
-                  {[
-                    AUTH_FEATURES.PASSWORD_LOGIN && mode !== 'password' && (
-                      <button
-                        key="password"
-                        type="button"
-                        className="font-medium text-foreground hover:underline underline-offset-4 transition-colors"
-                        onClick={() => { setMode('password'); setOtpStep('email'); setOtpCode(''); }}
-                        disabled={loading}
-                      >
-                        password
-                      </button>
-                    ),
-                    AUTH_FEATURES.EMAIL_OTP && mode !== 'otp' && (
-                      <button
-                        key="otp"
-                        type="button"
-                        className="font-medium text-foreground hover:underline underline-offset-4 transition-colors"
-                        onClick={() => { setMode('otp'); setOtpStep('email'); setOtpCode(''); }}
-                        disabled={loading}
-                      >
-                        email code
-                      </button>
-                    ),
-                    AUTH_FEATURES.MAGIC_LINK && mode !== 'magic' && (
-                      <button
-                        key="magic"
-                        type="button"
-                        className="font-medium text-foreground hover:underline underline-offset-4 transition-colors"
-                        onClick={() => { setMode('magic'); setOtpStep('email'); setOtpCode(''); }}
-                        disabled={loading}
-                      >
-                        magic link
-                      </button>
-                    ),
-                  ].filter(Boolean).reduce((acc: React.ReactNode[], curr, idx, arr) => {
-                    if (idx > 0 && idx < arr.length) acc.push(<span key={`sep-${idx}`}> or </span>);
-                    acc.push(curr);
-                    return acc;
-                  }, [])}
+                <div className="flex rounded-lg border border-border/60 p-0.5 bg-muted/30 gap-0.5">
+                  {AUTH_FEATURES.PASSWORD_LOGIN && (
+                    <button
+                      type="button"
+                      className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
+                        mode === 'password'
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                      onClick={() => { if (mode !== 'password') { setMode('password'); setOtpStep('email'); setOtpCode(''); } }}
+                      disabled={loading || mode === 'password'}
+                      aria-pressed={mode === 'password'}
+                    >
+                      Password
+                    </button>
+                  )}
+                  {AUTH_FEATURES.EMAIL_OTP && (
+                    <button
+                      type="button"
+                      className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
+                        mode === 'otp'
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                      onClick={() => {
+                        if (mode !== 'otp') {
+                          setMode('otp');
+                          setOtpStep('email');
+                          setOtpCode('');
+                          if (email) void sendOtp();
+                        }
+                      }}
+                      disabled={loading || mode === 'otp'}
+                      aria-pressed={mode === 'otp'}
+                    >
+                      Email code
+                    </button>
+                  )}
+                  {AUTH_FEATURES.MAGIC_LINK && (
+                    <button
+                      type="button"
+                      className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-all ${
+                        mode === 'magic'
+                          ? 'bg-background text-foreground shadow-sm'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                      onClick={() => { if (mode !== 'magic') { setMode('magic'); setOtpStep('email'); setOtpCode(''); } }}
+                      disabled={loading || mode === 'magic'}
+                      aria-pressed={mode === 'magic'}
+                    >
+                      Magic link
+                    </button>
+                  )}
                 </div>
               )}
             </form>

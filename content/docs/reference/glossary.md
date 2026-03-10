@@ -1,14 +1,14 @@
 ---
-title: "Glossary"
-description: "Definitions of key terms used throughout the documentation"
-category: "reference"
-audience: "all"
+title: 'Glossary'
+description: 'Definitions of key terms used throughout the documentation'
+category: 'reference'
+audience: 'all'
 order: 10
 ---
 
 # Glossary
 
-Quick reference for terms used throughout the access broker documentation.
+Quick reference for terms used throughout the Access Broker documentation.
 
 ## Core Concepts
 
@@ -26,7 +26,7 @@ const role = user.app_metadata?.apps?.['my-app']?.role; // 'admin', 'user', etc.
 ### app_metadata vs user_metadata
 
 | Field | Who can modify | Use for |
-|-------|----------------|---------|
+| --- | --- | --- |
 | `app_metadata` | Server only (service role key) | Roles, permissions, claims — things users shouldn't change |
 | `user_metadata` | User can modify | Profile info like name, avatar, preferences |
 
@@ -95,7 +95,7 @@ A passwordless login method where users click a link sent to their email instead
 
 ## Architecture Terms
 
-### access broker
+### Access Broker
 
 This project. A platform that provides centralized authentication, authorization, and user management for Supabase applications.
 
@@ -167,14 +167,14 @@ The Supabase table containing user accounts. `raw_app_meta_data` column stores c
 
 ## Quick Reference
 
-| Term | One-Line Definition |
-|------|---------------------|
-| Claims | Custom data in JWT tokens for authorization |
-| APP_ID | Unique identifier for an app in multi-app setups |
-| Service Role Key | Secret key that bypasses RLS (server-only) |
-| Anon Key | Public key that respects RLS (client-safe) |
-| RLS | Database-level security policies |
-| JWT | Signed token containing user data and claims |
-| RBAC | Authorization based on roles |
-| MFA | Requiring multiple verification methods |
-| SSO | Log in once, access multiple apps |
+| Term             | One-Line Definition                              |
+| ---------------- | ------------------------------------------------ |
+| Claims           | Custom data in JWT tokens for authorization      |
+| APP_ID           | Unique identifier for an app in multi-app setups |
+| Service Role Key | Secret key that bypasses RLS (server-only)       |
+| Anon Key         | Public key that respects RLS (client-safe)       |
+| RLS              | Database-level security policies                 |
+| JWT              | Signed token containing user data and claims     |
+| RBAC             | Authorization based on roles                     |
+| MFA              | Requiring multiple verification methods          |
+| SSO              | Log in once, access multiple apps                |
