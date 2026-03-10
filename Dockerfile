@@ -20,14 +20,8 @@ RUN pnpm install --no-frozen-lockfile
 FROM base AS builder
 WORKDIR /app
 
-# Copy dependencies from deps stage
-COPY --from=deps /app/node_modules ./node_modules
-
-# Copy source code
-COPY . .
-
-# Set build-time environment variables
-# Note: NEXT_PUBLIC_* vars must be available at build time
+# Declare build-time variables BEFORE copying source so that any arg change
+# invalidates the cache from this point forward, preventing stale baked-in values.
 ARG NEXT_PUBLIC_SUPABASE_URL
 ARG NEXT_PUBLIC_SUPABASE_ANON_KEY
 ARG NEXT_PUBLIC_APP_URL
@@ -40,6 +34,10 @@ RUN if [ -z "$NEXT_PUBLIC_SUPABASE_URL" ] || [ "$NEXT_PUBLIC_SUPABASE_URL" = "ht
     if [ -z "$NEXT_PUBLIC_SUPABASE_ANON_KEY" ] || [ "$NEXT_PUBLIC_SUPABASE_ANON_KEY" = "placeholder-anon-key" ]; then \
         echo "ERROR: NEXT_PUBLIC_SUPABASE_ANON_KEY must be set and cannot be placeholder" >&2; \
         exit 1; \
+    fi && \
+    if [ -z "$NEXT_PUBLIC_APP_URL" ]; then \
+        echo "ERROR: NEXT_PUBLIC_APP_URL must be set (e.g. https://your-domain.com)" >&2; \
+        exit 1; \
     fi
 
 ENV NEXT_PUBLIC_SUPABASE_URL=$NEXT_PUBLIC_SUPABASE_URL
@@ -47,8 +45,11 @@ ENV NEXT_PUBLIC_SUPABASE_ANON_KEY=$NEXT_PUBLIC_SUPABASE_ANON_KEY
 ENV NEXT_PUBLIC_APP_URL=$NEXT_PUBLIC_APP_URL
 ENV NEXT_TELEMETRY_DISABLED=1
 
+# Copy dependencies and source AFTER args are declared and validated
+COPY --from=deps /app/node_modules ./node_modules
+COPY . .
+
 # Build the application
-# ENV vars are already set above, which will override package.json defaults
 RUN pnpm build
 
 # Production stage

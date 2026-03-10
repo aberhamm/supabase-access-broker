@@ -74,14 +74,19 @@ build_image() {
             error "NEXT_PUBLIC_SUPABASE_ANON_KEY is not set correctly in .env.production"
             exit 1
         fi
+        if [[ -z "$app_url" ]] || [[ "$app_url" == *"localhost"* ]]; then
+            error "NEXT_PUBLIC_APP_URL is not set correctly in .env.production (found: ${app_url:-empty})"
+            error "Set it to your production domain, e.g. NEXT_PUBLIC_APP_URL=https://your-domain.com"
+            exit 1
+        fi
 
         build_args="$build_args --build-arg NEXT_PUBLIC_SUPABASE_URL=$supabase_url"
         build_args="$build_args --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=$supabase_anon"
-        [[ -n "$app_url" ]] && build_args="$build_args --build-arg NEXT_PUBLIC_APP_URL=$app_url"
+        build_args="$build_args --build-arg NEXT_PUBLIC_APP_URL=$app_url"
 
         log "Building with:"
         log "  NEXT_PUBLIC_SUPABASE_URL=${supabase_url:0:30}..."
-        log "  NEXT_PUBLIC_APP_URL=${app_url:-not set}"
+        log "  NEXT_PUBLIC_APP_URL=$app_url"
     else
         error ".env.production not found - cannot build without NEXT_PUBLIC_* vars"
         exit 1
@@ -91,6 +96,19 @@ build_image() {
     docker build -t "$IMAGE_NAME" $build_args .
 
     success "Image built successfully"
+
+    # Verify the correct URL was baked into the bundle
+    log "Verifying build contains correct app URL..."
+    local found
+    found=$(docker run --rm "$IMAGE_NAME" sh -c \
+        "grep -rl '$app_url' /app/.next/static/ 2>/dev/null | head -1" 2>/dev/null || true)
+    if [[ -z "$found" ]]; then
+        error "Build verification failed: '$app_url' not found in compiled static assets"
+        error "The image was likely built from a Docker cache that predates NEXT_PUBLIC_APP_URL being set"
+        error "Run: docker builder prune -f  then retry"
+        exit 1
+    fi
+    success "Build verified: $app_url is correctly baked into the bundle"
 }
 
 # Push image to server via SSH
@@ -157,14 +175,19 @@ if [[ -f ".env.production" ]]; then
         echo "ERROR: NEXT_PUBLIC_SUPABASE_ANON_KEY is not set correctly in .env.production" >&2
         exit 1
     fi
+    if [[ -z "\$APP_URL" ]] || [[ "\$APP_URL" == *"localhost"* ]]; then
+        echo "ERROR: NEXT_PUBLIC_APP_URL is not set correctly in .env.production (found: \${APP_URL:-empty})" >&2
+        echo "ERROR: Set it to your production domain, e.g. NEXT_PUBLIC_APP_URL=https://your-domain.com" >&2
+        exit 1
+    fi
 
     BUILD_ARGS="\$BUILD_ARGS --build-arg NEXT_PUBLIC_SUPABASE_URL=\$SUPABASE_URL"
     BUILD_ARGS="\$BUILD_ARGS --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=\$SUPABASE_ANON"
-    [[ -n "\$APP_URL" ]] && BUILD_ARGS="\$BUILD_ARGS --build-arg NEXT_PUBLIC_APP_URL=\$APP_URL"
+    BUILD_ARGS="\$BUILD_ARGS --build-arg NEXT_PUBLIC_APP_URL=\$APP_URL"
 
     echo "Building with:"
     echo "  NEXT_PUBLIC_SUPABASE_URL=\${SUPABASE_URL:0:30}..."
-    echo "  NEXT_PUBLIC_APP_URL=\${APP_URL:-not set}"
+    echo "  NEXT_PUBLIC_APP_URL=\$APP_URL"
 else
     echo "ERROR: .env.production not found - cannot build without NEXT_PUBLIC_* vars" >&2
     exit 1
