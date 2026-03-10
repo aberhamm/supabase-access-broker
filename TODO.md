@@ -1,0 +1,1 @@
+- Control auth methods for each app in the portal. enable disable different methods without code release
