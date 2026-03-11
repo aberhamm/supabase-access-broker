@@ -179,6 +179,28 @@ export async function GET(request: Request) {
       });
     }
 
+    // Check if user has been granted access to this app
+    const appMetadata = user.app_metadata as { apps?: Record<string, { enabled?: boolean }> } | null;
+    const userAppClaims = appMetadata?.apps?.[appId];
+    if (!userAppClaims || userAppClaims.enabled === false) {
+      logSSOEvent({
+        eventType: 'sso_complete_error',
+        userId: authUserId,
+        errorCode: 'access_denied',
+        ...auditContext,
+        metadata: { reason: 'no_app_claims' },
+      });
+      return NextResponse.redirect(
+        buildErrorPageUrl(appOrigin, {
+          error: 'access_denied',
+          errorDescription: `Your account has not been granted access to this application. Contact your administrator to request access.`,
+          appId,
+          redirectUri,
+          state,
+        })
+      );
+    }
+
     // Create auth code and redirect to client
     const code = await createAuthCode({ userId: authUserId, appId, redirectUri });
     const callbackUrl = new URL(redirectUri);
