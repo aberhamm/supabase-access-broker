@@ -76,7 +76,7 @@ export default async function UserDetailPage({
         lastSignIn={user.last_sign_in_at ?? null}
       />
 
-      <div className="grid gap-8 lg:grid-cols-12">
+      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-12">
         {/* Left Sidebar - 4 columns */}
         <div className="space-y-6 lg:col-span-4">
           <EnhancedUserInfoCard
@@ -163,7 +163,7 @@ export default async function UserDetailPage({
         </div>
 
         {/* Right Sidebar - 3 columns */}
-        <div className="space-y-6 lg:col-span-3">
+        <div className="space-y-6 md:col-span-2 lg:col-span-3">
           <UserInsightsPanelServer
             userId={user.email || id}
             isAdmin={isAdmin}

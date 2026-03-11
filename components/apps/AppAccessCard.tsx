@@ -78,9 +78,9 @@ export function AppAccessCard({
           return (
             <div
               key={app.id}
-              className="flex items-center justify-between rounded-lg border p-4"
+              className="flex flex-wrap items-center justify-between gap-y-3 rounded-lg border p-4"
             >
-              <div className="flex items-center gap-3">
+              <div className="flex min-w-0 items-center gap-3">
                 {app.color && (
                   <div
                     className="h-3 w-3 rounded-full"
@@ -105,7 +105,7 @@ export function AppAccessCard({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2">
+              <div className="flex shrink-0 items-center gap-2">
                 {isEnabled && (
                   <AppRoleSelector
                     currentRole={role}
