@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { cn } from '@/lib/utils';
-import { Key, Shield, LayoutDashboard, Link2 } from 'lucide-react';
+import { Key, Shield, LayoutDashboard, Link2, Lock } from 'lucide-react';
 
 interface AppDetailNavProps {
   appId: string;
@@ -14,6 +14,7 @@ const tabs = [
   { id: 'roles', label: 'Roles', icon: Shield, href: '/roles' },
   { id: 'api-keys', label: 'API Keys', icon: Key, href: '/api-keys' },
   { id: 'sso', label: 'SSO', icon: Link2, href: '/sso' },
+  { id: 'auth-methods', label: 'Auth', icon: Lock, href: '/auth-methods' },
 ];
 
 export function AppDetailNav({ appId }: AppDetailNavProps) {

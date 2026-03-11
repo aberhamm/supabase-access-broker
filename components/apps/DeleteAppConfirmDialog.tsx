@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -29,6 +30,7 @@ export function DeleteAppConfirmDialog({
   open,
   onOpenChange,
 }: DeleteAppConfirmDialogProps) {
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [confirmText, setConfirmText] = useState('');
 
@@ -47,6 +49,7 @@ export function DeleteAppConfirmDialog({
         toast.error(result.error);
       } else {
         toast.success(`App "${app.name}" deleted successfully`);
+        router.refresh();
         onOpenChange(false);
       }
     } catch (error) {

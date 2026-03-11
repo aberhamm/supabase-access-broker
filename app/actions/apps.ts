@@ -218,6 +218,43 @@ export async function generateAppSecretAction(
 }
 
 // ============================================================================
+// Auth Methods Actions
+// ============================================================================
+
+export async function updateAppAuthMethodsAction(
+  appId: string,
+  authMethods: import('@/types/claims').AppAuthMethods
+): Promise<{ data: { ok: true } | null; error: string | null }> {
+  try {
+    const supabase = await createClient();
+
+    const { data: isAdmin } = await isClaimsAdmin(supabase);
+    if (!isAdmin) {
+      return { data: null, error: 'Unauthorized: You must be a claims_admin' };
+    }
+
+    const { error } = await supabase
+      .schema('access_broker_app')
+      .from('apps')
+      .update({ auth_methods: authMethods })
+      .eq('id', appId);
+
+    if (error) {
+      return { data: null, error: error.message || 'Failed to update auth methods' };
+    }
+
+    refreshCache();
+    revalidatePath('/apps');
+    revalidatePath(`/apps/${appId}`);
+
+    return { data: { ok: true }, error: null };
+  } catch (e) {
+    const err = e as Error;
+    return { data: null, error: err.message || 'Failed to update auth methods' };
+  }
+}
+
+// ============================================================================
 // Role Management Actions
 // ============================================================================
 

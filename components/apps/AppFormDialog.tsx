@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import {
   Dialog,
   DialogContent,
@@ -27,6 +28,7 @@ interface AppFormDialogProps {
 
 export function AppFormDialog({ app, open, onOpenChange, onSuccess }: AppFormDialogProps) {
   const isEditing = !!app;
+  const router = useRouter();
   const [loading, setLoading] = useState(false);
   const [formData, setFormData] = useState({
     id: app?.id || '',
@@ -70,6 +72,7 @@ export function AppFormDialog({ app, open, onOpenChange, onSuccess }: AppFormDia
             ? `App "${formData.name}" updated successfully`
             : `App "${formData.name}" created successfully`
         );
+        router.refresh();
         onOpenChange(false);
         onSuccess?.();
       }

@@ -104,6 +104,7 @@ export default function CreateAppPage() {
         toast.error(result.error);
       } else {
         toast.success(`App "${formData.name}" created successfully`);
+        router.refresh();
         router.push('/apps');
       }
     } catch (error) {

@@ -117,6 +117,15 @@ export function getUserCustomClaimsCount(
   ).length;
 }
 
+export interface AppAuthMethods {
+  password: boolean;
+  magic_link: boolean;
+  email_otp: boolean;
+  passkeys: boolean;
+  google: boolean;
+  github: boolean;
+}
+
 export interface AppInfo {
   id: string;
   name: string;
@@ -141,6 +150,7 @@ export interface AppConfig {
   // SSO settings (Auth Portal)
   allowed_callback_urls?: string[] | null;
   sso_client_secret_hash?: string | null;
+  auth_methods?: AppAuthMethods | null;
   created_at: string;
   updated_at: string;
 }
