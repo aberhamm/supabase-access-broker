@@ -721,34 +721,23 @@
 }
 
 /* Shimmer loading effect */
-@keyframes shimmer {
-  0% {
-    background-position: -800px 0;
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
   }
-  100% {
-    background-position: 800px 0;
+  50% {
+    opacity: 0.5;
   }
 }
 
 .skeleton {
-  animation: shimmer 3.5s infinite ease-in-out;
-  background: linear-gradient(
-    90deg,
-    oklch(0.92 0.002 270) 0%,
-    oklch(0.96 0.002 270) 50%,
-    oklch(0.92 0.002 270) 100%
-  );
-  background-size: 800px 100%;
+  animation: skeleton-pulse 2.5s ease-in-out infinite;
+  background-color: oklch(0.92 0.002 270);
   border-radius: var(--radius-md);
 }
 
 .dark .skeleton {
-  background: linear-gradient(
-    90deg,
-    oklch(0.18 0.008 270) 0%,
-    oklch(0.22 0.008 270) 50%,
-    oklch(0.18 0.008 270) 100%
-  );
+  background-color: oklch(0.18 0.008 270);
 }
 
 /* ===================================
