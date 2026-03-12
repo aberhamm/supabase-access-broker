@@ -59,4 +59,5 @@ nginx/ssl/*.pem
 !nginx/ssl/.gitkeep
 !nginx/logs/.gitkeep
 .cursor/*
+.claude/*
 e2e/screenshots/*
