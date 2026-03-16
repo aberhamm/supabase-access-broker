@@ -1,4 +1,4 @@
-import { createClient } from '@/lib/supabase/server';
+import { createAdminClient } from '@/lib/supabase/server';
 import { ApiKey, CreateApiKeyData, ValidatedApiKey } from '@/types/claims';
 
 /**
@@ -34,7 +34,7 @@ export async function validateApiKey(
 ): Promise<ValidatedApiKey | null> {
   try {
     const keyHash = await hashApiKey(apiKey);
-    const supabase = await createClient();
+    const supabase = await createAdminClient();
 
     const { data, error } = await supabase.rpc('validate_api_key', {
       p_key_hash: keyHash,
@@ -69,7 +69,7 @@ export async function validateApiKey(
 export async function recordApiKeyUsage(apiKey: string): Promise<void> {
   try {
     const keyHash = await hashApiKey(apiKey);
-    const supabase = await createClient();
+    const supabase = await createAdminClient();
 
     await supabase.rpc('record_api_key_usage', {
       p_key_hash: keyHash,
@@ -85,7 +85,7 @@ export async function recordApiKeyUsage(apiKey: string): Promise<void> {
  */
 export async function getApiKeys(appId: string): Promise<ApiKey[]> {
   try {
-    const supabase = await createClient();
+    const supabase = await createAdminClient();
     const { data, error } = await supabase.rpc('get_app_api_keys', {
       p_app_id: appId,
     });
@@ -111,7 +111,7 @@ export async function createApiKey(
   createdBy?: string
 ): Promise<{ id: string; secret: string }> {
   try {
-    const supabase = await createClient();
+    const supabase = await createAdminClient();
 
     // Generate the key
     const secret = generateApiKey();
@@ -157,7 +157,7 @@ export async function updateApiKey(
   }
 ): Promise<void> {
   try {
-    const supabase = await createClient();
+    const supabase = await createAdminClient();
 
     const { data, error } = await supabase.rpc('update_api_key', {
       p_id: id,
@@ -187,7 +187,7 @@ export async function updateApiKey(
  */
 export async function deleteApiKey(id: string): Promise<void> {
   try {
-    const supabase = await createClient();
+    const supabase = await createAdminClient();
 
     const { data, error } = await supabase.rpc('delete_api_key', {
       p_id: id,

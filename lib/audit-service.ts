@@ -14,7 +14,17 @@ export type SSOEventType =
   | 'logout_success'
   | 'logout_external_redirect'
   | 'user_lookup_success'
-  | 'user_lookup_error';
+  | 'user_lookup_error'
+  | 'user_list_success'
+  | 'user_list_error'
+  | 'user_claims_get_success'
+  | 'user_claims_get_error'
+  | 'user_claims_set_success'
+  | 'user_claims_set_error'
+  | 'user_claims_delete_success'
+  | 'user_claims_delete_error'
+  | 'user_invite_success'
+  | 'user_invite_error';
 
 /**
  * Parameters for logging an SSO audit event

@@ -1,0 +1,70 @@
+import { NextRequest, NextResponse } from 'next/server';
+import { createAdminClient } from '@/lib/supabase/server';
+import { authenticateAppRequest } from '@/lib/app-api-auth';
+import { logSSOEvent } from '@/lib/audit-service';
+import { AppClaim } from '@/types/claims';
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ appId: string }> }
+) {
+  const { appId } = await params;
+
+  const auth = await authenticateAppRequest(request, appId);
+  if (!auth.ok) return auth.response;
+
+  const { ipAddress, userAgent } = auth;
+
+  try {
+    const searchParams = request.nextUrl.searchParams;
+    const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10) || 1);
+    const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') ?? '50', 10) || 50));
+    const search = searchParams.get('search') ?? '';
+
+    const supabase = await createAdminClient();
+    const { data, error } = await supabase.rpc('list_app_users', { app_id: appId });
+
+    if (error) throw error;
+
+    const allUsers = (data ?? []) as { user_id: string; user_email: string; app_data: AppClaim }[];
+
+    // In-memory filter by email
+    const filtered = search
+      ? allUsers.filter((u) => u.user_email.toLowerCase().includes(search.toLowerCase()))
+      : allUsers;
+
+    const total = filtered.length;
+    const offset = (page - 1) * limit;
+    const pageUsers = filtered.slice(offset, offset + limit);
+
+    logSSOEvent({
+      eventType: 'user_list_success',
+      appId,
+      ipAddress,
+      userAgent,
+      metadata: { count: pageUsers.length, total },
+    });
+
+    return NextResponse.json({
+      users: pageUsers.map((u) => ({
+        id: u.user_id,
+        email: u.user_email,
+        app_claims: u.app_data,
+      })),
+      total,
+      page,
+      limit,
+    });
+  } catch (e) {
+    const message = e instanceof Error ? e.message : 'Unknown error';
+    logSSOEvent({
+      eventType: 'user_list_error',
+      appId,
+      ipAddress,
+      userAgent,
+      errorCode: 'server_error',
+      metadata: { error_message: message },
+    });
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+  }
+}

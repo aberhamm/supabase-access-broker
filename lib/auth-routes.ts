@@ -6,6 +6,7 @@ export const PUBLIC_ROUTE_PREFIXES = [
   '/reset-password',
   '/api/auth/',
   '/api/health',
+  '/api/apps/',
   '/demo/',
 ] as const;
 
