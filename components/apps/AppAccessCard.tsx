@@ -5,10 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { AppClaim, AppConfig, isAppAdmin } from '@/types/claims';
-import {
-  toggleAppAccessAction,
-  setAppRoleAction,
-} from '@/app/actions/claims';
+import { toggleAppAccessAction, setAppRoleAction } from '@/app/actions/claims';
 import { toast } from 'sonner';
 import { Shield } from 'lucide-react';
 import { AppRoleSelector } from './AppRoleSelector';
@@ -35,9 +32,7 @@ export function AppAccessCard({
     if (result.error) {
       toast.error(result.error);
     } else {
-      toast.success(
-        `App access ${!currentEnabled ? 'enabled' : 'disabled'} successfully`
-      );
+      toast.success(`App access ${!currentEnabled ? 'enabled' : 'disabled'} successfully`);
     }
     setLoading(null);
   };
@@ -53,7 +48,6 @@ export function AppAccessCard({
     }
     setLoading(null);
   };
-
 
   return (
     <Card>
@@ -76,16 +70,10 @@ export function AppAccessCard({
           const isAdmin = isAppAdmin(appData);
 
           return (
-            <div
-              key={app.id}
-              className="flex flex-wrap items-center justify-between gap-y-3 rounded-lg border p-4"
-            >
+            <div key={app.id} className="flex flex-col gap-3 rounded-lg border p-4">
               <div className="flex min-w-0 items-center gap-3">
                 {app.color && (
-                  <div
-                    className="h-3 w-3 rounded-full"
-                    style={{ backgroundColor: app.color }}
-                  />
+                  <div className="h-3 w-3 rounded-full" style={{ backgroundColor: app.color }} />
                 )}
                 <div>
                   <div className="flex items-center gap-2">
@@ -98,20 +86,16 @@ export function AppAccessCard({
                     )}
                   </div>
                   {app.description && (
-                    <p className="text-xs text-muted-foreground">
-                      {app.description}
-                    </p>
+                    <p className="text-xs text-muted-foreground">{app.description}</p>
                   )}
                 </div>
               </div>
 
-              <div className="flex shrink-0 items-center gap-2">
+              <div className="flex items-center gap-2 justify-between">
                 {isEnabled && (
                   <AppRoleSelector
                     currentRole={role}
-                    onRoleChange={(newRole) =>
-                      handleRoleChange(app.id, newRole)
-                    }
+                    onRoleChange={(newRole) => handleRoleChange(app.id, newRole)}
                     disabled={loading === app.id}
                   />
                 )}

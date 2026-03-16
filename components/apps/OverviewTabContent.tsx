@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Shield, Key, Calendar, Copy, Check } from 'lucide-react';
+import { AppUsersCard } from './AppUsersCard';
 import { getUnifiedApiKeys } from '@/app/actions/api-keys';
 import type { AppConfig } from '@/types/claims';
 
@@ -215,6 +216,9 @@ export function OverviewTabContent({ app }: OverviewTabContentProps) {
           </dl>
         </CardContent>
       </Card>
+
+      {/* App Users */}
+      <AppUsersCard appId={app.id} />
     </div>
   );
 }

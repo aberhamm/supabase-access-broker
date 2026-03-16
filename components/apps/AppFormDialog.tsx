@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   Dialog,
@@ -26,10 +26,22 @@ interface AppFormDialogProps {
   onSuccess?: () => void;
 }
 
+// Convert a string to kebab-case
+function toKebabCase(str: string): string {
+  return str
+    .toLowerCase()
+    .trim()
+    .replace(/[^\w\s-]/g, '')
+    .replace(/\s+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-|-$/g, '');
+}
+
 export function AppFormDialog({ app, open, onOpenChange, onSuccess }: AppFormDialogProps) {
   const isEditing = !!app;
   const router = useRouter();
   const [loading, setLoading] = useState(false);
+  const [idManuallyEdited, setIdManuallyEdited] = useState(isEditing);
   const [formData, setFormData] = useState({
     id: app?.id || '',
     name: app?.name || '',
@@ -37,6 +49,20 @@ export function AppFormDialog({ app, open, onOpenChange, onSuccess }: AppFormDia
     color: app?.color || '',
     enabled: app?.enabled ?? true,
   });
+
+  // Reset state when dialog opens with different app
+  useEffect(() => {
+    if (open) {
+      setIdManuallyEdited(!!app);
+      setFormData({
+        id: app?.id || '',
+        name: app?.name || '',
+        description: app?.description || '',
+        color: app?.color || '',
+        enabled: app?.enabled ?? true,
+      });
+    }
+  }, [open, app]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -112,36 +138,58 @@ export function AppFormDialog({ app, open, onOpenChange, onSuccess }: AppFormDia
 
           <div className="space-y-4 py-4">
             <div className="space-y-2">
-              <Label htmlFor="id">App ID *</Label>
-              <Input
-                id="id"
-                value={formData.id}
-                onChange={(e) =>
-                  setFormData({ ...formData, id: e.target.value })
-                }
-                disabled={isEditing || loading}
-                placeholder="e.g., my-app"
-                required
-              />
-              {!isEditing && (
-                <p className="text-xs text-muted-foreground">
-                  Use lowercase with hyphens. Cannot be changed after creation.
-                </p>
-              )}
-            </div>
-
-            <div className="space-y-2">
               <Label htmlFor="name">Name *</Label>
               <Input
                 id="name"
                 value={formData.name}
-                onChange={(e) =>
-                  setFormData({ ...formData, name: e.target.value })
-                }
+                onChange={(e) => {
+                  const newName = e.target.value;
+                  setFormData({
+                    ...formData,
+                    name: newName,
+                    id: idManuallyEdited ? formData.id : toKebabCase(newName),
+                  });
+                }}
                 disabled={loading}
                 placeholder="e.g., My Application"
                 required
               />
+              {!isEditing && (
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <span>ID:</span>
+                  {idManuallyEdited ? (
+                    <Input
+                      id="id"
+                      value={formData.id}
+                      onChange={(e) => {
+                        setFormData({ ...formData, id: e.target.value });
+                      }}
+                      disabled={loading}
+                      placeholder="e.g., my-app"
+                      required
+                      className="h-6 px-1.5 py-0 text-xs font-mono"
+                    />
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => setIdManuallyEdited(true)}
+                      className="font-mono rounded px-1 hover:bg-muted transition-colors"
+                    >
+                      {formData.id || 'my-app'}
+                    </button>
+                  )}
+                  {!idManuallyEdited && formData.id && (
+                    <span className="text-muted-foreground/60">
+                      (click to edit)
+                    </span>
+                  )}
+                </div>
+              )}
+              {isEditing && (
+                <p className="text-xs text-muted-foreground">
+                  ID: <span className="font-mono">{formData.id}</span>
+                </p>
+              )}
             </div>
 
             <div className="space-y-2">

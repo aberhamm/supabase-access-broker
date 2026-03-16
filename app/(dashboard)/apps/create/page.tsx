@@ -142,7 +142,6 @@ export default function CreateAppPage() {
                   setFormData({
                     ...formData,
                     name: newName,
-                    // Only auto-populate ID if user hasn't manually edited it
                     id: idManuallyEdited ? formData.id : toKebabCase(newName),
                   });
                 }}
@@ -150,25 +149,35 @@ export default function CreateAppPage() {
                 placeholder="e.g., My Application"
                 required
               />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="id">App ID *</Label>
-              <Input
-                id="id"
-                value={formData.id}
-                onChange={(e) => {
-                  setIdManuallyEdited(true);
-                  setFormData({ ...formData, id: e.target.value });
-                }}
-                disabled={loading}
-                placeholder="e.g., my-app"
-                required
-              />
-              <p className="text-xs text-muted-foreground">
-                Auto-generated from name. Use lowercase with hyphens. Cannot be
-                changed after creation.
-              </p>
+              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                <span>ID:</span>
+                {idManuallyEdited ? (
+                  <Input
+                    id="id"
+                    value={formData.id}
+                    onChange={(e) => {
+                      setFormData({ ...formData, id: e.target.value });
+                    }}
+                    disabled={loading}
+                    placeholder="e.g., my-app"
+                    required
+                    className="h-6 px-1.5 py-0 text-xs font-mono"
+                  />
+                ) : (
+                  <button
+                    type="button"
+                    onClick={() => setIdManuallyEdited(true)}
+                    className="font-mono rounded px-1 hover:bg-muted transition-colors"
+                  >
+                    {formData.id || 'my-app'}
+                  </button>
+                )}
+                {!idManuallyEdited && formData.id && (
+                  <span className="text-muted-foreground/60">
+                    (click to edit)
+                  </span>
+                )}
+              </div>
             </div>
 
             <div className="space-y-2">

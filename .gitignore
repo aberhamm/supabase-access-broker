@@ -61,3 +61,4 @@ nginx/ssl/*.pem
 .cursor/*
 .claude/*
 e2e/screenshots/*
+.gstack/

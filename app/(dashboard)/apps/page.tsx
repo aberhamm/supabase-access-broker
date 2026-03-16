@@ -23,7 +23,7 @@ async function checkAdmin() {
 
 export default async function AppsPage() {
   await checkAdmin();
-  const apps = await getApps();
+  const apps = await getApps(true);
 
   return (
     <div className="space-y-8">
