@@ -44,7 +44,7 @@ export function SSOSettingsCard({
   const [generatedSecret, setGeneratedSecret] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
 
-  const secretConfigured = !!app.sso_client_secret_hash;
+  const [secretConfigured, setSecretConfigured] = useState(!!app.sso_client_secret_hash);
 
   const addUrl = async () => {
     try {
@@ -115,6 +115,7 @@ export function SSOSettingsCard({
         return;
       }
       setGeneratedSecret(result.data?.secret ?? null);
+      setSecretConfigured(true);
       toast.success('App secret generated');
       onUpdated?.();
     } catch (e) {

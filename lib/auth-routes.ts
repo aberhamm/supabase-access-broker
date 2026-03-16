@@ -6,6 +6,12 @@ export const PUBLIC_ROUTE_PREFIXES = [
   '/reset-password',
   '/api/auth/',
   '/api/health',
+  // Bypasses middleware session auth for all /api/apps/* routes.
+  // These endpoints handle their own auth:
+  //   - auth-methods: intentionally public (used by login page)
+  //   - users, claims, invite: API key / app_secret via authenticateAppRequest()
+  //   - roles: session auth via getUser() (dashboard endpoint)
+  // WARNING: Any new route under /api/apps/ MUST implement its own auth check.
   '/api/apps/',
   '/demo/',
 ] as const;

@@ -13,7 +13,7 @@ export async function GET(
   const auth = await authenticateAppRequest(request, appId);
   if (!auth.ok) return auth.response;
 
-  const { ipAddress, userAgent } = auth;
+  const { ipAddress, userAgent, authMethod } = auth;
 
   try {
     const searchParams = request.nextUrl.searchParams;
@@ -42,7 +42,7 @@ export async function GET(
       appId,
       ipAddress,
       userAgent,
-      metadata: { count: pageUsers.length, total },
+      metadata: { count: pageUsers.length, total, auth_method: authMethod },
     });
 
     return NextResponse.json({
@@ -63,7 +63,7 @@ export async function GET(
       ipAddress,
       userAgent,
       errorCode: 'server_error',
-      metadata: { error_message: message },
+      metadata: { error_message: message, auth_method: authMethod },
     });
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }

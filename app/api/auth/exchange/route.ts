@@ -1,88 +1,43 @@
 import { NextResponse } from 'next/server';
 import { debugLog, debugWarn } from '@/lib/auth-debug';
 import { createAdminClient } from '@/lib/supabase/server';
-import { consumeAuthCode, getSsoAppAuthConfig, sha256Hex, timingSafeEqualHex } from '@/lib/sso-service';
-import { logSSOEvent, extractClientIP } from '@/lib/audit-service';
+import { consumeAuthCode } from '@/lib/sso-service';
+import { authenticateAppRequest } from '@/lib/app-api-auth';
+import { logSSOEvent } from '@/lib/audit-service';
+import { extractAppClaims } from '@/lib/app-api-validation';
 
 export async function POST(request: Request) {
-  // Common audit context
-  const auditContext = {
-    ipAddress: extractClientIP(request) || undefined,
-    userAgent: request.headers.get('user-agent') || undefined,
-  };
+  let body: Record<string, unknown> = {};
+  try {
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
+
+  const code = typeof body.code === 'string' ? body.code : null;
+  const appId = typeof body.app_id === 'string' ? body.app_id : null;
+
+  if (!code || !appId) {
+    logSSOEvent({
+      eventType: 'token_exchange_error',
+      appId: appId || undefined,
+      errorCode: 'invalid_request',
+      metadata: { reason: 'missing_code_or_app_id' },
+    });
+    return NextResponse.json({ error: 'Missing code or app_id' }, { status: 400 });
+  }
+
+  // Authenticate using shared auth helper (supports both API key and app_secret)
+  const auth = await authenticateAppRequest(request, appId, body, {
+    auditEventType: 'token_exchange_error',
+  });
+  if (!auth.ok) return auth.response;
+
+  // app_secret already stripped by authenticateAppRequest
+
+  const { ipAddress, userAgent, authMethod } = auth;
 
   try {
-    const body = await request.json().catch(() => ({}));
-    const code = typeof body?.code === 'string' ? body.code : null;
-    const appId = typeof body?.app_id === 'string' ? body.app_id : null;
-    const appSecret = typeof body?.app_secret === 'string' ? body.app_secret : null;
-
-    if (!code || !appId) {
-      logSSOEvent({
-        eventType: 'token_exchange_error',
-        appId: appId || undefined,
-        errorCode: 'invalid_request',
-        ...auditContext,
-        metadata: { reason: 'missing_code_or_app_id' },
-      });
-      return NextResponse.json({ error: 'Missing code or app_id' }, { status: 400 });
-    }
-
-    const appConfig = await getSsoAppAuthConfig(appId);
-
-    if (!appConfig?.id) {
-      logSSOEvent({
-        eventType: 'token_exchange_error',
-        appId,
-        errorCode: 'unknown_app',
-        ...auditContext,
-      });
-      return NextResponse.json({ error: 'Unknown app_id' }, { status: 400 });
-    }
-
-    if (appConfig.enabled === false) {
-      logSSOEvent({
-        eventType: 'token_exchange_error',
-        appId,
-        errorCode: 'app_disabled',
-        ...auditContext,
-      });
-      return NextResponse.json({ error: 'App is disabled' }, { status: 403 });
-    }
-
-    if (!appConfig.ssoClientSecretHash) {
-      logSSOEvent({
-        eventType: 'token_exchange_error',
-        appId,
-        errorCode: 'secret_not_configured',
-        ...auditContext,
-      });
-      return NextResponse.json({ error: 'App secret is not configured' }, { status: 403 });
-    }
-
-    if (!appSecret) {
-      logSSOEvent({
-        eventType: 'token_exchange_error',
-        appId,
-        errorCode: 'missing_secret',
-        ...auditContext,
-      });
-      return NextResponse.json({ error: 'Missing app_secret' }, { status: 401 });
-    }
-
-    const computed = sha256Hex(appSecret);
-    const ok = timingSafeEqualHex(computed, appConfig.ssoClientSecretHash);
-    if (!ok) {
-      logSSOEvent({
-        eventType: 'token_exchange_error',
-        appId,
-        errorCode: 'invalid_secret',
-        ...auditContext,
-        metadata: { reason: 'secret_mismatch' },
-      });
-      return NextResponse.json({ error: 'Invalid app_secret' }, { status: 401 });
-    }
-
     const supabase = await createAdminClient();
     const { userId } = await consumeAuthCode({ code, appId });
 
@@ -101,7 +56,8 @@ export async function POST(request: Request) {
         appId,
         userId,
         errorCode: 'user_not_found',
-        ...auditContext,
+        ipAddress,
+        userAgent,
       });
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
@@ -124,31 +80,26 @@ export async function POST(request: Request) {
         appId,
         userId,
         errorCode: 'user_id_mismatch',
-        ...auditContext,
+        ipAddress,
+        userAgent,
         metadata: {
           expected_user_id: userId,
           actual_user_id: user.id,
           email: user.email,
         },
       });
-      return NextResponse.json({ error: 'User ID validation failed' }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
     }
 
-    const appMetadata = user.app_metadata as unknown;
-    const apps =
-      appMetadata && typeof appMetadata === 'object' && 'apps' in (appMetadata as Record<string, unknown>)
-        ? ((appMetadata as { apps?: unknown }).apps as unknown)
-        : undefined;
-    const appClaims =
-      apps && typeof apps === 'object'
-        ? ((apps as Record<string, unknown>)[appId] ?? null)
-        : null;
-    // Log successful exchange
+    const appClaims = extractAppClaims(user, appId);
+
     logSSOEvent({
       eventType: 'token_exchange_success',
       appId,
       userId: user.id,
-      ...auditContext,
+      ipAddress,
+      userAgent,
+      metadata: { auth_method: authMethod },
     });
 
     return NextResponse.json({
@@ -171,11 +122,14 @@ export async function POST(request: Request) {
 
     logSSOEvent({
       eventType: 'token_exchange_error',
+      appId,
       errorCode,
-      ...auditContext,
+      ipAddress,
+      userAgent,
       metadata: { error_message: message },
     });
 
-    return NextResponse.json({ error: message }, { status: 400 });
+    // Return generic error — do not leak internal details to caller
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
