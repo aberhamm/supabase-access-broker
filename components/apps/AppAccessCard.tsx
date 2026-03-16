@@ -91,7 +91,7 @@ export function AppAccessCard({
                 </div>
               </div>
 
-              <div className="flex items-center gap-2 justify-between">
+              <div className="flex flex-wrap items-center gap-2 justify-between">
                 {isEnabled && (
                   <AppRoleSelector
                     currentRole={role}
