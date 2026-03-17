@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { authenticateAppRequest } from '@/lib/app-api-auth';
+import { enforceRateLimit } from '@/lib/app-api-rate-limit';
 import { logSSOEvent } from '@/lib/audit-service';
 import { isValidEmail, validateClaimValues, extractAppClaims } from '@/lib/app-api-validation';
 
@@ -19,6 +20,9 @@ export async function POST(
 
   const auth = await authenticateAppRequest(request, appId, body);
   if (!auth.ok) return auth.response;
+
+  const rateLimited = enforceRateLimit(appId, 'write');
+  if (rateLimited) return rateLimited;
 
   // app_secret already stripped by authenticateAppRequest
 

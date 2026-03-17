@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { authenticateAppRequest } from '@/lib/app-api-auth';
+import { enforceRateLimit } from '@/lib/app-api-rate-limit';
 import { logSSOEvent } from '@/lib/audit-service';
 
 export async function GET(
@@ -12,6 +13,9 @@ export async function GET(
   const auth = await authenticateAppRequest(request, appId);
   if (!auth.ok) return auth.response;
 
+  const rateLimited = enforceRateLimit(appId, 'read');
+  if (rateLimited) return rateLimited;
+
   const { ipAddress, userAgent, authMethod } = auth;
 
   try {
@@ -19,7 +23,21 @@ export async function GET(
     const page = Math.max(1, parseInt(searchParams.get('page') ?? '1', 10) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(searchParams.get('limit') ?? '50', 10) || 50));
     const search = searchParams.get('search') ?? '';
+    const since = searchParams.get('since') ?? null;
     const offset = (page - 1) * limit;
+
+    // Validate since parameter if provided
+    let sinceDate: string | null = null;
+    if (since) {
+      const parsed = new Date(since);
+      if (isNaN(parsed.getTime())) {
+        return NextResponse.json(
+          { error: 'Invalid since parameter. Use ISO 8601 format (e.g. 2026-03-17T00:00:00Z).' },
+          { status: 400 }
+        );
+      }
+      sinceDate = parsed.toISOString();
+    }
 
     const supabase = await createAdminClient();
     const { data, error } = await supabase.rpc('list_app_users_paginated', {
@@ -27,6 +45,7 @@ export async function GET(
       p_limit: limit,
       p_offset: offset,
       p_search: search,
+      p_since: sinceDate,
     });
 
     if (error) throw error;

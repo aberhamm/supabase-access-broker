@@ -24,6 +24,7 @@ See [MIGRATION_GUIDE.md](../MIGRATION_GUIDE.md) for comprehensive documentation.
 - `004_external_key_sources.sql` - External key source integration
 - `006_performance_optimizations.sql` - Database performance improvements
 - `016_list_app_users_paginated.sql` - Server-side pagination and search for app users
+- `017_list_app_users_since.sql` - Add `since` parameter for incremental user sync
 
 ## Automated Migration System
 

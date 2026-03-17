@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
 import { authenticateAppRequest } from '@/lib/app-api-auth';
+import { enforceRateLimit } from '@/lib/app-api-rate-limit';
 import { logSSOEvent } from '@/lib/audit-service';
 import { validateClaimValues, extractAppClaims } from '@/lib/app-api-validation';
 
@@ -17,6 +18,9 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
 
   const auth = await authenticateAppRequest(request, appId);
   if (!auth.ok) return auth.response;
+
+  const rateLimited = enforceRateLimit(appId, 'read');
+  if (rateLimited) return rateLimited;
 
   const { ipAddress, userAgent, authMethod } = auth;
 
@@ -75,6 +79,9 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 
   const auth = await authenticateAppRequest(request, appId, body);
   if (!auth.ok) return auth.response;
+
+  const rateLimited = enforceRateLimit(appId, 'write');
+  if (rateLimited) return rateLimited;
 
   // app_secret already stripped by authenticateAppRequest
 
@@ -172,6 +179,9 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
 
   const auth = await authenticateAppRequest(request, appId, body);
   if (!auth.ok) return auth.response;
+
+  const rateLimitedDel = enforceRateLimit(appId, 'write');
+  if (rateLimitedDel) return rateLimitedDel;
 
   // app_secret already stripped by authenticateAppRequest
 
