@@ -2,18 +2,6 @@
 
 Deferred work from app-facing API review (2026-03-16).
 
-## P1: Enforce API key expiry in validate_api_key RPC
-
-**What:** Verify that the `validate_api_key` RPC checks `expires_at` and returns `is_valid: false` for expired keys. Fix if not.
-
-**Why:** The `api_keys` table stores `expires_at` but it's unclear if the validation RPC enforces it. An expired key could still authenticate.
-
-**Context:** Pre-existing issue surfaced during app-facing API review. All new endpoints use `validateApiKey()` via `authenticateAppRequest()`. Check the RPC in `migrations/003_api_keys.sql`. If it doesn't check expiry, add `AND (expires_at IS NULL OR expires_at > now())` to the WHERE clause.
-
-**Effort:** S | **Depends on:** Nothing
-
----
-
 ## P2: DB-level pagination for list_app_users
 
 **What:** Create `list_app_users_paginated(app_id, p_offset, p_limit, p_search)` RPC that handles pagination and search at the database level.

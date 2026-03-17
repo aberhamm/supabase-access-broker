@@ -492,11 +492,8 @@ SELECT * FROM list_app_users('app1');
 // Toggle app access
 await toggleAppAccessAction(userId, appId, enabled);
 
-// Set app role
+// Set app role (use 'admin' role for dashboard access)
 await setAppRoleAction(userId, appId, role);
-
-// Grant app admin
-await toggleAppAdminAction(userId, appId, isAdmin);
 
 // Set custom claim
 await setAppClaimAction(userId, appId, claimKey, value);
