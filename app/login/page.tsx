@@ -24,6 +24,7 @@ import { safeNextPath } from '@/lib/safe-redirect';
 import { debugError, debugLog, debugWarn } from '@/lib/auth-debug';
 
 const REMEMBERED_EMAIL_KEY = 'remembered_email';
+const PREFERRED_AUTH_KEY = 'preferred_auth_method';
 
 function getInitial(email: string): string {
   return email.charAt(0).toUpperCase();
@@ -59,6 +60,27 @@ function persistRememberedEmail(value: string | null) {
   }
 }
 
+type AuthCategory = 'passkey' | 'credentials';
+
+function readPreferredAuth(): AuthCategory | null {
+  if (typeof window === 'undefined') return null;
+  try {
+    const v = localStorage.getItem(PREFERRED_AUTH_KEY);
+    return v === 'passkey' || v === 'credentials' ? v : null;
+  } catch {
+    return null;
+  }
+}
+
+function persistPreferredAuth(value: AuthCategory) {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(PREFERRED_AUTH_KEY, value);
+  } catch {
+    // ignore
+  }
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -73,6 +95,7 @@ export default function LoginPage() {
   const [mounted, setMounted] = useState(false);
   const [appAuthMethods, setAppAuthMethods] = useState<AppAuthMethods | null>(null);
   const [appMethodsReady, setAppMethodsReady] = useState(false);
+  const [authCategory, setAuthCategory] = useState<AuthCategory>('credentials');
   const [mode, setMode] = useState<'magic' | 'otp' | 'password'>(() => {
     if (AUTH_FEATURES.PASSWORD_LOGIN) return 'password';
     if (AUTH_FEATURES.EMAIL_OTP) return 'otp';
@@ -81,7 +104,7 @@ export default function LoginPage() {
   const supabase = createClient();
   const emailInputRef = React.useRef<HTMLInputElement>(null);
 
-  // Load remembered email on mount
+  // Load remembered email and preferred auth method on mount
   useEffect(() => {
     setMounted(true);
     const stored = readRememberedEmail();
@@ -89,6 +112,10 @@ export default function LoginPage() {
       setRememberedEmail(stored);
       setEmail(stored);
       setShowRemembered(true);
+    }
+    const preferredAuth = readPreferredAuth();
+    if (preferredAuth) {
+      setAuthCategory(preferredAuth);
     }
   }, []);
 
@@ -162,13 +189,17 @@ export default function LoginPage() {
     };
   }, [appId, appAuthMethods]);
 
-  // Update login mode when per-app effective features resolve
+  // Update login mode and auth category when per-app effective features resolve
   useEffect(() => {
     if (!appMethodsReady || !appId) return;
     if (effectiveFeatures.PASSWORD_LOGIN) setMode('password');
     else if (effectiveFeatures.EMAIL_OTP) setMode('otp');
     else setMode('magic');
-  }, [appMethodsReady, appId, effectiveFeatures]);
+    // If passkeys are disabled, ensure we fall back to credentials
+    if (!effectiveFeatures.PASSKEYS && authCategory === 'passkey') {
+      setAuthCategory('credentials');
+    }
+  }, [appMethodsReady, appId, effectiveFeatures, authCategory]);
 
   const clearExistingSession = useCallback(async (reason: string) => {
     try {
@@ -276,6 +307,7 @@ export default function LoginPage() {
       if (error) throw error;
 
       saveEmailIfRemembered(email);
+      persistPreferredAuth('credentials');
       toast.success('Check your email for the magic link!');
     } catch (error) {
       const err = error as { error_description?: string; message?: string };
@@ -311,6 +343,7 @@ export default function LoginPage() {
       if (error) throw error;
 
       saveEmailIfRemembered(email);
+      persistPreferredAuth('credentials');
       window.location.href = nextPath;
     } catch (error) {
       const err = error as { error_description?: string; message?: string };
@@ -382,6 +415,7 @@ export default function LoginPage() {
       if (error) throw error;
 
       saveEmailIfRemembered(email);
+      persistPreferredAuth('credentials');
 
       // Ensure session is properly set before redirecting
       if (data.session) {
@@ -495,37 +529,53 @@ export default function LoginPage() {
                 </div>
               )}
 
-              {/* Quick sign-in options */}
-              {(effectiveFeatures.GOOGLE_LOGIN || effectiveFeatures.GITHUB_LOGIN || effectiveFeatures.PASSKEYS) && (
+              {/* Social login buttons (always visible when enabled) */}
+              {(effectiveFeatures.GOOGLE_LOGIN || effectiveFeatures.GITHUB_LOGIN) && (
                 <div className="space-y-3">
-                  {(effectiveFeatures.GOOGLE_LOGIN || effectiveFeatures.GITHUB_LOGIN) && (
-                    <SocialButtons
-                      next={nextPath}
-                      enableGoogle={effectiveFeatures.GOOGLE_LOGIN}
-                      enableGitHub={effectiveFeatures.GITHUB_LOGIN}
-                    />
-                  )}
-                  {effectiveFeatures.PASSKEYS && (
-                    <PasskeyButton className="w-full" next={nextPath} />
-                  )}
+                  <SocialButtons
+                    next={nextPath}
+                    enableGoogle={effectiveFeatures.GOOGLE_LOGIN}
+                    enableGitHub={effectiveFeatures.GITHUB_LOGIN}
+                  />
                 </div>
               )}
 
-              {/* Divider between quick options and email form */}
-              {(effectiveFeatures.GOOGLE_LOGIN || effectiveFeatures.GITHUB_LOGIN || effectiveFeatures.PASSKEYS) &&
-               (effectiveFeatures.PASSWORD_LOGIN || effectiveFeatures.EMAIL_OTP || effectiveFeatures.MAGIC_LINK) && (
+              {/* Divider between social and passkey/email section */}
+              {(effectiveFeatures.GOOGLE_LOGIN || effectiveFeatures.GITHUB_LOGIN) &&
+               (effectiveFeatures.PASSKEYS || effectiveFeatures.PASSWORD_LOGIN || effectiveFeatures.EMAIL_OTP || effectiveFeatures.MAGIC_LINK) && (
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">
                     <span className="w-full border-t border-border/60" />
                   </div>
                   <div className="relative flex justify-center text-xs uppercase">
-                    <span className="bg-card px-2 text-muted-foreground">or continue with email</span>
+                    <span className="bg-card px-2 text-muted-foreground">or</span>
                   </div>
                 </div>
               )}
 
-              {/* Email form */}
-              {(effectiveFeatures.PASSWORD_LOGIN || effectiveFeatures.EMAIL_OTP || effectiveFeatures.MAGIC_LINK) && (
+              {/* Passkey section (shown when authCategory is 'passkey' and passkeys are enabled) */}
+              {effectiveFeatures.PASSKEYS && authCategory === 'passkey' && (
+                <div className="space-y-3 animate-in fade-in-0 slide-in-from-bottom-2 duration-200">
+                  <PasskeyButton
+                    className="w-full"
+                    next={nextPath}
+                    onBeforeRedirect={() => persistPreferredAuth('passkey')}
+                  />
+                  {(effectiveFeatures.PASSWORD_LOGIN || effectiveFeatures.EMAIL_OTP || effectiveFeatures.MAGIC_LINK) && (
+                    <button
+                      type="button"
+                      onClick={() => setAuthCategory('credentials')}
+                      className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Sign in with password instead
+                    </button>
+                  )}
+                </div>
+              )}
+
+              {/* Email form (shown when authCategory is 'credentials' or passkeys are not enabled) */}
+              {(authCategory === 'credentials' || !effectiveFeatures.PASSKEYS) &&
+               (effectiveFeatures.PASSWORD_LOGIN || effectiveFeatures.EMAIL_OTP || effectiveFeatures.MAGIC_LINK) && (
                 <form
                   onSubmit={
                     mode === 'password'
@@ -702,6 +752,17 @@ export default function LoginPage() {
                         </button>
                       )}
                     </div>
+                  )}
+
+                  {/* Switch to passkey */}
+                  {effectiveFeatures.PASSKEYS && (
+                    <button
+                      type="button"
+                      onClick={() => setAuthCategory('passkey')}
+                      className="w-full text-sm text-muted-foreground hover:text-foreground transition-colors"
+                    >
+                      Sign in with passkey instead
+                    </button>
                   )}
                 </form>
               )}

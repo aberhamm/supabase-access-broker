@@ -10,6 +10,7 @@ import { createClient } from '@/lib/supabase/client';
 type PasskeyButtonProps = {
   next?: string;
   className?: string;
+  onBeforeRedirect?: () => void;
 };
 
 import type { PublicKeyCredentialRequestOptionsJSON } from '@simplewebauthn/browser';
@@ -89,7 +90,7 @@ function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promi
   ]);
 }
 
-export function PasskeyButton({ next = '/', className }: PasskeyButtonProps) {
+export function PasskeyButton({ next = '/', className, onBeforeRedirect }: PasskeyButtonProps) {
   const [loading, setLoading] = useState(false);
   const supabase = createClient();
 
@@ -152,6 +153,7 @@ export function PasskeyButton({ next = '/', className }: PasskeyButtonProps) {
       }
 
       // Complete Supabase session creation via generated magic-link (no email involved)
+      onBeforeRedirect?.();
       window.location.href = payload.action_link;
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Passkey sign-in failed';
