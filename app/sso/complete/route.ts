@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { debugLog, debugWarn } from '@/lib/auth-debug';
-import { createClient } from '@/lib/supabase/server';
+import { createClient, createAdminClient } from '@/lib/supabase/server';
 import { createAuthCode, validateRedirectUri, isRedirectUriAllowed, lookupUserByEmail } from '@/lib/sso-service';
+import type { AppAuthMethods } from '@/types/claims';
 import { logSSOEvent, extractHostname, extractClientIP } from '@/lib/audit-service';
 import { getAppUrl } from '@/lib/app-url';
 
@@ -194,6 +195,37 @@ export async function GET(request: Request) {
         buildErrorPageUrl(appOrigin, {
           error: 'access_denied',
           errorDescription: `Your account has not been granted access to this application. Contact your administrator to request access.`,
+          appId,
+          redirectUri,
+          state,
+        })
+      );
+    }
+
+    // Check that the app has at least one auth method enabled (server-side enforcement)
+    const supabaseAdmin = await createAdminClient();
+    const { data: appData } = await supabaseAdmin
+      .schema('access_broker_app')
+      .from('apps')
+      .select('auth_methods')
+      .eq('id', appId)
+      .single();
+
+    const authMethods = appData?.auth_methods as AppAuthMethods | null;
+    const hasAnyMethodEnabled = authMethods && Object.values(authMethods).some(Boolean);
+
+    if (!hasAnyMethodEnabled) {
+      logSSOEvent({
+        eventType: 'sso_complete_error',
+        userId: authUserId,
+        errorCode: 'access_denied',
+        ...auditContext,
+        metadata: { reason: 'no_auth_methods_configured' },
+      });
+      return NextResponse.redirect(
+        buildErrorPageUrl(appOrigin, {
+          error: 'unauthorized_client',
+          errorDescription: 'No sign-in methods have been configured for this application. Contact your administrator.',
           appId,
           redirectUri,
           state,

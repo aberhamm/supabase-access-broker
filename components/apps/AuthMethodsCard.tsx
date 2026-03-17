@@ -15,10 +15,10 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 
 const DEFAULT_METHODS: AppAuthMethods = {
-  password: false,
-  magic_link: false,
-  email_otp: false,
-  passkeys: false,
+  password: true,
+  magic_link: true,
+  email_otp: true,
+  passkeys: true,
   google: false,
   github: false,
 };
@@ -129,6 +129,15 @@ export function AuthMethodsCard({ app, onUpdated }: { app: AppConfig; onUpdated?
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
+          {enabledCount === 0 && (
+            <Alert variant="destructive">
+              <AlertDescription>
+                No sign-in methods are enabled. Users will not be able to log in to this app via SSO
+                until at least one method is enabled.
+              </AlertDescription>
+            </Alert>
+          )}
+
           <Alert>
             <Info className="h-4 w-4" />
             <AlertDescription>

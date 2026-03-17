@@ -140,7 +140,18 @@ export default function LoginPage() {
   }, [appId]);
 
   const effectiveFeatures = useMemo(() => {
-    if (!appId || !appAuthMethods) return AUTH_FEATURES;
+    if (!appId) return AUTH_FEATURES;
+    // App-scoped login: if auth_methods is null/unconfigured, block all methods
+    if (!appAuthMethods) {
+      return {
+        PASSKEYS: false,
+        GOOGLE_LOGIN: false,
+        GITHUB_LOGIN: false,
+        EMAIL_OTP: false,
+        PASSWORD_LOGIN: false,
+        MAGIC_LINK: false,
+      };
+    }
     return {
       PASSKEYS: AUTH_FEATURES.PASSKEYS && !!appAuthMethods.passkeys,
       GOOGLE_LOGIN: AUTH_FEATURES.GOOGLE_LOGIN && !!appAuthMethods.google,
