@@ -2,18 +2,6 @@
 
 Deferred work from app-facing API review (2026-03-16).
 
-## P2: DB-level pagination for list_app_users
-
-**What:** Create `list_app_users_paginated(app_id, p_offset, p_limit, p_search)` RPC that handles pagination and search at the database level.
-
-**Why:** `GET /api/apps/{appId}/users` currently loads ALL users from `list_app_users` into memory, then paginates in-memory. Works for <500 users but will OOM or degrade for 10K+ users.
-
-**Context:** The current `list_app_users` RPC returns all rows. The route handler in `app/api/apps/[appId]/users/route.ts` does `allUsers.filter()` and `.slice()` in JS. Replace with a new RPC that accepts offset/limit/search params and uses SQL WHERE + LIMIT + OFFSET. Update the route handler to pass through query params.
-
-**Effort:** M | **Depends on:** Nothing
-
----
-
 ## P2: Rate limiting for app-facing APIs
 
 **What:** Implement rate limiting for the app-facing API endpoints (60 req/min reads, 30 req/min writes).

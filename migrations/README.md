@@ -23,6 +23,7 @@ See [MIGRATION_GUIDE.md](../MIGRATION_GUIDE.md) for comprehensive documentation.
 - `003_api_keys.sql` - API key management system
 - `004_external_key_sources.sql` - External key source integration
 - `006_performance_optimizations.sql` - Database performance improvements
+- `016_list_app_users_paginated.sql` - Server-side pagination and search for app users
 
 ## Automated Migration System
 
