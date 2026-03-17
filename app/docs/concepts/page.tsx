@@ -28,7 +28,6 @@ export default async function ConceptsLandingPage() {
       color: 'blue',
       docs: conceptDocs.filter(
         (d) =>
-          d.category === 'authentication' ||
           d.slug.includes('auth') ||
           d.slug.includes('session') ||
           d.slug.includes('logout') ||
@@ -42,7 +41,6 @@ export default async function ConceptsLandingPage() {
       color: 'emerald',
       docs: conceptDocs.filter(
         (d) =>
-          d.category === 'authorization' ||
           d.slug.includes('role') ||
           d.slug.includes('claim') ||
           d.slug.includes('admin') ||

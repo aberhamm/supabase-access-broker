@@ -1,7 +1,7 @@
 ---
 title: 'Access Broker Quick Start'
 description: 'Get Access Broker running in 5 minutes'
-category: 'dashboard'
+category: 'operator'
 audience: 'dashboard-admin'
 order: 1
 ---

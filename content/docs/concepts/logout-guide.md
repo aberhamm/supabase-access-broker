@@ -1,7 +1,7 @@
 ---
 title: "Logout Guide"
 description: "Complete guide for implementing logout in internal apps and external SSO clients"
-category: "authentication"
+category: 'concepts'
 audience: "app-developer"
 order: 6
 ---
@@ -14,7 +14,7 @@ order: 6
 
 **Prerequisites:**
 - Understanding of [Session Management](./session-management.md)
-- For external apps: familiarity with [SSO Integration Guide](../guides/sso-integration-guide.md)
+- For external apps: familiarity with [SSO Integration Guide](../integrator/sso-integration-guide.md)
 
 ## Table of Contents
 

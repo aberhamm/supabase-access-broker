@@ -1,7 +1,7 @@
 ---
 title: 'App Authentication Integration Guide'
 description: 'Advanced integration patterns for authentication'
-category: 'advanced'
+category: 'integrator'
 audience: 'app-developer'
 order: 2
 ---

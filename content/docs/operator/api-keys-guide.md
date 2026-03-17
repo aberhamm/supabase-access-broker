@@ -1,7 +1,7 @@
 ---
 title: "API Keys Guide"
 description: "Secure your webhooks and external integrations with app-specific API keys"
-category: "advanced"
+category: 'operator'
 audience: "dashboard-admin"
 ---
 

@@ -1,7 +1,7 @@
 ---
 title: 'SSO Integration Guide'
 description: 'Simple guide to integrating your applications with the central auth portal for single sign-on'
-category: 'guides'
+category: 'integrator'
 audience: 'app-developer'
 order: 5
 ---
@@ -273,7 +273,7 @@ export async function GET() {
 
 **Important:** Your callback URL (`https://yourapp.com/logged-out`) must be registered in your app's `allowed_callback_urls`.
 
-> **See also:** [Logout Guide](/docs/authentication/logout-guide) for complete logout documentation including troubleshooting and best practices.
+> **See also:** [Logout Guide](/docs/concepts/logout-guide) for complete logout documentation including troubleshooting and best practices.
 
 ## Security Best Practices
 

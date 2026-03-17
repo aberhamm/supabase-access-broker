@@ -1,7 +1,7 @@
 ---
 title: 'Multi-App Architecture Guide'
 description: 'Managing multiple applications with one auth system'
-category: 'advanced'
+category: 'operator'
 audience: 'dashboard-admin'
 order: 2
 ---

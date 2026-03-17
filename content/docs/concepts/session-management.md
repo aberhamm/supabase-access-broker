@@ -1,7 +1,7 @@
 ---
 title: "Session Management Guide"
 description: "Complete guide for getting, retrieving, and managing user sessions"
-category: "authentication"
+category: 'concepts'
 audience: "app-developer"
 order: 5
 ---

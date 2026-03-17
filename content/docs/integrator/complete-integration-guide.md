@@ -1,7 +1,7 @@
 ---
 title: 'Complete App Integration Guide'
 description: 'Everything you need to integrate Access Broker into your application'
-category: 'guides'
+category: 'integrator'
 audience: 'app-developer'
 order: 1
 ---

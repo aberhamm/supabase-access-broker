@@ -1,7 +1,7 @@
 ---
 title: "Role Management Examples"
 description: "Complete, copy-paste role and permission examples"
-category: "authorization"
+category: 'integrator'
 audience: "app-developer"
 order: 5
 ---

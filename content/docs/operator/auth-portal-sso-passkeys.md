@@ -1,7 +1,7 @@
 ---
 title: 'Auth Portal (SSO + Passkeys)'
 description: 'Central auth portal for multiple apps: passkeys (Face ID/Touch ID) + SSO code exchange'
-category: 'authentication'
+category: 'operator'
 audience: 'dashboard-admin'
 order: 7
 ---

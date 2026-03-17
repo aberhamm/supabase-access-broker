@@ -1,7 +1,7 @@
 ---
 title: "Passwordless Authentication (Magic Links)"
 description: "Implement secure passwordless authentication using email magic links"
-category: "authentication"
+category: 'concepts'
 audience: "app-developer"
 order: 3
 ---

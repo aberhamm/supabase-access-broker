@@ -2,48 +2,22 @@ import fs from 'fs';
 import path from 'path';
 import matter from 'gray-matter';
 
-const DOC_CATEGORIES = [
-  'getting-started',
-  'authentication',
-  'authorization',
-  'guides',
-  'advanced',
-  'dashboard',
-  'reference',
-  'contributing',
-] as const;
-
-export type DocCategory = (typeof DOC_CATEGORIES)[number];
+export const DOC_TRACKS = ['integrator', 'operator', 'concepts', 'reference', 'contributing'] as const;
+export type DocTrack = (typeof DOC_TRACKS)[number];
 
 const DOC_AUDIENCES = ['dashboard-admin', 'app-developer', 'all'] as const;
 export type DocAudience = (typeof DOC_AUDIENCES)[number];
 
-export const DOC_TRACKS = ['integrator', 'operator', 'concepts', 'reference', 'contributing'] as const;
-export type DocTrack = (typeof DOC_TRACKS)[number];
-
-function isDocCategory(value: unknown): value is DocCategory {
-  return typeof value === 'string' && (DOC_CATEGORIES as readonly string[]).includes(value);
-}
-
 function isDocAudience(value: unknown): value is DocAudience {
   return typeof value === 'string' && (DOC_AUDIENCES as readonly string[]).includes(value);
-}
-
-function getTrack(category: DocCategory, audience: DocAudience): DocTrack {
-  if (category === 'reference') return 'reference';
-  if (category === 'contributing') return 'contributing';
-  if (audience === 'app-developer') return 'integrator';
-  if (audience === 'dashboard-admin') return 'operator';
-  return 'concepts'; // audience: all
 }
 
 export interface DocMetadata {
   slug: string;
   title: string;
   description: string;
-  category: DocCategory;
-  audience: DocAudience;
   track: DocTrack;
+  audience: DocAudience;
   order: number;
   filePath: string;
 }
@@ -52,47 +26,37 @@ export async function getAllDocs(): Promise<DocMetadata[]> {
   const docsDir = path.join(process.cwd(), 'content/docs');
   const docs: DocMetadata[] = [];
 
-  for (const category of DOC_CATEGORIES) {
-    const categoryPath = path.join(docsDir, category);
+  for (const track of DOC_TRACKS) {
+    const trackPath = path.join(docsDir, track);
 
-    // Check if directory exists
-    if (!fs.existsSync(categoryPath)) {
+    if (!fs.existsSync(trackPath)) {
       continue;
     }
 
-    const files = fs.readdirSync(categoryPath).filter(f => f.endsWith('.md'));
+    const files = fs.readdirSync(trackPath).filter(f => f.endsWith('.md'));
 
     for (const file of files) {
-      const filePath = path.join(categoryPath, file);
+      const filePath = path.join(trackPath, file);
       const fileContent = fs.readFileSync(filePath, 'utf-8');
       const { data } = matter(fileContent);
-
-      const docCategory = isDocCategory(data.category) ? data.category : category;
-      const docAudience = isDocAudience(data.audience) ? data.audience : 'all';
 
       docs.push({
         slug: file.replace('.md', ''),
         title: data.title || 'Untitled',
         description: data.description || '',
-        category: docCategory,
-        audience: docAudience,
-        track: getTrack(docCategory, docAudience),
+        track,
+        audience: isDocAudience(data.audience) ? data.audience : 'all',
         order: data.order || 999,
-        filePath: `${category}/${file}`,
+        filePath: `${track}/${file}`,
       });
     }
   }
 
   return docs.sort((a, b) => {
-    // Sort by category first
-    const categoryOrder = Object.fromEntries(DOC_CATEGORIES.map((c, idx) => [c, idx])) as Record<
-      DocCategory,
-      number
-    >;
-    if (categoryOrder[a.category] !== categoryOrder[b.category]) {
-      return categoryOrder[a.category] - categoryOrder[b.category];
+    const trackOrder = Object.fromEntries(DOC_TRACKS.map((t, idx) => [t, idx])) as Record<DocTrack, number>;
+    if (trackOrder[a.track] !== trackOrder[b.track]) {
+      return trackOrder[a.track] - trackOrder[b.track];
     }
-    // Then by order within category
     return a.order - b.order;
   });
 }
@@ -121,14 +85,14 @@ export function getAllDocSlugs(): string[] {
   const docsDir = path.join(process.cwd(), 'content/docs');
   const slugs: string[] = [];
 
-  for (const category of DOC_CATEGORIES) {
-    const categoryPath = path.join(docsDir, category);
+  for (const track of DOC_TRACKS) {
+    const trackPath = path.join(docsDir, track);
 
-    if (!fs.existsSync(categoryPath)) {
+    if (!fs.existsSync(trackPath)) {
       continue;
     }
 
-    const files = fs.readdirSync(categoryPath).filter(f => f.endsWith('.md'));
+    const files = fs.readdirSync(trackPath).filter(f => f.endsWith('.md'));
     slugs.push(...files.map(f => f.replace('.md', '')));
   }
 

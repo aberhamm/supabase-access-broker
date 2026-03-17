@@ -1,7 +1,7 @@
 ---
 title: 'Environment Variables & Deployment'
 description: 'Complete guide to environment configuration for development and production'
-category: 'guides'
+category: 'operator'
 audience: 'dashboard-admin'
 order: 10
 ---

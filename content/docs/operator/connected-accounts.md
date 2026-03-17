@@ -1,7 +1,7 @@
 ---
 title: "Connected Accounts"
 description: "Link external accounts like Telegram to Supabase users"
-category: "advanced"
+category: 'operator'
 audience: "dashboard-admin"
 order: 12
 ---

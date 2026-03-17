@@ -1,7 +1,7 @@
 ---
 title: "Password Authentication"
 description: "Implement secure password authentication with reset and recovery flows"
-category: "authentication"
+category: 'concepts'
 audience: "app-developer"
 order: 4
 ---

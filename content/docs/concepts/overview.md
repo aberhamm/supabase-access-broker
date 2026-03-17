@@ -1,7 +1,7 @@
 ---
 title: 'Getting Started Overview'
 description: 'What Access Broker is, how it works, and when to use it.'
-category: 'getting-started'
+category: 'concepts'
 audience: 'app-developer'
 order: 1
 ---

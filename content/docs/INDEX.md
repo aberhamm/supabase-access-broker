@@ -1,7 +1,7 @@
 ---
 title: 'Documentation'
 description: 'Access Broker — unified identity and access management for Supabase applications'
-category: 'getting-started'
+category: 'concepts'
 audience: 'all'
 order: 0
 ---

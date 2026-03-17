@@ -1,7 +1,7 @@
 ---
 title: "Role Frontend Patterns"
 description: "React and Next.js patterns for role-based UI"
-category: "authorization"
+category: 'integrator'
 audience: "app-developer"
 order: 4
 ---

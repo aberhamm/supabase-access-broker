@@ -1,7 +1,7 @@
 ---
 title: "Role Management Guide"
 description: "Complete guide to database-backed role management system"
-category: "authorization"
+category: 'concepts'
 audience: "all"
 order: 2
 ---

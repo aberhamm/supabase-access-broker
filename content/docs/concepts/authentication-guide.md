@@ -1,7 +1,7 @@
 ---
 title: 'Authentication Setup Guide'
 description: 'Set up Supabase Auth with Access Broker claims'
-category: 'authentication'
+category: 'concepts'
 audience: 'app-developer'
 order: 1
 ---

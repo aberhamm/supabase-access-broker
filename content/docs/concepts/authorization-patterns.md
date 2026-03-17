@@ -1,7 +1,7 @@
 ---
 title: "Authorization Patterns"
 description: "Implementing access control and user permissions"
-category: "authorization"
+category: 'concepts'
 audience: "app-developer"
 order: 7
 ---

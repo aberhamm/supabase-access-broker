@@ -1,7 +1,7 @@
 ---
 title: "RLS Policies Guide"
 description: "Set up Row Level Security policies with custom claims"
-category: "authorization"
+category: 'concepts'
 audience: "app-developer"
 order: 3
 ---

@@ -1,7 +1,7 @@
 ---
 title: "Admin Types and Permissions"
 description: "Understand global admins, app admins, and admin roles"
-category: "authorization"
+category: 'concepts'
 audience: "app-developer"
 order: 3
 ---

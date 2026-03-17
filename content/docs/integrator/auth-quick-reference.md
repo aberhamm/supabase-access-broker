@@ -1,7 +1,7 @@
 ---
 title: "Authentication Quick Reference"
 description: "Copy-paste ready code snippets"
-category: "guides"
+category: 'integrator'
 audience: "app-developer"
 order: 4
 ---

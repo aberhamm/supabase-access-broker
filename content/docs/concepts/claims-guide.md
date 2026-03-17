@@ -1,7 +1,7 @@
 ---
 title: "Supabase Custom Claims Guide"
 description: "Complete guide to Supabase custom claims"
-category: "authorization"
+category: 'concepts'
 audience: "all"
 order: 1
 ---

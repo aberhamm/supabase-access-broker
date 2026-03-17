@@ -1,7 +1,7 @@
 ---
 title: 'Setup Guide'
 description: 'Detailed setup instructions for the dashboard'
-category: 'dashboard'
+category: 'operator'
 audience: 'dashboard-admin'
 order: 2
 ---

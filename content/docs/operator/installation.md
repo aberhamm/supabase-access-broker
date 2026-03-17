@@ -1,7 +1,7 @@
 ---
 title: "Installation"
 description: "Install the SQL functions in Supabase and configure your Next.js app for production-safe auth redirects"
-category: "getting-started"
+category: 'operator'
 audience: "dashboard-admin"
 order: 3
 ---
