@@ -11,6 +11,7 @@ import {
   getUnifiedApiKeys as getUnifiedApiKeysService,
   getExternalSources as getExternalSourcesService,
 } from '@/lib/external-keys-service';
+import { isClaimsAdmin, isAppAdmin } from '@/lib/claims';
 import {
   CreateApiKeyData,
   UpdateApiKeyData,
@@ -22,11 +23,24 @@ import {
 } from '@/types/claims';
 import { revalidatePath } from 'next/cache';
 
+async function requireAppAccess(appId: string): Promise<string> {
+  const supabase = await createClient();
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
+  const { data: isAdmin } = await isClaimsAdmin(supabase);
+  const { data: isAppAdminUser } = await isAppAdmin(supabase, appId);
+  if (!isAdmin && !isAppAdminUser) throw new Error('Unauthorized');
+
+  return user.id;
+}
+
 /**
  * Get all API keys for an app
  */
 export async function getApiKeys(appId: string): Promise<ApiKey[]> {
   try {
+    await requireAppAccess(appId);
     return await getApiKeysService(appId);
   } catch (error) {
     console.error('Error in getApiKeys action:', error);
@@ -42,17 +56,9 @@ export async function createApiKey(
   data: CreateApiKeyData
 ): Promise<{ id: string; secret: string }> {
   try {
-    // Get current user
-    const supabase = await createClient();
-    const {
-      data: { user },
-    } = await supabase.auth.getUser();
+    const userId = await requireAppAccess(data.app_id);
 
-    if (!user) {
-      throw new Error('Not authenticated');
-    }
-
-    const result = await createApiKeyService(data, user.id);
+    const result = await createApiKeyService(data, userId);
 
     // Revalidate the app page
     revalidatePath(`/apps/${data.app_id}`);
@@ -75,6 +81,7 @@ export async function updateApiKey(
   data: UpdateApiKeyData
 ): Promise<void> {
   try {
+    await requireAppAccess(appId);
     await updateApiKeyService(id, data);
 
     // Revalidate the app page
@@ -92,6 +99,7 @@ export async function updateApiKey(
  */
 export async function deleteApiKey(id: string, appId: string): Promise<void> {
   try {
+    await requireAppAccess(appId);
     await deleteApiKeyService(id);
 
     // Revalidate the app page
@@ -113,6 +121,7 @@ export async function toggleApiKey(
   enabled: boolean
 ): Promise<void> {
   try {
+    await requireAppAccess(appId);
     await updateApiKeyService(id, { enabled });
 
     // Revalidate the app page
@@ -132,6 +141,7 @@ export async function getUnifiedApiKeys(
   appId: string
 ): Promise<UnifiedApiKey[]> {
   try {
+    await requireAppAccess(appId);
     const localKeys = await getApiKeysService(appId);
     return await getUnifiedApiKeysService(appId, localKeys);
   } catch (error) {
@@ -147,6 +157,7 @@ export async function getExternalSources(
   appId: string
 ): Promise<ExternalKeySource[]> {
   try {
+    await requireAppAccess(appId);
     return await getExternalSourcesService(appId);
   } catch (error) {
     console.error('Error in getExternalSources action:', error);
@@ -161,6 +172,7 @@ export async function createExternalSource(
   data: CreateExternalSourceData
 ): Promise<string> {
   try {
+    await requireAppAccess(data.app_id);
     const supabase = await createClient();
 
     const { data: sourceId, error } = await supabase.rpc(
@@ -197,6 +209,7 @@ export async function updateExternalSource(
   data: UpdateExternalSourceData
 ): Promise<void> {
   try {
+    await requireAppAccess(appId);
     const supabase = await createClient();
 
     const { data: result, error } = await supabase.rpc(
@@ -235,6 +248,7 @@ export async function deleteExternalSource(
   appId: string
 ): Promise<void> {
   try {
+    await requireAppAccess(appId);
     const supabase = await createClient();
 
     const { data: result, error } = await supabase.rpc(

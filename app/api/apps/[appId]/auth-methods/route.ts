@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { createAdminClient } from '@/lib/supabase/server';
+import { getAppById } from '@/lib/apps-service';
 
 export async function GET(
   _request: NextRequest,
@@ -7,22 +7,18 @@ export async function GET(
 ) {
   try {
     const { appId } = await params;
-    const supabase = await createAdminClient();
+    const app = await getAppById(appId);
 
-    const { data, error } = await supabase
-      .schema('access_broker_app')
-      .from('apps')
-      .select('auth_methods')
-      .eq('id', appId)
-      .eq('enabled', true)
-      .single();
-
-    if (error || !data) {
-      return NextResponse.json({ auth_methods: null });
+    if (!app) {
+      return NextResponse.json({ auth_methods: null, status: 'app_not_found' });
     }
 
-    return NextResponse.json({ auth_methods: data.auth_methods ?? null });
+    if (!app.enabled) {
+      return NextResponse.json({ auth_methods: null, status: 'app_disabled' });
+    }
+
+    return NextResponse.json({ auth_methods: app.auth_methods ?? null, status: 'ok' });
   } catch {
-    return NextResponse.json({ auth_methods: null });
+    return NextResponse.json({ auth_methods: null, status: 'error' });
   }
 }
