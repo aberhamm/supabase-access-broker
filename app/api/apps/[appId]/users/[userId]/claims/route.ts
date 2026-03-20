@@ -27,8 +27,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
   try {
     const supabase = await createAdminClient();
     const { data, error } = await supabase.auth.admin.getUserById(userId);
-    if (error) throw error;
-    if (!data.user) {
+    if (error || !data?.user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
@@ -115,8 +114,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
 
     // Verify user exists
     const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
-    if (userError) throw userError;
-    if (!userData.user) {
+    if (userError || !userData?.user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 

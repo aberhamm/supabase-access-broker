@@ -1,10 +1,9 @@
 import { test, expect, Page, Response } from '@playwright/test';
+import { supabase } from './utils/test-helpers';
 
-// Test environment config - can be overridden via env vars
-const APP_URL = process.env.TEST_APP_URL || 'https://access-broker.home.arpa';
-const TEST_USER = {
-  email: process.env.TEST_USER_EMAIL || 'test@test.com',
-  password: process.env.TEST_USER_PASSWORD || 'test',
+// Use a separate test user to avoid magic link invalidation when running in parallel
+const SESSION_TEST_USER = {
+  email: 'test-session@example.com',
 };
 
 /**
@@ -19,10 +18,24 @@ const TEST_USER = {
  * /auth/logout route would inadvertently clear session cookies.
  */
 test.describe('Session Persistence', () => {
-  // Override baseURL and allow self-signed certs
-  test.use({
-    baseURL: APP_URL,
-    ignoreHTTPSErrors: true,
+  test.describe.configure({ mode: 'serial' });
+
+  test.beforeAll(async () => {
+    // Ensure this separate test user exists
+    const { data: existingUsers } = await supabase.auth.admin.listUsers();
+    const existing = existingUsers?.users.find((u) => u.email === SESSION_TEST_USER.email);
+    if (!existing) {
+      await supabase.auth.admin.createUser({
+        email: SESSION_TEST_USER.email,
+        password: 'test-session-password',
+        email_confirm: true,
+        app_metadata: { claims_admin: true },
+      });
+    } else if (!existing.app_metadata?.claims_admin) {
+      await supabase.auth.admin.updateUserById(existing.id, {
+        app_metadata: { ...existing.app_metadata, claims_admin: true },
+      });
+    }
   });
 
   /**
@@ -34,24 +47,24 @@ test.describe('Session Persistence', () => {
   }
 
   /**
-   * Helper to login and return to dashboard
+   * Helper to login via admin-generated magic link (works regardless of auth config)
    */
   async function login(page: Page): Promise<void> {
-    await page.goto('/login');
-    await page.waitForLoadState('load');
+    const { data, error } = await supabase.auth.admin.generateLink({
+      type: 'magiclink',
+      email: SESSION_TEST_USER.email,
+      options: {
+        redirectTo: 'http://localhost:3050/auth/callback?next=%2F',
+      },
+    });
 
-    await page.fill('input[name="email"], input[type="email"]', TEST_USER.email);
-    await page.fill('input[name="password"], input[type="password"]', TEST_USER.password);
+    if (error) throw error;
 
-    await page.click('button[type="submit"]');
+    const tokenHash = data.properties?.hashed_token;
+    if (!tokenHash) throw new Error('Failed to generate test magic link token');
 
-    // Wait for redirect to dashboard or stay on login with error
-    await page.waitForURL(url => !url.pathname.includes('/login') || url.search.includes('error'), {
-      timeout: 10000,
-    }).catch(() => {});
-
-    // Give async cookie operations time to complete
-    await page.waitForTimeout(1000);
+    await page.goto(`/auth/confirm?token_hash=${encodeURIComponent(tokenHash)}&type=email&next=%2F`);
+    await page.waitForURL((url) => !url.pathname.includes('/auth/confirm'), { timeout: 15000 });
   }
 
   test('session persists across SPA navigation', async ({ page }) => {

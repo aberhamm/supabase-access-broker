@@ -11,6 +11,10 @@ import {
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3050';
 
+// Unique key name per worker to avoid conflicts with parallel workers
+const E2E_KEY_PREFIX = 'e2e-test-key';
+const E2E_KEY_NAME = `${E2E_KEY_PREFIX}-${process.pid}-${Date.now()}`;
+
 // Helper: create an API key for the test app
 async function createTestApiKey(): Promise<string> {
   const array = new Uint8Array(32);
@@ -21,7 +25,7 @@ async function createTestApiKey(): Promise<string> {
 
   const { data, error } = await supabase.rpc('create_api_key', {
     p_app_id: TEST_APP.id,
-    p_name: 'e2e-test-key',
+    p_name: E2E_KEY_NAME,
     p_key_hash: keyHash,
     p_description: 'Temporary key for E2E tests',
     p_role_id: null,
@@ -33,19 +37,24 @@ async function createTestApiKey(): Promise<string> {
   return secret;
 }
 
-// Helper: clean up API key by name
+// Helper: clean up only this worker's API key (not other workers' keys)
 async function cleanupTestApiKeys() {
   const { data } = await supabase.rpc('get_app_api_keys', { p_app_id: TEST_APP.id });
   if (!data) return;
   for (const key of data as { id: string; name: string }[]) {
-    if (key.name === 'e2e-test-key') {
+    if (key.name === E2E_KEY_NAME) {
       await supabase.rpc('delete_api_key', { p_id: key.id });
     }
   }
 }
 
+// Dedicated user for lifecycle tests to avoid race conditions with parallel test files
+const LIFECYCLE_USER_EMAIL = 'test-lifecycle@example.com';
+
 test.describe('App Management API', () => {
+  test.describe.configure({ mode: 'serial' });
   let testUserId: string;
+  let lifecycleUserId: string;
   let apiKey: string;
 
   test.beforeAll(async () => {
@@ -53,6 +62,23 @@ test.describe('App Management API', () => {
     testUserId = user.id;
     await createTestApp();
     await grantUserAppAccess(testUserId, TEST_APP.id, 'admin');
+
+    // Create or find a dedicated lifecycle test user
+    const { data: existingUsers } = await supabase.auth.admin.listUsers();
+    let lcUser = existingUsers?.users.find((u) => u.email === LIFECYCLE_USER_EMAIL);
+    if (!lcUser) {
+      const { data, error } = await supabase.auth.admin.createUser({
+        email: LIFECYCLE_USER_EMAIL,
+        password: 'test-lifecycle-password',
+        email_confirm: true,
+        app_metadata: { claims_admin: true },
+      });
+      if (error) throw error;
+      lcUser = data.user;
+    }
+    lifecycleUserId = lcUser!.id;
+    await grantUserAppAccess(lifecycleUserId, TEST_APP.id, 'admin');
+
     await cleanupTestApiKeys();
     apiKey = await createTestApiKey();
   });
@@ -165,9 +191,9 @@ test.describe('App Management API', () => {
   // --- Full lifecycle: PATCH → GET → DELETE → GET ---
 
   test('T47: full lifecycle - update claims, verify, revoke, verify', async ({ request }) => {
-    // T26/T27: PATCH - set role and permissions
+    // T26/T27: PATCH - set role and permissions (uses dedicated lifecycle user)
     const patchResponse = await request.patch(
-      `${APP_URL}/api/apps/${TEST_APP.id}/users/${testUserId}/claims`,
+      `${APP_URL}/api/apps/${TEST_APP.id}/users/${lifecycleUserId}/claims`,
       {
         headers: { authorization: `Bearer ${apiKey}` },
         data: {
@@ -178,7 +204,7 @@ test.describe('App Management API', () => {
     );
     expect(patchResponse.status()).toBe(200);
     const patchBody = await patchResponse.json();
-    expect(patchBody.user_id).toBe(testUserId);
+    expect(patchBody.user_id).toBe(lifecycleUserId);
     expect(patchBody.app_claims).toBeDefined();
     expect(patchBody.app_claims.role).toBe('editor');
     expect(patchBody.app_claims.permissions).toEqual(['read', 'write', 'publish']);
@@ -186,7 +212,7 @@ test.describe('App Management API', () => {
 
     // T23: GET - verify claims were set
     const getResponse = await request.get(
-      `${APP_URL}/api/apps/${TEST_APP.id}/users/${testUserId}/claims`,
+      `${APP_URL}/api/apps/${TEST_APP.id}/users/${lifecycleUserId}/claims`,
       { headers: { authorization: `Bearer ${apiKey}` } }
     );
     expect(getResponse.status()).toBe(200);
@@ -196,7 +222,7 @@ test.describe('App Management API', () => {
 
     // T32: DELETE - revoke access
     const deleteResponse = await request.delete(
-      `${APP_URL}/api/apps/${TEST_APP.id}/users/${testUserId}/claims`,
+      `${APP_URL}/api/apps/${TEST_APP.id}/users/${lifecycleUserId}/claims`,
       { headers: { authorization: `Bearer ${apiKey}` } }
     );
     expect(deleteResponse.status()).toBe(200);
@@ -206,7 +232,7 @@ test.describe('App Management API', () => {
 
     // T34: GET - verify claims were cleared
     const verifyResponse = await request.get(
-      `${APP_URL}/api/apps/${TEST_APP.id}/users/${testUserId}/claims`,
+      `${APP_URL}/api/apps/${TEST_APP.id}/users/${lifecycleUserId}/claims`,
       { headers: { authorization: `Bearer ${apiKey}` } }
     );
     expect(verifyResponse.status()).toBe(200);
@@ -218,13 +244,13 @@ test.describe('App Management API', () => {
 
     // T33: DELETE again - idempotent
     const deleteAgainResponse = await request.delete(
-      `${APP_URL}/api/apps/${TEST_APP.id}/users/${testUserId}/claims`,
+      `${APP_URL}/api/apps/${TEST_APP.id}/users/${lifecycleUserId}/claims`,
       { headers: { authorization: `Bearer ${apiKey}` } }
     );
     expect(deleteAgainResponse.status()).toBe(200);
 
     // Restore access for other tests
-    await grantUserAppAccess(testUserId, TEST_APP.id, 'admin');
+    await grantUserAppAccess(lifecycleUserId, TEST_APP.id, 'admin');
   });
 
   // --- PATCH validation ---

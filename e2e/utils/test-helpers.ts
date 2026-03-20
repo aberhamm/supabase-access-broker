@@ -125,7 +125,8 @@ export async function deleteTestUser() {
  */
 export async function createTestApp() {
   const { data: existing } = await supabase
-    .from('access_broker_app.apps')
+    .schema('access_broker_app')
+    .from('apps')
     .select('*')
     .eq('id', TEST_APP.id)
     .maybeSingle();
@@ -134,7 +135,8 @@ export async function createTestApp() {
     console.log(`Test app already exists: ${TEST_APP.id}`);
     // Update to ensure callback URL is set
     const { error: updateError } = await supabase
-      .from('access_broker_app.apps')
+      .schema('access_broker_app')
+      .from('apps')
       .update({
         enabled: true,
         allowed_callback_urls: [DEMO_CALLBACK],
@@ -147,7 +149,7 @@ export async function createTestApp() {
   }
 
   console.log(`Creating test app: ${TEST_APP.id}`);
-  const { data, error } = await supabase.from('access_broker_app.apps').insert({
+  const { data, error } = await supabase.schema('access_broker_app').from('apps').insert({
     id: TEST_APP.id,
     name: TEST_APP.name,
     description: TEST_APP.description,
@@ -161,7 +163,8 @@ export async function createTestApp() {
     // If app exists (race condition), fetch and return it
     if (error.code === '23505') {
       const { data: app } = await supabase
-        .from('access_broker_app.apps')
+        .schema('access_broker_app')
+        .from('apps')
         .select('*')
         .eq('id', TEST_APP.id)
         .single();
@@ -176,7 +179,7 @@ export async function createTestApp() {
  * Delete test app
  */
 export async function deleteTestApp() {
-  await supabase.from('access_broker_app.apps').delete().eq('id', TEST_APP.id);
+  await supabase.schema('access_broker_app').from('apps').delete().eq('id', TEST_APP.id);
 }
 
 /**
@@ -210,7 +213,8 @@ export async function grantUserAppAccess(userId: string, appId: string, role: st
  */
 export async function cleanupOldAuthCodes() {
   await supabase
-    .from('access_broker_app.auth_codes')
+    .schema('access_broker_app')
+    .from('auth_codes')
     .delete()
     .lt('expires_at', new Date().toISOString());
 }

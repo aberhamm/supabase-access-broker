@@ -114,10 +114,12 @@ export async function POST(request: Request) {
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Unknown error';
 
-    // Determine error code from message
+    // Determine error code and HTTP status from message
     let errorCode = 'server_error';
+    let status = 500;
     if (message.includes('expired') || message.includes('Invalid')) {
       errorCode = 'invalid_code';
+      status = 400;
     }
 
     logSSOEvent({
@@ -129,7 +131,7 @@ export async function POST(request: Request) {
       metadata: { error_message: message },
     });
 
-    // Return generic error — do not leak internal details to caller
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    const errorMessage = status === 400 ? 'Invalid or expired code' : 'Internal server error';
+    return NextResponse.json({ error: errorMessage }, { status });
   }
 }

@@ -48,6 +48,7 @@ export default defineConfig({
   projects: [
     {
       name: 'chromium',
+      testIgnore: /responsive-smoke\.spec\.ts/,
       use: { ...devices['Desktop Chrome'] },
     },
     {

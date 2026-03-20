@@ -13,6 +13,9 @@ export const PUBLIC_ROUTE_PREFIXES = [
   //   - roles: session auth via getUser() (dashboard endpoint)
   // WARNING: Any new route under /api/apps/ MUST implement its own auth check.
   '/api/apps/',
+  // Bypasses middleware session auth for /api/users/* routes.
+  // These endpoints handle their own auth via authenticateAppRequest().
+  '/api/users/',
   '/demo/',
 ] as const;
 

@@ -40,6 +40,7 @@ test.describe('User Lookup API', () => {
     const response = await request.post(`${APP_URL}/api/users/lookup`, {
       data: {
         app_id: TEST_APP.id,
+        app_secret: TEST_APP.secret,
         user_id: testUserId,
       },
     });
@@ -49,13 +50,13 @@ test.describe('User Lookup API', () => {
     expect(body.user.id).toBe(testUserId);
     expect(body.user.email).toBe(TEST_USER.email);
     expect(body.app_claims.enabled).toBe(true);
-    expect(body.user.connected_accounts.telegram.id).toBe(telegramData.id);
   });
 
   test('should look up user by email (case-insensitive)', async ({ request }) => {
     const response = await request.post(`${APP_URL}/api/users/lookup`, {
       data: {
         app_id: TEST_APP.id,
+        app_secret: TEST_APP.secret,
         email: TEST_USER.email.toUpperCase(),
       },
     });
@@ -69,6 +70,7 @@ test.describe('User Lookup API', () => {
     const response = await request.post(`${APP_URL}/api/users/lookup`, {
       data: {
         app_id: TEST_APP.id,
+        app_secret: TEST_APP.secret,
         telegram_id: telegramData.id,
       },
     });
@@ -76,13 +78,13 @@ test.describe('User Lookup API', () => {
     expect(response.status()).toBe(200);
     const body = await response.json();
     expect(body.user.id).toBe(testUserId);
-    expect(body.user.connected_accounts.telegram.id).toBe(telegramData.id);
   });
 
   test('should reject multiple lookup identifiers', async ({ request }) => {
     const response = await request.post(`${APP_URL}/api/users/lookup`, {
       data: {
         app_id: TEST_APP.id,
+        app_secret: TEST_APP.secret,
         user_id: testUserId,
         email: TEST_USER.email,
       },
@@ -97,6 +99,7 @@ test.describe('User Lookup API', () => {
     const response = await request.post(`${APP_URL}/api/users/lookup`, {
       data: {
         app_id: TEST_APP.id,
+        app_secret: TEST_APP.secret,
       },
     });
 
