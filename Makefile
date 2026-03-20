@@ -38,26 +38,14 @@ help:
 	@echo "  make migrate-status       - Show migration status"
 	@echo "  make migrate-force NAME=  - Force re-run a migration"
 	@echo ""
-	@echo "Remote Deployment commands (configure .env.deploy first):"
-	@echo "  make deploy             - Full deploy: build locally, push, start"
-	@echo "  make deploy-remote      - Full deploy: build on server (slower upload, faster build)"
-	@echo "  make deploy-init        - First-time server setup"
-	@echo "  make deploy-build       - Build image locally only"
-	@echo "  make deploy-push        - Push image to server only"
-	@echo "  make deploy-start       - Start containers on server"
-	@echo "  make deploy-migrate     - Run database migrations (connects to prod DB)"
+	@echo "Remote Deployment commands (htzweb01vm01 via Tailscale):"
+	@echo "  make deploy             - Full deploy: sync env, pull, build, start"
+	@echo "  make deploy-build       - Build image on server"
 	@echo "  make deploy-restart     - Quick restart without rebuilding"
 	@echo "  make deploy-sync-env    - Sync .env.production to server"
-	@echo "  make deploy-sync-config - Sync docker-compose and nginx config"
-	@echo "  make deploy-logs        - View remote logs (SERVICE=app|nginx)"
-	@echo "  make deploy-status      - Check remote container status"
+	@echo "  make deploy-logs        - View remote logs (SERVICE=app)"
+	@echo "  make deploy-status      - Check remote container status + health"
 	@echo "  make deploy-ssh         - SSH into the remote server"
-	@echo ""
-	@echo "Local Production commands (uses .env.production):"
-	@echo "  make prod-up      - Start production stack locally"
-	@echo "  make prod-down    - Stop production stack locally"
-	@echo "  make prod-logs    - View production logs locally"
-	@echo "  make prod-restart - Restart production stack locally"
 
 # Local (non-Docker) commands
 install:
@@ -143,45 +131,41 @@ prod-rebuild:
 	docker-compose -f docker-compose.prod.yml up -d
 	@echo "Production stack rebuilt and restarted"
 
-# Remote Deployment commands
+# Remote Deployment commands (htzweb01vm01 via Tailscale)
+DEPLOY_HOST := root@100.80.250.15
+DEPLOY_DIR := /opt/apps/access
+
 deploy:
-	@./scripts/deploy.sh deploy
-
-deploy-remote:
-	@./scripts/deploy.sh deploy-remote
-
-deploy-init:
-	@./scripts/deploy.sh init
+	@echo "==> Syncing .env.production to server..."
+	scp .env.production $(DEPLOY_HOST):$(DEPLOY_DIR)/.env
+	ssh $(DEPLOY_HOST) "chmod 600 $(DEPLOY_DIR)/.env && chown deploy:deploy $(DEPLOY_DIR)/.env"
+	@echo "==> Pulling latest code..."
+	ssh $(DEPLOY_HOST) "sudo -u deploy bash -c 'cd $(DEPLOY_DIR) && git pull origin main'"
+	@echo "==> Building and deploying..."
+	ssh $(DEPLOY_HOST) "cd $(DEPLOY_DIR) && docker compose -f docker-compose.prod.yml build && docker compose -f docker-compose.prod.yml up -d"
+	@echo "==> Reloading Caddy..."
+	ssh $(DEPLOY_HOST) "systemctl reload caddy"
+	@echo "==> Deploy complete! https://access.matthew.systems"
 
 deploy-build:
-	@./scripts/deploy.sh build
-
-deploy-push:
-	@./scripts/deploy.sh push
-
-deploy-start:
-	@./scripts/deploy.sh start
+	ssh $(DEPLOY_HOST) "cd $(DEPLOY_DIR) && docker compose -f docker-compose.prod.yml build"
 
 deploy-restart:
-	@./scripts/deploy.sh restart
-
-deploy-migrate:
-	@./scripts/deploy.sh deploy-migrate
+	ssh $(DEPLOY_HOST) "cd $(DEPLOY_DIR) && docker compose -f docker-compose.prod.yml restart"
 
 deploy-sync-env:
-	@./scripts/deploy.sh sync-env
-
-deploy-sync-config:
-	@./scripts/deploy.sh sync-config
+	scp .env.production $(DEPLOY_HOST):$(DEPLOY_DIR)/.env
+	ssh $(DEPLOY_HOST) "chmod 600 $(DEPLOY_DIR)/.env && chown deploy:deploy $(DEPLOY_DIR)/.env"
+	@echo "==> .env synced to server"
 
 deploy-logs:
-	@./scripts/deploy.sh logs $(SERVICE)
+	ssh $(DEPLOY_HOST) "cd $(DEPLOY_DIR) && docker compose -f docker-compose.prod.yml logs -f $(SERVICE)"
 
 deploy-status:
-	@./scripts/deploy.sh status
+	ssh $(DEPLOY_HOST) "cd $(DEPLOY_DIR) && docker compose -f docker-compose.prod.yml ps && echo '---' && curl -s http://127.0.0.1:3050/api/health | jq ."
 
 deploy-ssh:
-	@./scripts/deploy.sh ssh
+	ssh $(DEPLOY_HOST)
 
 # Sync .env.production to .env for local Docker testing
 sync-env-local:
