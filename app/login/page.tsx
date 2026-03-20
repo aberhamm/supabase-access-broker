@@ -192,8 +192,8 @@ export default function LoginPage() {
   // Update login mode and auth category when per-app effective features resolve
   useEffect(() => {
     if (!appMethodsReady || !appId) return;
-    if (effectiveFeatures.PASSWORD_LOGIN) setMode('password');
-    else if (effectiveFeatures.EMAIL_OTP) setMode('otp');
+    if (effectiveFeatures.EMAIL_OTP) setMode('otp');
+    else if (effectiveFeatures.PASSWORD_LOGIN) setMode('password');
     else setMode('magic');
     // If passkeys are disabled, ensure we fall back to credentials
     if (!effectiveFeatures.PASSKEYS && authCategory === 'passkey') {
