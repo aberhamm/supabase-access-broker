@@ -1,47 +1,25 @@
 services:
-  # Next.js Application
   app:
-    image: supabase-access-broker:latest
     build:
       context: .
       dockerfile: Dockerfile
       args:
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL}
+        NEXT_PUBLIC_APP_URL: https://access.matthew.systems
     container_name: supabase-access-broker
     restart: unless-stopped
     ports:
-      - '127.0.0.1:3050:3050'
+      - "3050:3050"
+    env_file:
+      - .env
     environment:
-      # Public variables (already baked into build)
-      - NEXT_PUBLIC_SUPABASE_URL=${NEXT_PUBLIC_SUPABASE_URL}
-      - NEXT_PUBLIC_SUPABASE_ANON_KEY=${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-
-      # CRITICAL: App URL for auth redirects (magic links, password resets)
-      - NEXT_PUBLIC_APP_URL=${NEXT_PUBLIC_APP_URL}
-
-      # Server-side only variables
-      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY}
-
-      # Node environment
       - NODE_ENV=production
       - PORT=3050
       - HOSTNAME=0.0.0.0
-    env_file:
-      - .env
-    networks:
-      - access-broker-network
     healthcheck:
       test: ['CMD', 'wget', '--no-verbose', '--tries=1', '--spider', 'http://localhost:3050/api/health']
       interval: 30s
       timeout: 3s
       retries: 3
       start_period: 40s
-    labels:
-      - 'com.supabase-access-broker.description=Supabase Access Broker'
-      - 'com.supabase-access-broker.version=1.0.0'
-
-networks:
-  access-broker-network:
-    driver: bridge

@@ -39,6 +39,7 @@ export default function RootLayout({
           {children}
           <Toaster />
         </ThemeProvider>
+        <script defer src="/a/script.js" data-website-id="7a49a3b7-9900-496b-87a1-855d9d03574f" />
       </body>
     </html>
   );
