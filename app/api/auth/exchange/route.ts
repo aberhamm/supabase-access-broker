@@ -11,7 +11,7 @@ export async function POST(request: Request) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    return NextResponse.json({ error: 'Invalid JSON body', error_code: 'invalid_request' }, { status: 400 });
   }
 
   const code = typeof body.code === 'string' ? body.code : null;
@@ -24,7 +24,7 @@ export async function POST(request: Request) {
       errorCode: 'invalid_request',
       metadata: { reason: 'missing_code_or_app_id' },
     });
-    return NextResponse.json({ error: 'Missing code or app_id' }, { status: 400 });
+    return NextResponse.json({ error: 'Missing code or app_id', error_code: 'invalid_request' }, { status: 400 });
   }
 
   // Authenticate using shared auth helper (supports both API key and app_secret)
@@ -59,7 +59,7 @@ export async function POST(request: Request) {
         ipAddress,
         userAgent,
       });
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return NextResponse.json({ error: 'User not found', error_code: 'user_not_found' }, { status: 404 });
     }
 
     debugLog('[SSO Exchange] User resolved', {
@@ -88,7 +88,7 @@ export async function POST(request: Request) {
           email: user.email,
         },
       });
-      return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+      return NextResponse.json({ error: 'Internal server error', error_code: 'server_error' }, { status: 500 });
     }
 
     const appClaims = extractAppClaims(user, appId);
@@ -132,6 +132,6 @@ export async function POST(request: Request) {
     });
 
     const errorMessage = status === 400 ? 'Invalid or expired code' : 'Internal server error';
-    return NextResponse.json({ error: errorMessage }, { status });
+    return NextResponse.json({ error: errorMessage, error_code: errorCode }, { status });
   }
 }

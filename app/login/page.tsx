@@ -81,6 +81,21 @@ function persistPreferredAuth(value: AuthCategory) {
   }
 }
 
+/** Map machine-readable error codes to user-friendly messages */
+const LOGIN_ERROR_MESSAGES: Record<string, string> = {
+  session_failed: 'We were unable to create your session. Please try signing in again.',
+  code_exchange_failed: 'The authentication code could not be verified. It may have expired — please try signing in again.',
+  auth_failed: 'Authentication failed. Please try signing in again.',
+  access_denied: 'You do not have permission to access this application. Contact your administrator.',
+  invalid_token: 'The sign-in link is invalid or has expired. Please request a new one.',
+  otp_expired: 'Your verification code has expired. Please request a new one.',
+};
+
+function getLoginErrorMessage(error: string | null): string | null {
+  if (!error) return null;
+  return LOGIN_ERROR_MESSAGES[error] || error;
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -95,7 +110,9 @@ export default function LoginPage() {
   const [mounted, setMounted] = useState(false);
   const [appAuthMethods, setAppAuthMethods] = useState<AppAuthMethods | null>(null);
   const [appMethodsReady, setAppMethodsReady] = useState(false);
+  const [appStatus, setAppStatus] = useState<'ok' | 'app_not_found' | 'app_disabled' | 'error' | null>(null);
   const [authCategory, setAuthCategory] = useState<AuthCategory>('credentials');
+  const [urlError, setUrlError] = useState<string | null>(null);
   const [mode, setMode] = useState<'magic' | 'otp' | 'password'>(() => {
     if (AUTH_FEATURES.EMAIL_OTP) return 'otp';
     if (AUTH_FEATURES.PASSWORD_LOGIN) return 'password';
@@ -116,6 +133,28 @@ export default function LoginPage() {
     const preferredAuth = readPreferredAuth();
     if (preferredAuth) {
       setAuthCategory(preferredAuth);
+    }
+
+    // Read error from URL query params (from auth callback/confirm redirects)
+    const params = new URLSearchParams(window.location.search);
+    const errorParam = params.get('error');
+
+    // Also check URL hash for Supabase-generated errors (e.g. #error=...&error_description=...)
+    const hash = window.location.hash;
+    let hashError: string | null = null;
+    if (hash && hash.includes('error')) {
+      const hashParams = new URLSearchParams(hash.substring(1));
+      hashError = hashParams.get('error_description') || hashParams.get('error');
+    }
+
+    const errorToShow = errorParam || hashError;
+    if (errorToShow) {
+      setUrlError(errorToShow);
+      // Clean the error from the URL so refreshing/retrying doesn't re-show it
+      const cleanUrl = new URL(window.location.href);
+      cleanUrl.searchParams.delete('error');
+      cleanUrl.hash = '';
+      window.history.replaceState({}, '', cleanUrl.toString());
     }
   }, []);
 
@@ -159,10 +198,11 @@ export default function LoginPage() {
     }
     fetch(`/api/apps/${appId}/auth-methods`)
       .then((r) => (r.ok ? r.json() : null))
-      .then((data: { auth_methods: AppAuthMethods | null } | null) => {
+      .then((data: { auth_methods: AppAuthMethods | null; status?: string } | null) => {
         setAppAuthMethods(data?.auth_methods ?? null);
+        setAppStatus((data?.status as 'ok' | 'app_not_found' | 'app_disabled' | 'error') ?? 'error');
       })
-      .catch(() => setAppAuthMethods(null))
+      .catch(() => { setAppAuthMethods(null); setAppStatus('error'); })
       .finally(() => setAppMethodsReady(true));
   }, [appId]);
 
@@ -286,6 +326,7 @@ export default function LoginPage() {
 
   const handleMagicLinkLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setUrlError(null);
 
     if (!email) {
       toast.error('Please enter your email');
@@ -327,6 +368,7 @@ export default function LoginPage() {
 
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
+    setUrlError(null);
     if (!email) {
       toast.error('Please enter your email');
       return;
@@ -354,6 +396,7 @@ export default function LoginPage() {
   };
 
   const sendOtp = useCallback(async () => {
+    setUrlError(null);
     if (!email) {
       toast.error('Please enter your email');
       return;
@@ -390,6 +433,7 @@ export default function LoginPage() {
 
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
+    setUrlError(null);
     const token = otpCode.replace(/\D/g, '');
     if (token.length !== 6) {
       toast.error('Enter the 6-digit code');
@@ -515,14 +559,42 @@ export default function LoginPage() {
           )}
         </CardHeader>
         <CardContent className="space-y-6">
+          {/* URL error banner (from failed auth redirects) */}
+          {urlError && (
+            <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm animate-in fade-in-0 slide-in-from-top-2 duration-200">
+              <div className="flex items-start justify-between gap-3">
+                <p className="text-destructive font-medium">
+                  {getLoginErrorMessage(urlError)}
+                </p>
+                <button
+                  type="button"
+                  onClick={() => setUrlError(null)}
+                  className="shrink-0 text-destructive/60 hover:text-destructive transition-colors"
+                  aria-label="Dismiss error"
+                >
+                  ✕
+                </button>
+              </div>
+            </div>
+          )}
+
           {!appMethodsReady ? (
             <div className="flex items-center justify-center py-8">
               <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted border-t-primary" />
             </div>
           ) : (
             <>
+              {/* App-level error states */}
+              {appId && appStatus && appStatus !== 'ok' && (
+                <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
+                  {appStatus === 'app_not_found' && 'This application is not recognized. Please check the link you used to get here.'}
+                  {appStatus === 'app_disabled' && 'This application has been disabled. Contact your administrator.'}
+                  {appStatus === 'error' && 'Unable to load sign-in options for this application. Please try again.'}
+                </div>
+              )}
+
               {/* No methods configured for this app */}
-              {appId && appAuthMethods && !Object.values(effectiveFeatures).some(Boolean) && (
+              {appId && appStatus === 'ok' && !Object.values(effectiveFeatures).some(Boolean) && (
                 <div className="rounded-md border border-dashed p-6 text-center text-sm text-muted-foreground">
                   No sign-in methods have been configured for this application.
                   Contact your administrator.

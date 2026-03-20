@@ -38,7 +38,7 @@ function AuthCallbackContent() {
           if (error) {
             debugError('[Auth Callback] Error setting session:', error);
             setStatus('Authentication failed');
-            router.push('/login?error=session_failed');
+            router.push(`/login?error=session_failed`);
             return;
           }
 

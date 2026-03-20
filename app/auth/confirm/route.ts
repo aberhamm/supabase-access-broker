@@ -67,9 +67,9 @@ export async function GET(request: Request) {
 
   if (error) {
     console.error('[auth/confirm] Error verifying token:', error.message);
-    // Redirect to login with error
+    // Redirect to login with a machine-readable error code
     const loginUrl = new URL('/login', baseUrl);
-    loginUrl.searchParams.set('error', 'Invalid or expired link');
+    loginUrl.searchParams.set('error', 'invalid_token');
     return NextResponse.redirect(loginUrl);
   }
 

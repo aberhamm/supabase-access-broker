@@ -129,7 +129,14 @@ export async function GET(request: Request) {
   });
 
   if (!response.ok) {
-    return NextResponse.redirect(new URL('/login?error=auth_failed', url.origin));
+    // The exchange endpoint returns { error, error_code } on failure.
+    // Pass the error_code through so the user sees a meaningful message.
+    const errorBody = await response.json().catch(() => ({}));
+    const errorCode = errorBody.error_code || 'auth_failed';
+    const errorMsg = errorBody.error || 'Authentication failed';
+    return NextResponse.redirect(
+      new URL(`/login?error=${encodeURIComponent(errorCode)}&error_description=${encodeURIComponent(errorMsg)}`, url.origin)
+    );
   }
 
   const payload = await response.json();
