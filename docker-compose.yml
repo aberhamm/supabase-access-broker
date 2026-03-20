@@ -6,7 +6,13 @@ services:
       args:
         NEXT_PUBLIC_SUPABASE_URL: ${NEXT_PUBLIC_SUPABASE_URL}
         NEXT_PUBLIC_SUPABASE_ANON_KEY: ${NEXT_PUBLIC_SUPABASE_ANON_KEY}
-        NEXT_PUBLIC_APP_URL: https://access.matthew.systems
+        NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-https://access.matthew.systems}
+        NEXT_PUBLIC_AUTH_PASSKEYS: ${NEXT_PUBLIC_AUTH_PASSKEYS:-false}
+        NEXT_PUBLIC_AUTH_GOOGLE: ${NEXT_PUBLIC_AUTH_GOOGLE:-false}
+        NEXT_PUBLIC_AUTH_GITHUB: ${NEXT_PUBLIC_AUTH_GITHUB:-false}
+        NEXT_PUBLIC_AUTH_EMAIL_OTP: ${NEXT_PUBLIC_AUTH_EMAIL_OTP:-false}
+        NEXT_PUBLIC_AUTH_PASSWORD: ${NEXT_PUBLIC_AUTH_PASSWORD:-false}
+        NEXT_PUBLIC_AUTH_MAGIC_LINK: ${NEXT_PUBLIC_AUTH_MAGIC_LINK:-true}
     container_name: supabase-access-broker
     restart: unless-stopped
     ports:
