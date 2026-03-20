@@ -50,7 +50,7 @@ export default async function SSOSettingsPage() {
   const configuredCallbacks = apps.filter(
     (a) => (a.allowed_callback_urls ?? []).length > 0
   ).length;
-  const configuredSecrets = apps.filter((a) => !!a.sso_client_secret_hash).length;
+  const configuredSecrets = apps.filter((a) => (a.sso_client_secrets?.length ?? 0) > 0 || !!a.sso_client_secret_hash).length;
 
   return (
     <div className="space-y-8">
@@ -154,7 +154,13 @@ export default async function SSOSettingsPage() {
                           {callbackCount === 1 ? '' : 's'}
                         </span>
                         <span className="text-muted-foreground/60">•</span>
-                        <span>{hasSecret ? 'Secret configured' : 'No secret'}</span>
+                        <span>
+                          {(app.sso_client_secrets?.length ?? 0) > 0
+                            ? `${app.sso_client_secrets!.length} secret${app.sso_client_secrets!.length === 1 ? '' : 's'}`
+                            : hasSecret
+                              ? 'Secret configured'
+                              : 'No secret'}
+                        </span>
                       </div>
                     </div>
 

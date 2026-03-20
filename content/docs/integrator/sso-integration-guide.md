@@ -300,13 +300,9 @@ Don't exchange the code in the browser — do it in your API route to:
 - Prevent code interception
 - Safely store the app secret (if used)
 
-### 3. Use an App Secret (Optional but Recommended)
+### 3. Use an App Secret (Required)
 
-For extra security, set a shared secret:
-
-1. Generate a secret: `openssl rand -hex 32`
-2. Store the **SHA-256 hash** in the portal DB
-3. Send the **plain secret** when exchanging codes
+Each app has one or more named secrets (e.g. "production", "staging"). Generate a secret from the dashboard under the app's SSO settings tab. The plaintext is shown once — store it as `SSO_APP_SECRET` in your backend environment.
 
 ```ts
 body: JSON.stringify({
@@ -316,7 +312,7 @@ body: JSON.stringify({
 });
 ```
 
-The portal will verify the hash matches.
+The portal checks the secret against all active secrets for the app, so you can add a new secret for a new environment without invalidating existing ones.
 
 ### 4. Validate State Parameter
 

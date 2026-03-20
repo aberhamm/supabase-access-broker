@@ -4,8 +4,8 @@ import { useMemo, useState } from 'react';
 import { toast } from 'sonner';
 import { Copy, Check, Link2, KeyRound, Plus, Trash2, AlertTriangle } from 'lucide-react';
 
-import type { AppConfig } from '@/types/claims';
-import { updateAppSSOSettingsAction, generateAppSecretAction } from '@/app/actions/apps';
+import type { AppConfig, SsoClientSecret } from '@/types/claims';
+import { updateAppSSOSettingsAction, generateAppSecretAction, deleteAppSecretAction } from '@/app/actions/apps';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -26,6 +26,18 @@ function normalizeUrl(input: string): string {
   return new URL(input.trim()).toString();
 }
 
+function formatDate(iso: string): string {
+  try {
+    return new Date(iso).toLocaleDateString(undefined, {
+      month: 'short',
+      day: 'numeric',
+      year: 'numeric',
+    });
+  } catch {
+    return iso;
+  }
+}
+
 export function SSOSettingsCard({
   app,
   onUpdated,
@@ -42,9 +54,11 @@ export function SSOSettingsCard({
   const [secretDialogOpen, setSecretDialogOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
   const [generatedSecret, setGeneratedSecret] = useState<string | null>(null);
+  const [secretLabel, setSecretLabel] = useState('');
   const [copied, setCopied] = useState(false);
+  const [deletingSecretId, setDeletingSecretId] = useState<string | null>(null);
 
-  const [secretConfigured, setSecretConfigured] = useState(!!app.sso_client_secret_hash);
+  const [secrets, setSecrets] = useState<SsoClientSecret[]>(app.sso_client_secrets ?? []);
 
   const addUrl = async () => {
     try {
@@ -57,13 +71,12 @@ export function SSOSettingsCard({
       setUrls(newUrls);
       setNewUrl('');
 
-      // Auto-save immediately
       setSaving(true);
       try {
         const result = await updateAppSSOSettingsAction(app.id, { allowed_callback_urls: newUrls });
         if (result.error) {
           toast.error(result.error);
-          setUrls(urls); // Revert on error
+          setUrls(urls);
           return;
         }
         toast.success('Callback URL added');
@@ -71,7 +84,7 @@ export function SSOSettingsCard({
       } catch (e) {
         const err = e as { message?: string };
         toast.error(err.message || 'Failed to add callback URL');
-        setUrls(urls); // Revert on error
+        setUrls(urls);
       } finally {
         setSaving(false);
       }
@@ -84,13 +97,12 @@ export function SSOSettingsCard({
     const newUrls = urls.filter((x) => x !== u);
     setUrls(newUrls);
 
-    // Auto-save immediately
     setSaving(true);
     try {
       const result = await updateAppSSOSettingsAction(app.id, { allowed_callback_urls: newUrls });
       if (result.error) {
         toast.error(result.error);
-        setUrls(urls); // Revert on error
+        setUrls(urls);
         return;
       }
       toast.success('Callback URL removed');
@@ -98,7 +110,7 @@ export function SSOSettingsCard({
     } catch (e) {
       const err = e as { message?: string };
       toast.error(err.message || 'Failed to remove callback URL');
-      setUrls(urls); // Revert on error
+      setUrls(urls);
     } finally {
       setSaving(false);
     }
@@ -109,13 +121,21 @@ export function SSOSettingsCard({
     setGeneratedSecret(null);
     setCopied(false);
     try {
-      const result = await generateAppSecretAction(app.id);
+      const label = secretLabel.trim() || 'default';
+      const result = await generateAppSecretAction(app.id, label);
       if (result.error) {
         toast.error(result.error);
         return;
       }
       setGeneratedSecret(result.data?.secret ?? null);
-      setSecretConfigured(true);
+      if (result.data) {
+        setSecrets(prev => [...prev, {
+          id: result.data!.secretId,
+          label,
+          hash: '••••••••',
+          created_at: new Date().toISOString(),
+        }]);
+      }
       toast.success('App secret generated');
       onUpdated?.();
     } catch (e) {
@@ -126,10 +146,30 @@ export function SSOSettingsCard({
     }
   };
 
+  const deleteSecret = async (secretId: string) => {
+    setDeletingSecretId(secretId);
+    try {
+      const result = await deleteAppSecretAction(app.id, secretId);
+      if (result.error) {
+        toast.error(result.error);
+        return;
+      }
+      setSecrets(prev => prev.filter(s => s.id !== secretId));
+      toast.success('Secret deleted');
+      onUpdated?.();
+    } catch (e) {
+      const err = e as { message?: string };
+      toast.error(err.message || 'Failed to delete secret');
+    } finally {
+      setDeletingSecretId(null);
+    }
+  };
+
   const copySecret = async () => {
     if (!generatedSecret) return;
     await navigator.clipboard.writeText(generatedSecret);
     setCopied(true);
+    toast.success('Secret copied to clipboard');
     setTimeout(() => setCopied(false), 2000);
   };
 
@@ -201,78 +241,126 @@ export function SSOSettingsCard({
           <div className="space-y-1">
             <CardTitle className="text-base flex items-center gap-2">
               <KeyRound className="h-4 w-4" />
-              SSO App Secret
+              SSO App Secrets
             </CardTitle>
             <p className="text-sm text-muted-foreground">
-              Optional shared secret used by client apps when exchanging auth codes.
+              Secrets used by client apps when exchanging auth codes. Create separate secrets for each environment.
             </p>
           </div>
-          <Badge variant={secretConfigured ? 'default' : 'secondary'}>
-            {secretConfigured ? 'Configured' : 'Not configured'}
+          <Badge variant={secrets.length > 0 ? 'default' : 'secondary'}>
+            {secrets.length} secret{secrets.length === 1 ? '' : 's'}
           </Badge>
         </CardHeader>
         <CardContent className="space-y-4">
-          <Alert>
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription>
-              The plaintext secret is shown <strong>only once</strong>. Store it in your client app backend as an env
-              var (e.g. <code>SSO_APP_SECRET</code>). The portal stores only a SHA-256 hash.
-            </AlertDescription>
-          </Alert>
+          {/* Existing secrets list */}
+          {secrets.length === 0 ? (
+            <div className="rounded-md border border-dashed p-6 text-sm text-muted-foreground">
+              No secrets configured. Generate one to secure the code exchange endpoint.
+            </div>
+          ) : (
+            <div className="space-y-2">
+              {secrets.map((s) => (
+                <div key={s.id} className="flex items-center justify-between gap-3 rounded-md border p-3">
+                  <div className="min-w-0 space-y-0.5">
+                    <div className="flex items-center gap-2">
+                      <span className="text-sm font-medium">{s.label}</span>
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      Created {formatDate(s.created_at)}
+                    </p>
+                  </div>
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => deleteSecret(s.id)}
+                    disabled={deletingSecretId === s.id}
+                    title="Delete secret"
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </div>
+              ))}
+            </div>
+          )}
 
           <Button
             type="button"
-            variant={secretConfigured ? 'destructive' : 'default'}
-            onClick={() => setSecretDialogOpen(true)}
+            onClick={() => {
+              setSecretDialogOpen(true);
+              setGeneratedSecret(null);
+              setSecretLabel('');
+              setCopied(false);
+            }}
           >
-            {secretConfigured ? 'Regenerate secret' : 'Generate secret'}
+            <Plus className="mr-2 h-4 w-4" />
+            Generate new secret
           </Button>
 
           <Dialog open={secretDialogOpen} onOpenChange={setSecretDialogOpen}>
             <DialogContent>
               <DialogHeader>
-                <DialogTitle>{secretConfigured ? 'Regenerate app secret' : 'Generate app secret'}</DialogTitle>
+                <DialogTitle>Generate app secret</DialogTitle>
                 <DialogDescription>
-                  {secretConfigured
-                    ? 'Regenerating will invalidate the previous secret immediately.'
-                    : 'This will create a new secret for securing the code exchange endpoint.'}
+                  Create a named secret for a specific environment (e.g. &quot;production&quot;, &quot;staging&quot;, &quot;local&quot;). Existing secrets are not affected.
                 </DialogDescription>
               </DialogHeader>
 
               {generatedSecret ? (
                 <div className="space-y-3">
+                  <Alert>
+                    <AlertTriangle className="h-4 w-4" />
+                    <AlertDescription>
+                      Copy this secret now. You will not be able to view it again.
+                    </AlertDescription>
+                  </Alert>
                   <div className="space-y-2">
-                    <Label>One-time secret (copy now)</Label>
+                    <Label>Secret</Label>
                     <div className="flex gap-2">
-                      <Input readOnly value={generatedSecret} />
-                      <Button type="button" variant="secondary" onClick={copySecret}>
+                      <code className="flex-1 rounded-md bg-muted px-3 py-2 font-mono text-sm break-all select-all">
+                        {generatedSecret}
+                      </code>
+                      <Button type="button" variant="secondary" onClick={copySecret} className="shrink-0">
                         {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
                       </Button>
                     </div>
                   </div>
-
                   <div className="text-sm text-muted-foreground">
-                    Client apps should send this as <code>app_secret</code> when calling <code>/api/auth/exchange</code>.
+                    Set this as <code>SSO_APP_SECRET</code> in your client app&apos;s environment.
                   </div>
                 </div>
               ) : (
-                <div className="text-sm text-muted-foreground">
-                  Click confirm to generate a new secret. You will not be able to view it again later.
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label htmlFor="secret_label">Label</Label>
+                    <Input
+                      id="secret_label"
+                      value={secretLabel}
+                      onChange={(e) => setSecretLabel(e.target.value)}
+                      placeholder="e.g. production, staging, local"
+                      disabled={generating}
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      A name to identify which environment uses this secret.
+                    </p>
+                  </div>
                 </div>
               )}
 
               <DialogFooter>
                 <Button type="button" variant="outline" onClick={() => setSecretDialogOpen(false)} disabled={generating}>
-                  Close
+                  {generatedSecret ? 'Done' : 'Cancel'}
                 </Button>
-                <Button
-                  type="button"
-                  variant={secretConfigured ? 'destructive' : 'default'}
-                  onClick={generateSecret}
-                  disabled={generating}
-                >
-                  {generating ? 'Generating...' : secretConfigured ? 'Regenerate' : 'Generate'}
-                </Button>
+                {!generatedSecret && (
+                  <Button
+                    type="button"
+                    onClick={generateSecret}
+                    disabled={generating}
+                  >
+                    {generating ? 'Generating...' : 'Generate'}
+                  </Button>
+                )}
               </DialogFooter>
             </DialogContent>
           </Dialog>

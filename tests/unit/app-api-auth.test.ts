@@ -108,6 +108,7 @@ describe('authenticateAppRequest', () => {
         id: APP_ID,
         enabled: true,
         ssoClientSecretHash: 'hashed_my-secret',
+        ssoClientSecrets: [],
       });
 
       const body: Record<string, unknown> = { app_secret: 'my-secret' };
@@ -128,6 +129,7 @@ describe('authenticateAppRequest', () => {
         id: APP_ID,
         enabled: true,
         ssoClientSecretHash: 'hashed_correct-secret',
+        ssoClientSecrets: [],
       });
 
       const body: Record<string, unknown> = { app_secret: 'wrong-secret' };
@@ -148,6 +150,7 @@ describe('authenticateAppRequest', () => {
         id: APP_ID,
         enabled: false,
         ssoClientSecretHash: 'hashed_secret',
+        ssoClientSecrets: [],
       });
 
       const body: Record<string, unknown> = { app_secret: 'secret' };
@@ -170,6 +173,7 @@ describe('authenticateAppRequest', () => {
         id: APP_ID,
         enabled: true,
         ssoClientSecretHash: null,
+        ssoClientSecrets: [],
       });
 
       const body: Record<string, unknown> = { app_secret: 'secret' };
@@ -240,6 +244,7 @@ describe('authenticateAppRequest', () => {
         id: APP_ID,
         enabled: true,
         ssoClientSecretHash: 'hashed_secret',
+        ssoClientSecrets: [],
       });
 
       const body: Record<string, unknown> = { app_secret: 'secret', other: 'data' };

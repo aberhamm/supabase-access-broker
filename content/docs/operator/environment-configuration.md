@@ -326,7 +326,7 @@ If you're using this dashboard as a central **auth portal** for other apps:
 
 - **Database migration**: apply `migrations/007_auth_and_passkeys.sql`
 - **Register allowed callback URLs** per app: `public.apps.allowed_callback_urls`
-- (Optional) require an app secret by setting: `public.apps.sso_client_secret_hash`
+- Generate app secrets from the dashboard (SSO settings tab) — each app supports multiple named secrets for different environments
 - (Optional) set `NEXT_PUBLIC_AUTH_PORTAL_URL` if external apps should use a different URL than `NEXT_PUBLIC_APP_URL` (e.g., `https://access-broker.yourdomain.com`)
 
 See: **[Auth Portal (SSO + Passkeys)](/docs/auth-portal-sso-passkeys)**.

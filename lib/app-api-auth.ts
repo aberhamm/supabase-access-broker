@@ -131,7 +131,13 @@ export async function authenticateAppRequest(
       };
     }
 
-    if (!appConfig.ssoClientSecretHash) {
+    // Check against all configured secrets (new multi-secret array, then legacy single hash)
+    const secretHashes = appConfig.ssoClientSecrets.map(s => s.hash);
+    if (appConfig.ssoClientSecretHash && !secretHashes.includes(appConfig.ssoClientSecretHash)) {
+      secretHashes.push(appConfig.ssoClientSecretHash);
+    }
+
+    if (secretHashes.length === 0) {
       logFailure('secret_not_configured');
       return {
         ok: false,
@@ -140,9 +146,9 @@ export async function authenticateAppRequest(
     }
 
     const computed = sha256Hex(appSecret);
-    const ok = timingSafeEqualHex(computed, appConfig.ssoClientSecretHash);
+    const matched = secretHashes.some(hash => timingSafeEqualHex(computed, hash));
 
-    if (!ok) {
+    if (!matched) {
       logFailure('invalid_secret');
       return {
         ok: false,

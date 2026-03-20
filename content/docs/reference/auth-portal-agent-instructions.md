@@ -124,32 +124,21 @@ if (payload.app_claims?.enabled !== true) {
 
 ## Task B — Require an app secret for exchange (recommended)
 
-### B1) Pick a secret (per app)
+### B1) Generate a secret (per app, per environment)
 
-Store it in the client app backend env as `SSO_APP_SECRET`.
+Each app supports multiple named secrets (e.g. "production", "staging", "local"). Generate secrets from the dashboard under the app's SSO settings tab. The plaintext is shown once — store it in the client app backend env as `SSO_APP_SECRET`.
 
-### B2) Hash it and store on the portal
+The portal checks the incoming secret against all active secrets for the app, so you can add a new secret for a new environment without invalidating existing ones.
 
-Store SHA-256 hex in `public.apps.sso_client_secret_hash`.
+### B2) Delete old secrets
 
-Example command to compute SHA-256 hex:
-
-```bash
-node -e "console.log(require('crypto').createHash('sha256').update(process.argv[1],'utf8').digest('hex'))" "YOUR_SECRET"
-```
-
-Then:
-
-```sql
-UPDATE public.apps
-SET sso_client_secret_hash = '<sha256_hex>'
-WHERE id = 'app1';
-```
+When rotating, generate the new secret first, deploy it to the client, then delete the old secret from the dashboard.
 
 **Acceptance criteria (Task B):**
 
 - `/api/auth/exchange` returns 401 if `app_secret` is missing/invalid
 - `/api/auth/exchange` returns 403 if the app has no configured secret
+- Multiple secrets per app are supported (checked against all active secrets)
 
 ## Task C — Passkeys (portal-side)
 

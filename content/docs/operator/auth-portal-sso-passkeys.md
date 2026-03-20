@@ -101,15 +101,9 @@ Response:
 
 ### Required: configure an app secret
 
-Set `public.apps.sso_client_secret_hash` to a SHA-256 hex of a shared secret known by the app backend:
+Each app supports **multiple named secrets** (e.g. one per environment). Generate secrets from the dashboard under the app's SSO settings — the plaintext is shown once, and the portal stores only a SHA-256 hash.
 
-```sql
-UPDATE public.apps
-SET sso_client_secret_hash = '<sha256_hex_of_secret>'
-WHERE id = 'app1';
-```
-
-Then include `app_secret` in every `/api/auth/exchange` request. Apps without a configured secret are rejected.
+When exchanging auth codes, include `app_secret` in every `/api/auth/exchange` request. The portal checks the secret against all active secrets for the app, so you can rotate or add secrets without downtime.
 
 ## Client SDK (browser helper)
 

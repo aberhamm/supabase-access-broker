@@ -176,8 +176,9 @@ export async function updateAppSSOSettingsAction(
 }
 
 export async function generateAppSecretAction(
-  appId: string
-): Promise<{ data: { secret: string } | null; error: string | null }> {
+  appId: string,
+  label: string = 'default'
+): Promise<{ data: { secret: string; secretId: string } | null; error: string | null }> {
   try {
     const supabase = await createClient();
 
@@ -186,22 +187,50 @@ export async function generateAppSecretAction(
       return { data: null, error: 'Unauthorized: You must be a claims_admin' };
     }
 
+    // Fetch existing secrets
+    const { data: appData, error: fetchError } = await supabase
+      .schema('access_broker_app')
+      .from('apps')
+      .select('sso_client_secrets')
+      .eq('id', appId)
+      .single();
+
+    if (fetchError) {
+      if (fetchError.code === '42703') {
+        return { data: null, error: SSO_SETTINGS_MISSING_ERROR };
+      }
+      return { data: null, error: fetchError.message || 'Failed to fetch app' };
+    }
+
+    const existingSecrets = (appData?.sso_client_secrets as { id: string; label: string; hash: string; created_at: string }[] | null) ?? [];
+
     // 32 bytes -> 64 hex chars; copy/paste friendly.
     const secret = randomBytes(32).toString('hex');
-    const sso_client_secret_hash = createHash('sha256').update(secret, 'utf8').digest('hex');
+    const hash = createHash('sha256').update(secret, 'utf8').digest('hex');
+    const secretId = crypto.randomUUID();
+
+    const newEntry = {
+      id: secretId,
+      label: label.trim() || 'default',
+      hash,
+      created_at: new Date().toISOString(),
+    };
+
+    const updatedSecrets = [...existingSecrets, newEntry];
 
     const { error } = await supabase
       .schema('access_broker_app')
       .from('apps')
-      .update({ sso_client_secret_hash })
+      .update({
+        sso_client_secrets: updatedSecrets,
+        // Also update legacy column for backwards compat
+        sso_client_secret_hash: hash,
+      })
       .eq('id', appId);
 
     if (error) {
       if (error.code === '42703') {
-        return {
-          data: null,
-          error: SSO_SETTINGS_MISSING_ERROR,
-        };
+        return { data: null, error: SSO_SETTINGS_MISSING_ERROR };
       }
       return { data: null, error: error.message || 'Failed to generate app secret' };
     }
@@ -210,10 +239,69 @@ export async function generateAppSecretAction(
     revalidatePath('/apps');
     revalidatePath(`/apps/${appId}`);
 
-    return { data: { secret }, error: null };
+    return { data: { secret, secretId }, error: null };
   } catch (e) {
     const err = e as Error;
     return { data: null, error: err.message || 'Failed to generate app secret' };
+  }
+}
+
+export async function deleteAppSecretAction(
+  appId: string,
+  secretId: string
+): Promise<{ error: string | null }> {
+  try {
+    const supabase = await createClient();
+
+    const { data: isAdmin } = await isClaimsAdmin(supabase);
+    if (!isAdmin) {
+      return { error: 'Unauthorized: You must be a claims_admin' };
+    }
+
+    const { data: appData, error: fetchError } = await supabase
+      .schema('access_broker_app')
+      .from('apps')
+      .select('sso_client_secrets')
+      .eq('id', appId)
+      .single();
+
+    if (fetchError) {
+      return { error: fetchError.message || 'Failed to fetch app' };
+    }
+
+    const existingSecrets = (appData?.sso_client_secrets as { id: string; label: string; hash: string; created_at: string }[] | null) ?? [];
+    const updatedSecrets = existingSecrets.filter(s => s.id !== secretId);
+
+    if (updatedSecrets.length === existingSecrets.length) {
+      return { error: 'Secret not found' };
+    }
+
+    // Update legacy column to the most recent remaining secret, or null
+    const latestHash = updatedSecrets.length > 0
+      ? updatedSecrets[updatedSecrets.length - 1].hash
+      : null;
+
+    const { error } = await supabase
+      .schema('access_broker_app')
+      .from('apps')
+      .update({
+        sso_client_secrets: updatedSecrets,
+        sso_client_secret_hash: latestHash,
+      })
+      .eq('id', appId);
+
+    if (error) {
+      return { error: error.message || 'Failed to delete secret' };
+    }
+
+    refreshCache();
+    revalidatePath('/apps');
+    revalidatePath(`/apps/${appId}`);
+
+    return { error: null };
+  } catch (e) {
+    const err = e as Error;
+    return { error: err.message || 'Failed to delete secret' };
   }
 }
 

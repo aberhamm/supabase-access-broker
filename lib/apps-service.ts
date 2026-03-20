@@ -72,7 +72,7 @@ async function fetchAppsFromDb(forceRefresh = false): Promise<AppConfig[]> {
       .schema('access_broker_app')
       .from('apps')
       .select(
-        'id,name,description,color,icon,enabled,allowed_callback_urls,sso_client_secret_hash,auth_methods,created_at,updated_at'
+        'id,name,description,color,icon,enabled,allowed_callback_urls,sso_client_secret_hash,sso_client_secrets,auth_methods,created_at,updated_at'
       )
       .order('name', { ascending: true });
 

@@ -2,10 +2,18 @@ import crypto from 'crypto';
 import { debugLog } from '@/lib/auth-debug';
 import { createAdminClient } from '@/lib/supabase/server';
 
+export interface SsoAppSecretEntry {
+  id: string;
+  label: string;
+  hash: string;
+  created_at: string;
+}
+
 export interface SsoAppAuthConfig {
   id: string;
   enabled: boolean | null;
   ssoClientSecretHash: string | null;
+  ssoClientSecrets: SsoAppSecretEntry[];
 }
 
 export function sha256Hex(input: string): string {
@@ -28,7 +36,7 @@ export async function getSsoAppAuthConfig(appId: string): Promise<SsoAppAuthConf
   const { data, error } = await supabase
     .schema('access_broker_app')
     .from('apps')
-    .select('id,enabled,sso_client_secret_hash')
+    .select('id,enabled,sso_client_secret_hash,sso_client_secrets')
     .eq('id', appId)
     .maybeSingle();
 
@@ -44,6 +52,7 @@ export async function getSsoAppAuthConfig(appId: string): Promise<SsoAppAuthConf
     id: data.id,
     enabled: data.enabled,
     ssoClientSecretHash: data.sso_client_secret_hash,
+    ssoClientSecrets: (data.sso_client_secrets as SsoAppSecretEntry[] | null) ?? [],
   };
 }
 

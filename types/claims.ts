@@ -139,6 +139,13 @@ export interface AppUser {
   app_data: AppClaim;
 }
 
+export interface SsoClientSecret {
+  id: string;
+  label: string;
+  hash: string;
+  created_at: string;
+}
+
 // Database-backed app configuration types
 export interface AppConfig {
   id: string;
@@ -150,6 +157,7 @@ export interface AppConfig {
   // SSO settings (Auth Portal)
   allowed_callback_urls?: string[] | null;
   sso_client_secret_hash?: string | null;
+  sso_client_secrets?: SsoClientSecret[] | null;
   auth_methods?: AppAuthMethods | null;
   created_at: string;
   updated_at: string;
