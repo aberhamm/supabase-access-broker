@@ -97,8 +97,8 @@ export default function LoginPage() {
   const [appMethodsReady, setAppMethodsReady] = useState(false);
   const [authCategory, setAuthCategory] = useState<AuthCategory>('credentials');
   const [mode, setMode] = useState<'magic' | 'otp' | 'password'>(() => {
-    if (AUTH_FEATURES.PASSWORD_LOGIN) return 'password';
     if (AUTH_FEATURES.EMAIL_OTP) return 'otp';
+    if (AUTH_FEATURES.PASSWORD_LOGIN) return 'password';
     return 'magic';
   });
   const supabase = createClient();
