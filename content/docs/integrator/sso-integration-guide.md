@@ -14,6 +14,16 @@ This guide explains how to integrate **your application** with the Access Broker
 
 > **💡 Want to see it in action?** Check out the [Demo Guide](/DEMO_GUIDE.md) to test the SSO flow locally with the included demo page.
 
+## No Supabase dependency required
+
+The Access Broker uses Supabase internally, but **your app does not need Supabase as a dependency**. The entire integration is plain HTTP:
+
+- **SSO login**: Standard redirect → auth code → exchange flow (like OAuth2)
+- **User management API**: REST endpoints with JSON payloads
+- **Authentication**: API key header or app secret in request body
+
+Any language or framework that can make HTTP requests and handle redirects can integrate — Rails, Django, Express, Go, PHP, Spring, or anything else. There is no Supabase SDK, client library, or database connection involved on the consumer side.
+
 ## What is the Auth Portal?
 
 The auth portal is a **centralized login page** where users authenticate once and gain access to all your applications. Think of it like:
@@ -32,43 +42,39 @@ The auth portal is a **centralized login page** where users authenticate once an
 **For developers:**
 
 - No need to build login UI for each app
-- Centralized user management
-- Secure token exchange
+- Centralized user management and role/permission assignment
+- Plain REST API — no vendor SDK or database dependency
 
 ## How it Works (Simple Flow)
 
 ```
-┌─────────────┐         ┌──────────────┐         ┌─────────────┐
-│   Your App  │         │ Auth Portal  │         │  Supabase   │
-└─────────────┘         └──────────────┘         └─────────────┘
-      │                        │                        │
-      │  1. Redirect to        │                        │
-      │     auth portal        │                        │
-      ├───────────────────────>│                        │
-      │                        │                        │
-      │                        │  2. User signs in      │
-      │                        │     (passkey/social/   │
-      │                        │      email/password)   │
-      │                        ├───────────────────────>│
-      │                        │                        │
-      │                        │  3. Session created    │
-      │                        │<───────────────────────┤
-      │                        │                        │
-      │  4. Redirect back      │                        │
-      │     with auth code     │                        │
-      │<───────────────────────┤                        │
-      │                        │                        │
-      │  5. Exchange code      │                        │
-      │     for user info      │                        │
-      ├───────────────────────>│                        │
-      │                        │                        │
-      │  6. User data +        │                        │
-      │     app claims         │                        │
-      │<───────────────────────┤                        │
-      │                        │                        │
-      │  7. Create session     │                        │
-      │     in your app        │                        │
-      │                        │                        │
+┌─────────────┐         ┌──────────────┐
+│   Your App  │         │ Auth Portal  │
+└─────────────┘         └──────────────┘
+      │                        │
+      │  1. Redirect to        │
+      │     auth portal        │
+      ├───────────────────────>│
+      │                        │
+      │                        │  2. User signs in
+      │                        │     (passkey/social/
+      │                        │      email/password)
+      │                        │
+      │  3. Redirect back      │
+      │     with auth code     │
+      │<───────────────────────┤
+      │                        │
+      │  4. Exchange code      │
+      │     for user info      │
+      ├───────────────────────>│
+      │                        │
+      │  5. User data +        │
+      │     app claims         │
+      │<───────────────────────┤
+      │                        │
+      │  6. Create session     │
+      │     in your app        │
+      │                        │
 ```
 
 ## Quick Start (3 Steps)
@@ -509,7 +515,7 @@ if (!response.ok) {
 }
 
 const data = await response.json();
-// data.user.id is the Supabase user ID
+// data.user.id is the user's unique ID
 // data.app_claims tells you their role/permissions in your app
 ```
 
@@ -539,6 +545,209 @@ const data = await response.json();
 - **Never expose in browser**: Call this endpoint only from your server/backend
 - **Check app_claims**: Verify `app_claims.enabled === true` before granting access
 - **Audit logged**: All lookups are logged with app_id and lookup method
+
+## Full API Reference
+
+Beyond SSO login and user lookup, the Access Broker exposes a complete REST API for user lifecycle management. All endpoints below are authenticated — no Supabase SDK required.
+
+### Authentication
+
+Every API request must include one of:
+
+1. **API key** (recommended for production):
+   ```
+   Authorization: Bearer sk_...
+   ```
+
+2. **App secret** (in the JSON request body):
+   ```json
+   { "app_secret": "your-secret", ... }
+   ```
+
+Both are scoped to a specific app. The API key is passed as a header and works with all HTTP methods. The app secret is passed in the request body and works with POST/PATCH/DELETE.
+
+### Endpoints
+
+#### SSO Code Exchange
+
+**`POST /api/auth/exchange`** — Exchange an SSO auth code for user info.
+
+```json
+// Request
+{
+  "code": "auth-code-from-redirect",
+  "app_id": "your-app-id",
+  "app_secret": "your-secret"
+}
+
+// Response (200)
+{
+  "user": { "id": "uuid", "email": "user@example.com" },
+  "app_id": "your-app-id",
+  "app_claims": { "enabled": true, "role": "user", "permissions": ["read", "write"] },
+  "expires_in": 300
+}
+```
+
+#### User Lookup
+
+**`POST /api/users/lookup`** — Look up a user by email, user ID, or Telegram ID. Provide exactly one identifier.
+
+```json
+// Request
+{
+  "app_id": "your-app-id",
+  "app_secret": "your-secret",
+  "email": "user@example.com"
+}
+
+// Response (200)
+{
+  "user": { "id": "uuid", "email": "user@example.com" },
+  "app_claims": { "enabled": true, "role": "user", "permissions": ["read", "write"] }
+}
+```
+
+#### List App Users
+
+**`GET /api/apps/{appId}/users`** — List all users who have claims for your app. Paginated.
+
+Query parameters:
+- `page` (default: 1)
+- `limit` (default: 50, max: 100)
+- `search` — filter by email
+- `since` — ISO 8601 timestamp, return only users updated after this time
+
+```json
+// Response (200)
+{
+  "users": [
+    {
+      "id": "uuid",
+      "email": "user@example.com",
+      "app_claims": { "enabled": true, "role": "admin", "permissions": ["read", "write"] }
+    }
+  ],
+  "total": 42,
+  "page": 1,
+  "limit": 50
+}
+```
+
+#### Get User Claims
+
+**`GET /api/apps/{appId}/users/{userId}/claims`** — Get a specific user's claims for your app.
+
+```json
+// Response (200)
+{
+  "user_id": "uuid",
+  "email": "user@example.com",
+  "app_claims": { "enabled": true, "role": "user", "permissions": ["read"] }
+}
+```
+
+#### Update User Claims
+
+**`PATCH /api/apps/{appId}/users/{userId}/claims`** — Update a user's claims. Only the fields you include are changed.
+
+Allowed fields: `enabled`, `role`, `permissions`, `metadata`.
+
+```json
+// Request
+{
+  "app_secret": "your-secret",
+  "role": "admin",
+  "permissions": ["read", "write", "delete"]
+}
+
+// Response (200)
+{
+  "user_id": "uuid",
+  "app_claims": { "enabled": true, "role": "admin", "permissions": ["read", "write", "delete"] },
+  "updated_at": "2026-03-21T12:00:00Z"
+}
+```
+
+#### Revoke User Access
+
+**`DELETE /api/apps/{appId}/users/{userId}/claims`** — Revoke a user's access to your app. Sets `enabled: false` and clears role/permissions.
+
+```json
+// Response (200)
+{
+  "user_id": "uuid",
+  "app_id": "your-app-id",
+  "revoked": true,
+  "revoked_at": "2026-03-21T12:00:00Z"
+}
+```
+
+#### Invite User
+
+**`POST /api/apps/{appId}/invite`** — Invite a user by email. Creates the account if it doesn't exist, and sets app claims in one call.
+
+```json
+// Request
+{
+  "app_secret": "your-secret",
+  "email": "newuser@example.com",
+  "role": "user",
+  "permissions": ["read"],
+  "send_email": true
+}
+
+// Response (200)
+{
+  "user_id": "uuid",
+  "email": "newuser@example.com",
+  "created": true,
+  "app_claims": { "enabled": true, "role": "user", "permissions": ["read"] }
+}
+```
+
+`send_email` defaults to `true`. Set to `false` to create the user silently without sending an invitation email.
+
+#### Auth Methods
+
+**`GET /api/apps/{appId}/auth-methods`** — Check which authentication methods are enabled for an app. No authentication required.
+
+```json
+// Response (200)
+{
+  "auth_methods": {
+    "password": true,
+    "magic_link": true,
+    "email_otp": true,
+    "passkeys": true,
+    "google": true,
+    "github": true
+  },
+  "status": "ok"
+}
+```
+
+### Rate Limiting
+
+All authenticated endpoints are rate-limited per app. Read endpoints (GET) and write endpoints (POST/PATCH/DELETE) have separate rate limits. If you exceed the limit, you'll receive a `429 Too Many Requests` response.
+
+### Error Format
+
+All endpoints return errors in a consistent format:
+
+```json
+{
+  "error": "Human-readable error message"
+}
+```
+
+Common HTTP status codes:
+- `400` — Bad request (missing/invalid parameters)
+- `401` — Authentication failed (invalid API key or app secret)
+- `403` — Forbidden (app disabled, key doesn't belong to this app)
+- `404` — User not found
+- `429` — Rate limited
+- `500` — Internal server error
 
 ## What's Next
 
