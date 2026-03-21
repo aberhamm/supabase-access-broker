@@ -683,4 +683,171 @@ GRANT EXECUTE ON FUNCTION lookup_user_by_identifier TO service_role;
 COMMENT ON FUNCTION lookup_user_by_identifier IS
   'Looks up a user by user_id, email, or telegram_id. Used by /api/users/lookup endpoint for SSO client apps.';
 
+-- ============================================================================
+-- Profiles Table (Migration 019)
+-- Canonical user identity data, owned by the access broker.
+-- ============================================================================
+
+CREATE TABLE IF NOT EXISTS access_broker_app.profiles (
+  user_id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  display_name TEXT,
+  first_name TEXT,
+  last_name TEXT,
+  avatar_url TEXT,
+  email TEXT,
+  timezone TEXT,
+  locale TEXT,
+  metadata JSONB DEFAULT '{}'::jsonb,
+  created_at TIMESTAMPTZ DEFAULT NOW(),
+  updated_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- Grants
+GRANT ALL ON access_broker_app.profiles TO service_role;
+GRANT SELECT, UPDATE ON access_broker_app.profiles TO authenticated;
+
+-- RLS
+ALTER TABLE access_broker_app.profiles ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can view own profile"
+  ON access_broker_app.profiles FOR SELECT
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can update own profile"
+  ON access_broker_app.profiles FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Admins can view all profiles"
+  ON access_broker_app.profiles FOR SELECT
+  USING (is_claims_admin());
+
+CREATE POLICY "Admins can update all profiles"
+  ON access_broker_app.profiles FOR UPDATE
+  USING (is_claims_admin());
+
+CREATE POLICY "Service role full access"
+  ON access_broker_app.profiles FOR ALL
+  USING (
+    current_setting('request.jwt.claims', true)::jsonb->>'role' = 'service_role'
+    OR session_user != 'authenticator'
+  );
+
+-- updated_at trigger
+CREATE OR REPLACE FUNCTION access_broker_app.set_profiles_updated_at()
+RETURNS TRIGGER LANGUAGE plpgsql AS $$
+BEGIN
+  NEW.updated_at = NOW();
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER set_profiles_updated_at
+  BEFORE UPDATE ON access_broker_app.profiles
+  FOR EACH ROW
+  EXECUTE FUNCTION access_broker_app.set_profiles_updated_at();
+
+-- profiles → auth.users sync (write-back, fails hard)
+CREATE OR REPLACE FUNCTION access_broker_app.sync_profile_to_auth()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, access_broker_app AS $$
+BEGIN
+  IF current_setting('access_broker.syncing', true) = 'true' THEN
+    RETURN NEW;
+  END IF;
+  PERFORM set_config('access_broker.syncing', 'true', true);
+  UPDATE auth.users
+  SET raw_user_meta_data = COALESCE(raw_user_meta_data, '{}'::jsonb)
+    || jsonb_build_object('display_name', NEW.display_name, 'avatar_url', NEW.avatar_url)
+  WHERE id = NEW.user_id;
+  PERFORM set_config('access_broker.syncing', 'false', true);
+  RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER sync_profile_to_auth
+  AFTER UPDATE OF display_name, avatar_url ON access_broker_app.profiles
+  FOR EACH ROW
+  WHEN (OLD.display_name IS DISTINCT FROM NEW.display_name OR OLD.avatar_url IS DISTINCT FROM NEW.avatar_url)
+  EXECUTE FUNCTION access_broker_app.sync_profile_to_auth();
+
+-- auth.users → profiles sync (ingest, fail-safe)
+CREATE OR REPLACE FUNCTION access_broker_app.sync_auth_to_profile()
+RETURNS TRIGGER LANGUAGE plpgsql SECURITY DEFINER
+SET search_path = public, access_broker_app AS $$
+DECLARE
+  v_display_name TEXT;
+  v_avatar_url TEXT;
+BEGIN
+  IF current_setting('access_broker.syncing', true) = 'true' THEN
+    RETURN NEW;
+  END IF;
+  PERFORM set_config('access_broker.syncing', 'true', true);
+  v_display_name := NULLIF(TRIM(COALESCE(NEW.raw_user_meta_data->>'display_name', NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', '')), '');
+  v_avatar_url := NULLIF(TRIM(COALESCE(NEW.raw_user_meta_data->>'avatar_url', NEW.raw_user_meta_data->>'picture', '')), '');
+  IF TG_OP = 'INSERT' THEN
+    INSERT INTO access_broker_app.profiles (user_id, display_name, avatar_url, email, created_at)
+    VALUES (NEW.id, v_display_name, v_avatar_url, NEW.email, NOW())
+    ON CONFLICT (user_id) DO NOTHING;
+  ELSIF TG_OP = 'UPDATE' THEN
+    UPDATE access_broker_app.profiles
+    SET display_name = CASE WHEN display_name IS NULL THEN v_display_name ELSE display_name END,
+        avatar_url = CASE WHEN avatar_url IS NULL THEN v_avatar_url ELSE avatar_url END,
+        email = COALESCE(NEW.email, email)
+    WHERE user_id = NEW.id;
+  END IF;
+  PERFORM set_config('access_broker.syncing', 'false', true);
+  RETURN NEW;
+EXCEPTION
+  WHEN OTHERS THEN
+    RAISE WARNING 'access_broker_app.sync_auth_to_profile failed for user %: %', NEW.id, SQLERRM;
+    PERFORM set_config('access_broker.syncing', 'false', true);
+    RETURN NEW;
+END;
+$$;
+
+CREATE TRIGGER sync_auth_to_profile
+  AFTER INSERT OR UPDATE OF raw_user_meta_data, email ON auth.users
+  FOR EACH ROW
+  EXECUTE FUNCTION access_broker_app.sync_auth_to_profile();
+
+-- Profile CRUD RPC
+CREATE OR REPLACE FUNCTION get_user_profile(p_user_id UUID)
+RETURNS TABLE(
+  user_id UUID, display_name TEXT, first_name TEXT, last_name TEXT,
+  avatar_url TEXT, email TEXT, timezone TEXT, locale TEXT,
+  metadata JSONB, created_at TIMESTAMPTZ, updated_at TIMESTAMPTZ
+) LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, access_broker_app AS $$
+BEGIN
+  IF NOT is_claims_admin() AND auth.uid() != p_user_id THEN
+    RAISE EXCEPTION 'access denied';
+  END IF;
+  RETURN QUERY SELECT p.user_id, p.display_name, p.first_name, p.last_name,
+    p.avatar_url, p.email, p.timezone, p.locale, p.metadata, p.created_at, p.updated_at
+  FROM access_broker_app.profiles p WHERE p.user_id = get_user_profile.p_user_id;
+END;
+$$;
+
+CREATE OR REPLACE FUNCTION update_user_profile(
+  p_user_id UUID, p_display_name TEXT DEFAULT NULL, p_first_name TEXT DEFAULT NULL,
+  p_last_name TEXT DEFAULT NULL, p_avatar_url TEXT DEFAULT NULL,
+  p_timezone TEXT DEFAULT NULL, p_locale TEXT DEFAULT NULL, p_metadata JSONB DEFAULT NULL
+) RETURNS TEXT LANGUAGE plpgsql SECURITY DEFINER SET search_path = public, access_broker_app AS $$
+BEGIN
+  IF NOT is_claims_admin() AND auth.uid() != p_user_id THEN
+    RETURN 'error: access denied';
+  END IF;
+  UPDATE access_broker_app.profiles SET
+    display_name = COALESCE(p_display_name, display_name),
+    first_name = COALESCE(p_first_name, first_name),
+    last_name = COALESCE(p_last_name, last_name),
+    avatar_url = COALESCE(p_avatar_url, avatar_url),
+    timezone = COALESCE(p_timezone, timezone),
+    locale = COALESCE(p_locale, locale),
+    metadata = COALESCE(p_metadata, metadata)
+  WHERE user_id = p_user_id;
+  IF NOT FOUND THEN RETURN 'error: profile not found'; END IF;
+  RETURN 'OK';
+END;
+$$;
+
 NOTIFY pgrst, 'reload schema';

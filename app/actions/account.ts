@@ -9,7 +9,10 @@ import type { MFAFactor, TOTPEnrollment, UpdateProfileData } from '@/types/claim
 // =============================================================================
 
 /**
- * Update the current user's own profile
+ * Update the current user's own profile.
+ * Profile fields (display_name, avatar_url, etc.) write to access_broker_app.profiles.
+ * The profiles→auth trigger syncs display_name/avatar_url back to user_metadata.
+ * Auth fields (email, phone) still go through supabase.auth.updateUser.
  */
 export async function updateOwnProfile(
   data: UpdateProfileData
@@ -17,32 +20,44 @@ export async function updateOwnProfile(
   try {
     const supabase = await createClient();
 
-    const updateData: {
-      email?: string;
-      phone?: string;
-      data?: Record<string, unknown>;
-    } = {};
-
-    if (data.email) {
-      updateData.email = data.email;
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Not authenticated' };
     }
 
-    if (data.phone !== undefined) {
-      updateData.phone = data.phone || '';
+    // Update auth fields (email, phone) via Supabase Auth
+    if (data.email || data.phone !== undefined) {
+      const authUpdate: { email?: string; phone?: string } = {};
+      if (data.email) authUpdate.email = data.email;
+      if (data.phone !== undefined) authUpdate.phone = data.phone || '';
+
+      const { error } = await supabase.auth.updateUser(authUpdate);
+      if (error) {
+        return { success: false, error: error.message };
+      }
     }
 
-    // Use the data field for user_metadata updates
-    if (data.display_name !== undefined || data.avatar_url !== undefined) {
-      updateData.data = {
-        ...(data.display_name !== undefined && { display_name: data.display_name }),
-        ...(data.avatar_url !== undefined && { avatar_url: data.avatar_url }),
-      };
-    }
+    // Update profile fields via profiles table RPC
+    const hasProfileFields = data.display_name !== undefined
+      || data.avatar_url !== undefined
+      || data.timezone !== undefined
+      || data.locale !== undefined;
 
-    const { error } = await supabase.auth.updateUser(updateData);
+    if (hasProfileFields) {
+      const { data: result, error } = await supabase.rpc('update_user_profile', {
+        p_user_id: user.id,
+        ...(data.display_name !== undefined && { p_display_name: data.display_name }),
+        ...(data.avatar_url !== undefined && { p_avatar_url: data.avatar_url }),
+        ...(data.timezone !== undefined && { p_timezone: data.timezone }),
+        ...(data.locale !== undefined && { p_locale: data.locale }),
+      });
 
-    if (error) {
-      return { success: false, error: error.message };
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      if (typeof result === 'string' && result.startsWith('error:')) {
+        return { success: false, error: result };
+      }
     }
 
     revalidatePath('/account');

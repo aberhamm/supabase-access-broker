@@ -4,7 +4,7 @@
 	build up down logs restart clean rebuild health test sync-env-local \
 	prod-up prod-down prod-logs prod-restart prod-rebuild \
 	deploy deploy-remote deploy-init deploy-build deploy-push deploy-start \
-	deploy-restart deploy-migrate deploy-sync-env deploy-sync-config deploy-logs deploy-status deploy-ssh \
+	deploy-restart deploy-migrate deploy-sync-env deploy-env deploy-sync-config deploy-logs deploy-status deploy-ssh \
 	shell nginx-shell nginx-test ps stats backup-env \
 	migrate migrate-status migrate-force
 
@@ -157,6 +157,13 @@ deploy-sync-env:
 	scp .env.production $(DEPLOY_HOST):$(DEPLOY_DIR)/.env
 	ssh $(DEPLOY_HOST) "chmod 600 $(DEPLOY_DIR)/.env && chown deploy:deploy $(DEPLOY_DIR)/.env"
 	@echo "==> .env synced to server"
+
+deploy-env:
+	scp .env.production $(DEPLOY_HOST):$(DEPLOY_DIR)/.env
+	ssh $(DEPLOY_HOST) "chmod 600 $(DEPLOY_DIR)/.env && chown deploy:deploy $(DEPLOY_DIR)/.env"
+	@echo "==> .env synced to server, restarting containers..."
+	ssh $(DEPLOY_HOST) "cd $(DEPLOY_DIR) && docker compose -f docker-compose.prod.yml restart"
+	@echo "==> Done. Containers restarted with updated env."
 
 deploy-logs:
 	ssh $(DEPLOY_HOST) "cd $(DEPLOY_DIR) && docker compose -f docker-compose.prod.yml logs -f $(SERVICE)"

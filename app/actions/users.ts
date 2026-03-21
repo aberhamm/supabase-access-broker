@@ -175,41 +175,39 @@ export async function updateUserProfileAdmin(
   try {
     const supabase = await requireClaimsAdmin();
 
-    const updateData: {
-      email?: string;
-      phone?: string;
-      user_metadata?: Record<string, unknown>;
-    } = {};
+    // Update auth fields (email, phone) via Supabase Auth admin API
+    if (data.email || data.phone !== undefined) {
+      const authUpdate: { email?: string; phone?: string } = {};
+      if (data.email) authUpdate.email = data.email;
+      if (data.phone !== undefined) authUpdate.phone = data.phone || '';
 
-    if (data.email) {
-      updateData.email = data.email;
-    }
-
-    if (data.phone !== undefined) {
-      updateData.phone = data.phone || '';
-    }
-
-    // Update user_metadata for display_name and avatar_url
-    if (data.display_name !== undefined || data.avatar_url !== undefined) {
-      // First get current metadata
-      const { data: userData, error: getUserError } =
-        await supabase.auth.admin.getUserById(userId);
-
-      if (getUserError) {
-        return { success: false, error: getUserError.message };
+      const { error } = await supabase.auth.admin.updateUserById(userId, authUpdate);
+      if (error) {
+        return { success: false, error: error.message };
       }
-
-      updateData.user_metadata = {
-        ...userData.user.user_metadata,
-        ...(data.display_name !== undefined && { display_name: data.display_name }),
-        ...(data.avatar_url !== undefined && { avatar_url: data.avatar_url }),
-      };
     }
 
-    const { error } = await supabase.auth.admin.updateUserById(userId, updateData);
+    // Update profile fields via profiles table RPC
+    const hasProfileFields = data.display_name !== undefined
+      || data.avatar_url !== undefined
+      || data.timezone !== undefined
+      || data.locale !== undefined;
 
-    if (error) {
-      return { success: false, error: error.message };
+    if (hasProfileFields) {
+      const { data: result, error } = await supabase.rpc('update_user_profile', {
+        p_user_id: userId,
+        ...(data.display_name !== undefined && { p_display_name: data.display_name }),
+        ...(data.avatar_url !== undefined && { p_avatar_url: data.avatar_url }),
+        ...(data.timezone !== undefined && { p_timezone: data.timezone }),
+        ...(data.locale !== undefined && { p_locale: data.locale }),
+      });
+
+      if (error) {
+        return { success: false, error: error.message };
+      }
+      if (typeof result === 'string' && result.startsWith('error:')) {
+        return { success: false, error: result };
+      }
     }
 
     revalidatePath(`/users/${userId}`);

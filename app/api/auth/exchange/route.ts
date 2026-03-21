@@ -93,6 +93,14 @@ export async function POST(request: Request) {
 
     const appClaims = extractAppClaims(user, appId);
 
+    // Fetch profile from access_broker_app.profiles
+    const { data: profileData } = await supabase
+      .schema('access_broker_app')
+      .from('profiles')
+      .select('display_name, first_name, last_name, avatar_url, timezone, locale')
+      .eq('user_id', user.id)
+      .single();
+
     logSSOEvent({
       eventType: 'token_exchange_success',
       appId,
@@ -107,6 +115,14 @@ export async function POST(request: Request) {
         id: user.id,
         email: user.email,
       },
+      profile: profileData ? {
+        display_name: profileData.display_name,
+        first_name: profileData.first_name,
+        last_name: profileData.last_name,
+        avatar_url: profileData.avatar_url,
+        timezone: profileData.timezone,
+        locale: profileData.locale,
+      } : null,
       app_id: appId,
       app_claims: appClaims,
       expires_in: 300,

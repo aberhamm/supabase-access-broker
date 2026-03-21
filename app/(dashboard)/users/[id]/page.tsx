@@ -52,12 +52,20 @@ export default async function UserDetailPage({
   const userApps = user.app_metadata?.apps || {};
   const telegramData = user.app_metadata?.telegram as TelegramData | undefined;
 
-  const [availableApps, mfaResult] = await Promise.all([
+  const profileSupabase = await createAdminClient();
+  const [availableApps, mfaResult, profileResult] = await Promise.all([
     getApps(),
     listUserMFAFactors(id),
+    profileSupabase
+      .schema('access_broker_app')
+      .from('profiles')
+      .select('display_name, first_name, last_name, avatar_url')
+      .eq('user_id', id)
+      .single(),
   ]);
 
   const mfaFactors = mfaResult.success ? mfaResult.factors || [] : [];
+  const profile = profileResult.data;
   const claimsCount = getUserCustomClaimsCount(claims);
   const appsCount = Object.keys(userApps).length;
 
@@ -82,7 +90,7 @@ export default async function UserDetailPage({
           <EnhancedUserInfoCard
             email={user.email || ''}
             phone={user.phone}
-            displayName={user.user_metadata?.display_name as string}
+            displayName={profile?.display_name || ''}
             userId={id}
             isAdmin={isAdmin}
             createdAt={user.created_at}

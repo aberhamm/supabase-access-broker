@@ -368,5 +368,23 @@ export interface UpdateProfileData {
   email?: string;
   phone?: string;
   display_name?: string;
+  first_name?: string;
+  last_name?: string;
   avatar_url?: string;
+  timezone?: string;
+  locale?: string;
+}
+
+export interface Profile {
+  user_id: string;
+  display_name?: string | null;
+  first_name?: string | null;
+  last_name?: string | null;
+  avatar_url?: string | null;
+  email?: string | null;
+  timezone?: string | null;
+  locale?: string | null;
+  metadata?: Record<string, unknown> | null;
+  created_at: string;
+  updated_at?: string | null;
 }

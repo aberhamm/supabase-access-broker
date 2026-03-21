@@ -32,8 +32,8 @@ export default async function AccountPage() {
     );
   }
 
-  // Fetch passkeys and MFA factors in parallel
-  const [passkeysResult, mfaResult] = await Promise.all([
+  // Fetch passkeys, MFA factors, and profile in parallel
+  const [passkeysResult, mfaResult, profileResult] = await Promise.all([
     supabase
       .schema('access_broker_app')
       .from('passkey_credentials')
@@ -41,7 +41,15 @@ export default async function AccountPage() {
       .eq('user_id', user.id)
       .order('created_at', { ascending: false }),
     listOwnMFAFactors(),
+    supabase
+      .schema('access_broker_app')
+      .from('profiles')
+      .select('display_name, first_name, last_name, avatar_url, timezone, locale')
+      .eq('user_id', user.id)
+      .single(),
   ]);
+
+  const profile = profileResult.data;
 
   const items: PasskeyItem[] = (passkeysResult.data || []) as PasskeyItem[];
   const mfaFactors = mfaResult.success ? mfaResult.factors || [] : [];
@@ -74,7 +82,7 @@ export default async function AccountPage() {
           <EditProfileDialog
             currentEmail={user.email || ''}
             currentPhone={user.phone || ''}
-            currentDisplayName={user.user_metadata?.display_name as string}
+            currentDisplayName={profile?.display_name || ''}
           />
         </CardHeader>
         <CardContent className="space-y-4">
@@ -96,13 +104,13 @@ export default async function AccountPage() {
             </div>
           )}
 
-          {user.user_metadata?.display_name && (
+          {profile?.display_name && (
             <div className="flex items-center gap-3">
               <User className="h-4 w-4 text-muted-foreground" />
               <div>
                 <p className="text-sm font-medium">Display Name</p>
                 <p className="text-sm text-muted-foreground">
-                  {user.user_metadata.display_name as string}
+                  {profile.display_name}
                 </p>
               </div>
             </div>
