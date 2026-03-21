@@ -48,6 +48,38 @@ export async function getAppUsersAction(
   }
 }
 
+export interface UserSuggestion {
+  user_id: string;
+  email: string;
+  display_name: string | null;
+}
+
+export async function searchUsersAction(
+  query: string
+): Promise<{ data: UserSuggestion[]; error: string | null }> {
+  if (!query || query.length < 2) {
+    return { data: [], error: null };
+  }
+
+  try {
+    const supabase = await requireClaimsAdmin();
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('user_id, email, display_name')
+      .or(`email.ilike.%${query}%,display_name.ilike.%${query}%`)
+      .limit(10);
+
+    if (error) {
+      return { data: [], error: error.message };
+    }
+
+    return { data: (data as UserSuggestion[]) || [], error: null };
+  } catch (error) {
+    const err = error as Error;
+    return { data: [], error: err.message };
+  }
+}
+
 export async function grantAppAccessByEmailAction(
   appId: string,
   email: string,

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -18,7 +18,9 @@ import { AppRoleSelector } from './AppRoleSelector';
 import {
   getAppUsersAction,
   grantAppAccessByEmailAction,
+  searchUsersAction,
 } from '@/app/actions/app-users';
+import type { UserSuggestion } from '@/app/actions/app-users';
 import {
   toggleAppAccessAction,
   setAppRoleAction,
@@ -37,6 +39,11 @@ export function AppUsersCard({ appId }: AppUsersCardProps) {
   const [email, setEmail] = useState('');
   const [role, setRole] = useState('user');
   const [addLoading, setAddLoading] = useState(false);
+  const [suggestions, setSuggestions] = useState<UserSuggestion[]>([]);
+  const [showSuggestions, setShowSuggestions] = useState(false);
+  const [selectedIndex, setSelectedIndex] = useState(-1);
+  const searchTimeout = useRef<NodeJS.Timeout | null>(null);
+  const suggestionsRef = useRef<HTMLDivElement>(null);
 
   const fetchUsers = useCallback(async () => {
     const result = await getAppUsersAction(appId);
@@ -76,6 +83,33 @@ export function AppUsersCard({ appId }: AppUsersCardProps) {
     setActionLoading(null);
   };
 
+  const handleEmailChange = (value: string) => {
+    setEmail(value);
+    setSelectedIndex(-1);
+    if (searchTimeout.current) clearTimeout(searchTimeout.current);
+    if (value.length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+    searchTimeout.current = setTimeout(async () => {
+      const result = await searchUsersAction(value);
+      if (result.data.length > 0) {
+        setSuggestions(result.data);
+        setShowSuggestions(true);
+      } else {
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+    }, 250);
+  };
+
+  const selectSuggestion = (suggestion: UserSuggestion) => {
+    setEmail(suggestion.email);
+    setShowSuggestions(false);
+    setSuggestions([]);
+  };
+
   const handleAddUser = async () => {
     if (!email.trim()) return;
     setAddLoading(true);
@@ -87,6 +121,8 @@ export function AppUsersCard({ appId }: AppUsersCardProps) {
       setDialogOpen(false);
       setEmail('');
       setRole('user');
+      setSuggestions([]);
+      setShowSuggestions(false);
       await fetchUsers();
     }
     setAddLoading(false);
@@ -160,14 +196,74 @@ export function AppUsersCard({ appId }: AppUsersCardProps) {
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <label className="text-sm font-medium">Email</label>
-              <Input
-                placeholder="user@example.com"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') handleAddUser();
-                }}
-              />
+              <div className="relative">
+                <Input
+                  placeholder="Search by email or name..."
+                  value={email}
+                  onChange={(e) => handleEmailChange(e.target.value)}
+                  onFocus={() => {
+                    if (suggestions.length > 0) setShowSuggestions(true);
+                  }}
+                  onBlur={() => {
+                    // Delay to allow click on suggestion
+                    setTimeout(() => setShowSuggestions(false), 150);
+                  }}
+                  onKeyDown={(e) => {
+                    if (showSuggestions && suggestions.length > 0) {
+                      if (e.key === 'ArrowDown') {
+                        e.preventDefault();
+                        setSelectedIndex((i) =>
+                          i < suggestions.length - 1 ? i + 1 : 0
+                        );
+                      } else if (e.key === 'ArrowUp') {
+                        e.preventDefault();
+                        setSelectedIndex((i) =>
+                          i > 0 ? i - 1 : suggestions.length - 1
+                        );
+                      } else if (e.key === 'Enter' && selectedIndex >= 0) {
+                        e.preventDefault();
+                        selectSuggestion(suggestions[selectedIndex]);
+                      } else if (e.key === 'Escape') {
+                        setShowSuggestions(false);
+                      } else if (e.key === 'Enter') {
+                        handleAddUser();
+                      }
+                    } else if (e.key === 'Enter') {
+                      handleAddUser();
+                    }
+                  }}
+                  autoComplete="off"
+                />
+                {showSuggestions && suggestions.length > 0 && (
+                  <div
+                    ref={suggestionsRef}
+                    className="absolute z-50 mt-1 w-full rounded-md border bg-popover shadow-md"
+                  >
+                    {suggestions.map((s, i) => (
+                      <button
+                        key={s.user_id}
+                        type="button"
+                        className={`flex w-full flex-col px-3 py-2 text-left text-sm hover:bg-accent ${
+                          i === selectedIndex ? 'bg-accent' : ''
+                        }`}
+                        onMouseDown={(e) => {
+                          e.preventDefault();
+                          selectSuggestion(s);
+                        }}
+                      >
+                        <span className="truncate font-medium">
+                          {s.email}
+                        </span>
+                        {s.display_name && (
+                          <span className="truncate text-xs text-muted-foreground">
+                            {s.display_name}
+                          </span>
+                        )}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             <div className="space-y-2">
               <label className="text-sm font-medium">Role</label>
