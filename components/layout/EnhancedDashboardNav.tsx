@@ -120,11 +120,11 @@ export function EnhancedDashboardNav({
 
           {/* Right: Actions and User Menu */}
           <div className="flex items-center gap-2 shrink-0">
-            {/* Search / Command Palette Trigger */}
+            {/* Search / Command Palette Trigger — xl to avoid overlap at lg */}
             <Button
               variant="outline"
               size="sm"
-              className="hidden lg:flex gap-2 text-muted-foreground hover:text-foreground"
+              className="hidden xl:flex gap-2 text-muted-foreground hover:text-foreground"
             >
               <Search className="h-4 w-4" />
               <span className="text-xs">Search</span>
@@ -153,14 +153,14 @@ export function EnhancedDashboardNav({
             <ThemeToggle />
 
             {/* Divider */}
-            <div className="h-6 w-px bg-border hidden lg:block" />
+            <div className="h-6 w-px bg-border hidden xl:block" />
 
             {/* User Menu */}
             <div className="flex items-center gap-2">
-              {/* User Avatar & Email */}
+              {/* User Avatar & Email — xl to avoid overlap at lg */}
               <Link
                 href="/account"
-                className="group hidden lg:flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors"
+                className="group hidden xl:flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-muted transition-colors"
               >
                 <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm ring-2 ring-primary/20 group-hover:ring-primary/40 transition-all">
                   {avatarLetter}
@@ -173,8 +173,8 @@ export function EnhancedDashboardNav({
                 </div>
               </Link>
 
-              {/* Mobile: Just Avatar */}
-              <Link href="/account" className="lg:hidden">
+              {/* Below xl: Just Avatar */}
+              <Link href="/account" className="xl:hidden">
                 <Button variant="ghost" size="sm" className="h-8 w-8 p-0 rounded-full">
                   <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary font-semibold text-sm">
                     {avatarLetter}
@@ -190,7 +190,7 @@ export function EnhancedDashboardNav({
                   className="gap-2 hover:bg-destructive/10 hover:text-destructive"
                 >
                   <LogOut className="h-4 w-4" />
-                  <span className="hidden lg:inline">Sign Out</span>
+                  <span className="hidden xl:inline">Sign Out</span>
                 </Button>
               </Link>
             </div>
