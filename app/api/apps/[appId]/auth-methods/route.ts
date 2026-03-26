@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { getAppById } from '@/lib/apps-service';
+import { createAdminClient } from '@/lib/supabase/server';
 
 export async function GET(
   _request: NextRequest,
@@ -7,17 +7,32 @@ export async function GET(
 ) {
   try {
     const { appId } = await params;
-    const app = await getAppById(appId);
 
-    if (!app) {
+    // Use admin client to bypass RLS — this endpoint is called by
+    // unauthenticated users during the SSO login flow, and the apps
+    // table RLS policy only allows claims_admin access.
+    const supabase = await createAdminClient();
+    const { data, error } = await supabase
+      .schema('access_broker_app')
+      .from('apps')
+      .select('enabled,auth_methods')
+      .eq('id', appId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('[auth-methods] Error fetching app:', error);
+      return NextResponse.json({ auth_methods: null, status: 'error' });
+    }
+
+    if (!data) {
       return NextResponse.json({ auth_methods: null, status: 'app_not_found' });
     }
 
-    if (!app.enabled) {
+    if (!data.enabled) {
       return NextResponse.json({ auth_methods: null, status: 'app_disabled' });
     }
 
-    return NextResponse.json({ auth_methods: app.auth_methods ?? null, status: 'ok' });
+    return NextResponse.json({ auth_methods: data.auth_methods ?? null, status: 'ok' });
   } catch {
     return NextResponse.json({ auth_methods: null, status: 'error' });
   }
