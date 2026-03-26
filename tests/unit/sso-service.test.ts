@@ -1,10 +1,12 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock the admin client
+// Mock the admin client — .schema('access_broker_app').rpc() chain
 const mockRpc = vi.fn();
+const mockSchema = vi.fn(() => ({ rpc: mockRpc }));
 vi.mock('@/lib/supabase/server', () => ({
   createAdminClient: vi.fn(() =>
     Promise.resolve({
+      schema: mockSchema,
       rpc: mockRpc,
     })
   ),

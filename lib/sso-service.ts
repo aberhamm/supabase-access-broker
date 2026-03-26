@@ -279,7 +279,7 @@ export async function consumeAuthCode(params: {
 
   // Atomic consumption via RPC — prevents race conditions (Critical #2)
   // Also verifies redirect_uri matches stored value when provided (Critical #3)
-  const { data, error } = await supabase.rpc('consume_auth_code', {
+  const { data, error } = await supabase.schema('access_broker_app').rpc('consume_auth_code', {
     p_code: params.code,
     p_app_id: params.appId,
     p_redirect_uri: params.redirectUri ?? null,
