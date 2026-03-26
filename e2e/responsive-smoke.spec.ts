@@ -77,7 +77,7 @@ test.describe('Responsive smoke', () => {
 
     for (const route of routes) {
       await page.goto(route);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       await expectNoHorizontalOverflow(page);
     }
   });
@@ -94,7 +94,7 @@ test.describe('Responsive smoke', () => {
 
     for (const route of routes) {
       await page.goto(route.path);
-      await page.waitForLoadState('networkidle');
+      await page.waitForLoadState('domcontentloaded');
       await expectNoHorizontalOverflow(page);
 
       if (route.expectActions) {
@@ -111,7 +111,7 @@ test.describe('Responsive smoke', () => {
     }
 
     await page.goto('/apps');
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
 
     const appDetailLink = page.locator('a[href^="/apps/"]').filter({
       has: page.getByText('View Details'),
@@ -119,7 +119,7 @@ test.describe('Responsive smoke', () => {
 
     await expect(appDetailLink).toBeVisible();
     await appDetailLink.click();
-    await page.waitForLoadState('networkidle');
+    await page.waitForLoadState('domcontentloaded');
     await expectNoHorizontalOverflow(page);
     await expectHeaderActionsResponsive(page);
   });
