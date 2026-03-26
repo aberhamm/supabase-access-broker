@@ -273,34 +273,32 @@ export async function createAuthCode(params: {
 export async function consumeAuthCode(params: {
   code: string;
   appId: string;
+  redirectUri?: string;
 }): Promise<{ userId: string; redirectUri: string }> {
   const supabase = await createAdminClient();
 
-  const { data, error } = await supabase
-    .schema('access_broker_app')
-    .from('auth_codes')
-    .select('id,code,user_id,app_id,redirect_uri,expires_at,used_at')
-    .eq('code', params.code)
-    .eq('app_id', params.appId)
-    .is('used_at', null)
-    .gt('expires_at', new Date().toISOString())
-    .maybeSingle();
+  // Atomic consumption via RPC — prevents race conditions (Critical #2)
+  // Also verifies redirect_uri matches stored value when provided (Critical #3)
+  const { data, error } = await supabase.rpc('consume_auth_code', {
+    p_code: params.code,
+    p_app_id: params.appId,
+    p_redirect_uri: params.redirectUri ?? null,
+  });
 
-  if (error) throw error;
-  if (!data?.id) throw new Error('Invalid or expired code');
+  if (error) {
+    if (error.message?.includes('Invalid or expired code')) {
+      throw new Error('Invalid or expired code');
+    }
+    throw error;
+  }
 
-  const { error: updateError } = await supabase
-    .schema('access_broker_app')
-    .from('auth_codes')
-    .update({ used_at: new Date().toISOString() })
-    .eq('id', data.id);
-  if (updateError) throw updateError;
+  const row = Array.isArray(data) ? data[0] : data;
+  if (!row?.out_user_id) throw new Error('Invalid or expired code');
 
   debugLog('[SSO] Auth code consumed', {
     appId: params.appId,
-    authCodeId: data.id,
-    userId: data.user_id,
+    userId: row.out_user_id,
   });
 
-  return { userId: data.user_id as string, redirectUri: data.redirect_uri as string };
+  return { userId: row.out_user_id as string, redirectUri: row.out_redirect_uri as string };
 }

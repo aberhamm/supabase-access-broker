@@ -75,10 +75,14 @@ export async function authenticateAppRequest(
   };
 
   const authHeader = request.headers.get('authorization');
+  const xApiKey = request.headers.get('x-api-key');
 
-  // API key: Authorization: Bearer <key>
-  if (authHeader?.toLowerCase().startsWith('bearer ')) {
-    const apiKey = authHeader.slice(7);
+  // API key: Authorization: Bearer <key> OR x-api-key: <key>
+  const apiKey = authHeader?.toLowerCase().startsWith('bearer ')
+    ? authHeader.slice(7)
+    : xApiKey || null;
+
+  if (apiKey) {
     const validated = await validateApiKey(apiKey);
 
     if (!validated) {

@@ -246,6 +246,7 @@
           body: JSON.stringify({
             code,
             app_id: APP_ID,
+            redirect_uri: window.location.href.split('?')[0],
           }),
         });
 

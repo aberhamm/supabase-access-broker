@@ -16,15 +16,16 @@ export async function POST(request: Request) {
 
   const code = typeof body.code === 'string' ? body.code : null;
   const appId = typeof body.app_id === 'string' ? body.app_id : null;
+  const redirectUri = typeof body.redirect_uri === 'string' ? body.redirect_uri : null;
 
-  if (!code || !appId) {
+  if (!code || !appId || !redirectUri) {
     logSSOEvent({
       eventType: 'token_exchange_error',
       appId: appId || undefined,
       errorCode: 'invalid_request',
-      metadata: { reason: 'missing_code_or_app_id' },
+      metadata: { reason: 'missing_required_params', has_code: !!code, has_app_id: !!appId, has_redirect_uri: !!redirectUri },
     });
-    return NextResponse.json({ error: 'Missing code or app_id', error_code: 'invalid_request' }, { status: 400 });
+    return NextResponse.json({ error: 'Missing required parameters: code, app_id, and redirect_uri', error_code: 'invalid_request' }, { status: 400 });
   }
 
   // Authenticate using shared auth helper (supports both API key and app_secret)
@@ -39,7 +40,7 @@ export async function POST(request: Request) {
 
   try {
     const supabase = await createAdminClient();
-    const { userId } = await consumeAuthCode({ code, appId });
+    const { userId } = await consumeAuthCode({ code, appId, redirectUri });
 
     debugLog('[SSO Exchange] Auth code consumed', {
       appId,

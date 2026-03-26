@@ -96,6 +96,7 @@ const res = await fetch('https://access-broker.yourdomain.com/api/auth/exchange'
   body: JSON.stringify({
     code,
     app_id: 'app1',
+    redirect_uri: REDIRECT_URI,
     app_secret: process.env.SSO_APP_SECRET,
   }),
 });

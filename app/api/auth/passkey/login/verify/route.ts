@@ -1,23 +1,9 @@
 import { NextResponse } from 'next/server';
 import { generateSupabaseMagicLinkForUser, verifyAuthentication } from '@/lib/passkey-service';
+import { getAppUrl } from '@/lib/app-url';
 
-function getBaseUrl(request: Request): string {
-  if (process.env.NEXT_PUBLIC_APP_URL) return process.env.NEXT_PUBLIC_APP_URL;
-
-  const forwardedHost = request.headers.get('x-forwarded-host');
-  if (forwardedHost) {
-    const protocol = request.headers.get('x-forwarded-proto') || 'https';
-    return `${protocol}://${forwardedHost}`;
-  }
-
-  const host = request.headers.get('host');
-  if (host) {
-    const protocol = host.includes('localhost') ? 'http' : 'https';
-    return `${protocol}://${host}`;
-  }
-
-  return new URL(request.url).origin;
-}
+const PASSKEY_COOKIE_NAME = '__passkey_action';
+const PASSKEY_COOKIE_MAX_AGE = 60; // 60 seconds
 
 export async function POST(request: Request) {
   try {
@@ -34,14 +20,27 @@ export async function POST(request: Request) {
       return NextResponse.json({ verified: false }, { status: 401 });
     }
 
-    const baseUrl = getBaseUrl(request);
+    const baseUrl = getAppUrl();
     const redirectTo = `${baseUrl}/auth/callback?next=${encodeURIComponent(next)}`;
     const action_link = await generateSupabaseMagicLinkForUser({
       userId: verification.userId,
       redirectTo,
     });
 
-    return NextResponse.json({ verified: true, action_link });
+    // Store the magic link in an httpOnly cookie instead of exposing it in the
+    // response body. The client navigates to /auth/passkey-complete which reads
+    // the cookie and redirects. This prevents XSS from stealing the magic link.
+    const isSecure = baseUrl.startsWith('https://');
+    const res = NextResponse.json({ verified: true });
+    res.cookies.set(PASSKEY_COOKIE_NAME, action_link, {
+      httpOnly: true,
+      secure: isSecure,
+      sameSite: 'lax',
+      path: '/auth/passkey-complete',
+      maxAge: PASSKEY_COOKIE_MAX_AGE,
+    });
+
+    return res;
   } catch (e) {
     const message = e instanceof Error ? e.message : 'Unknown error';
     return NextResponse.json({ error: message }, { status: 400 });

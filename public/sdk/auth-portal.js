@@ -34,7 +34,7 @@
   async function exchangeCode(params) {
     void params;
     throw new Error(
-      "AuthPortal.exchangeCode must run on your server. POST the code, app_id, and app_secret to /api/auth/exchange from a trusted backend."
+      "AuthPortal.exchangeCode must run on your server. POST the code, app_id, redirect_uri, and app_secret to /api/auth/exchange from a trusted backend."
     );
   }
 

@@ -5,6 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { debugError, debugLog } from '@/lib/auth-debug';
 import { hasAnyAppAdmin } from '@/types/claims';
+import { safeNextPath } from '@/lib/safe-redirect';
 
 function AuthCallbackContent() {
   const router = useRouter();
@@ -15,7 +16,7 @@ function AuthCallbackContent() {
     const handleCallback = async () => {
       const supabase = createClient();
       const code = searchParams.get('code');
-      const next = searchParams.get('next') || '/';
+      const next = safeNextPath(searchParams.get('next'), '/');
       const type = searchParams.get('type');
 
       // Check for tokens in the URL hash (implicit flow from magic links)

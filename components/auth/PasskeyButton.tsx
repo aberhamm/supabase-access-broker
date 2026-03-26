@@ -147,14 +147,15 @@ export function PasskeyButton({ next = '/', className, onBeforeRedirect }: Passk
         throw new Error(err?.error || 'Passkey verification failed');
       }
 
-      const payload = (await verifyRes.json()) as { verified: boolean; action_link?: string };
-      if (!payload.verified || !payload.action_link) {
+      const payload = (await verifyRes.json()) as { verified: boolean };
+      if (!payload.verified) {
         throw new Error('Passkey verification failed');
       }
 
-      // Complete Supabase session creation via generated magic-link (no email involved)
+      // Navigate to passkey-complete route which reads the httpOnly cookie
+      // containing the magic link and redirects to establish the Supabase session.
       onBeforeRedirect?.();
-      window.location.href = payload.action_link;
+      window.location.href = '/auth/passkey-complete';
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Passkey sign-in failed';
       toast.error(message);

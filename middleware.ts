@@ -1,6 +1,5 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
-import { validateApiKey, recordApiKeyUsage } from '@/lib/api-keys-service';
 import { debugLog, debugWarn, debugTrace, isDebugAuthEnabled } from '@/lib/auth-debug';
 import { PUBLIC_ROUTE_PREFIXES, PORTAL_ROUTE_PREFIXES } from '@/lib/auth-routes';
 import { hasAnyAppAdmin } from '@/types/claims';
@@ -43,46 +42,11 @@ export async function middleware(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 
-  // Check if this is a webhook route that should use API key authentication
-  const isWebhookRoute = request.nextUrl.pathname.startsWith('/api/webhooks/');
-
-  if (isWebhookRoute) {
-    // Try to authenticate with API key
-    const apiKey =
-      request.headers.get('x-api-key') ||
-      request.headers.get('authorization')?.replace('Bearer ', '');
-
-    if (!apiKey) {
-      return NextResponse.json(
-        { error: 'API key required' },
-        { status: 401 }
-      );
-    }
-
-    const validatedKey = await validateApiKey(apiKey);
-
-    if (!validatedKey || !validatedKey.is_valid) {
-      return NextResponse.json(
-        { error: 'Invalid or expired API key' },
-        { status: 401 }
-      );
-    }
-
-    // Record usage (non-blocking)
-    recordApiKeyUsage(apiKey).catch(console.error);
-
-    // Add app context to response headers for the API route to use
-    const webhookResponse = NextResponse.next({
-      request: {
-        headers: new Headers(request.headers),
-      },
-    });
-    webhookResponse.headers.set('x-app-id', validatedKey.app_id);
-    webhookResponse.headers.set('x-key-id', validatedKey.key_id);
-    if (validatedKey.role_name) {
-      webhookResponse.headers.set('x-role-name', validatedKey.role_name);
-    }
-
+  // Webhook routes handle their own auth inline (authenticateAppRequest)
+  // — no middleware auth needed. Let them pass through to the route handler.
+  if (request.nextUrl.pathname.startsWith('/api/webhooks/')) {
+    const webhookResponse = NextResponse.next();
+    webhookResponse.headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; frame-ancestors 'self'");
     return webhookResponse;
   }
 
@@ -319,6 +283,9 @@ export async function middleware(request: NextRequest) {
 
     debugLog('[MIDDLEWARE] User has admin access, allowing request');
   }
+
+  // CSP headers to mitigate XSS impact (auth cookies are not httpOnly per Supabase SSR requirement)
+  response.headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; frame-ancestors 'self'");
 
   return response;
 }

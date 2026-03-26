@@ -7,7 +7,6 @@ export async function GET(
   { params }: { params: Promise<{ appId: string }> }
 ) {
   try {
-    // Verify user is authenticated
     const supabase = await createClient();
     const { data: { user }, error: authError } = await supabase.auth.getUser();
 
@@ -19,6 +18,19 @@ export async function GET(
     }
 
     const { appId } = await params;
+
+    // Authorization: global admin OR app-specific admin for this appId
+    const isGlobalAdmin = user.app_metadata?.claims_admin === true;
+    const appClaims = (user.app_metadata?.apps as Record<string, { admin?: boolean }> | undefined)?.[appId];
+    const isAppAdmin = appClaims?.admin === true;
+
+    if (!isGlobalAdmin && !isAppAdmin) {
+      return NextResponse.json(
+        { error: 'Forbidden' },
+        { status: 403 }
+      );
+    }
+
     const roles = await getRoles(appId);
     return NextResponse.json(roles);
   } catch (error) {

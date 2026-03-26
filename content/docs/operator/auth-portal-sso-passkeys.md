@@ -84,6 +84,7 @@ Content-Type: application/json
 {
   "code": "…",
   "app_id": "app1",
+  "redirect_uri": "https://your-app.com/callback",
   "app_secret": "required"
 }
 ```

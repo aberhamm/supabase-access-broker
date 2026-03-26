@@ -217,7 +217,7 @@ Then exchange the returned code:
 const res = await fetch('https://access-broker.yourdomain.com/api/auth/exchange', {
   method: 'POST',
   headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({ code, app_id: 'app1', app_secret: process.env.SSO_APP_SECRET }),
+  body: JSON.stringify({ code, app_id: 'app1', redirect_uri: REDIRECT_URI, app_secret: process.env.SSO_APP_SECRET }),
 });
 const payload = await res.json();
 ```

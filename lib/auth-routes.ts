@@ -3,6 +3,7 @@ export const PUBLIC_ROUTE_PREFIXES = [
   '/auth/callback',
   '/auth/confirm',
   '/auth/logout',
+  '/auth/passkey-complete',
   '/reset-password',
   '/api/auth/',
   '/api/health',

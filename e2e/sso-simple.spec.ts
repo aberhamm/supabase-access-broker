@@ -112,6 +112,7 @@ test.describe('SSO Integration - Simplified E2E', () => {
       data: {
         code,
         app_id: TEST_APP.id,
+        redirect_uri: DEMO_CALLBACK,
         app_secret: TEST_APP.secret,
       },
     });
@@ -178,6 +179,7 @@ test.describe('SSO Integration - Simplified E2E', () => {
       data: {
         code,
         app_id: TEST_APP.id,
+        redirect_uri: DEMO_CALLBACK,
         app_secret: TEST_APP.secret,
       },
     });
@@ -189,6 +191,7 @@ test.describe('SSO Integration - Simplified E2E', () => {
       data: {
         code,
         app_id: TEST_APP.id,
+        redirect_uri: DEMO_CALLBACK,
         app_secret: TEST_APP.secret,
       },
     });
@@ -196,5 +199,100 @@ test.describe('SSO Integration - Simplified E2E', () => {
     expect(secondResponse.status()).toBe(400);
     const body = await secondResponse.json();
     expect(body.error).toMatch(/invalid|expired/i);
+  });
+
+  test('API: should reject exchange with mismatched redirect_uri (Critical #3)', async ({ request }) => {
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    const code = `test-code-redirect-${Date.now()}`;
+    await supabase.schema('access_broker_app').from('auth_codes').insert({
+      code,
+      user_id: testUserId,
+      app_id: TEST_APP.id,
+      redirect_uri: DEMO_CALLBACK,
+      expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+    });
+
+    // Exchange with WRONG redirect_uri
+    const response = await request.post(`${APP_URL}/api/auth/exchange`, {
+      data: {
+        code,
+        app_id: TEST_APP.id,
+        redirect_uri: 'https://evil.com/steal',
+        app_secret: TEST_APP.secret,
+      },
+    });
+
+    expect(response.status()).toBe(400);
+    const body = await response.json();
+    expect(body.error).toMatch(/invalid|expired/i);
+  });
+
+  test('API: should reject exchange without redirect_uri', async ({ request }) => {
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    const code = `test-code-noredirect-${Date.now()}`;
+    await supabase.schema('access_broker_app').from('auth_codes').insert({
+      code,
+      user_id: testUserId,
+      app_id: TEST_APP.id,
+      redirect_uri: DEMO_CALLBACK,
+      expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+    });
+
+    // Exchange WITHOUT redirect_uri — should be rejected (now required)
+    const response = await request.post(`${APP_URL}/api/auth/exchange`, {
+      data: {
+        code,
+        app_id: TEST_APP.id,
+        app_secret: TEST_APP.secret,
+      },
+    });
+
+    expect(response.status()).toBe(400);
+    const body = await response.json();
+    expect(body.error).toMatch(/missing|required/i);
+  });
+
+  test('API: concurrent exchange of same code — only one succeeds (Critical #2)', async ({ request }) => {
+    const { createClient } = await import('@supabase/supabase-js');
+    const supabase = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!
+    );
+
+    const code = `test-code-race-${Date.now()}`;
+    await supabase.schema('access_broker_app').from('auth_codes').insert({
+      code,
+      user_id: testUserId,
+      app_id: TEST_APP.id,
+      redirect_uri: DEMO_CALLBACK,
+      expires_at: new Date(Date.now() + 5 * 60 * 1000).toISOString(),
+    });
+
+    // Fire two concurrent exchange requests
+    const exchangeData = {
+      code,
+      app_id: TEST_APP.id,
+      redirect_uri: DEMO_CALLBACK,
+      app_secret: TEST_APP.secret,
+    };
+
+    const [res1, res2] = await Promise.all([
+      request.post(`${APP_URL}/api/auth/exchange`, { data: exchangeData }),
+      request.post(`${APP_URL}/api/auth/exchange`, { data: exchangeData }),
+    ]);
+
+    const statuses = [res1.status(), res2.status()].sort();
+    // Exactly one should succeed (200) and one should fail (400)
+    expect(statuses).toEqual([200, 400]);
   });
 });

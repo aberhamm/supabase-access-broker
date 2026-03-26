@@ -130,6 +130,7 @@ export async function GET(request: Request) {
     body: JSON.stringify({
       code,
       app_id: APP_ID,
+      redirect_uri: REDIRECT_URI,
       app_secret: process.env.SSO_APP_SECRET,
     }),
   });
@@ -577,6 +578,7 @@ Both are scoped to a specific app. The API key is passed as a header and works w
 {
   "code": "auth-code-from-redirect",
   "app_id": "your-app-id",
+  "redirect_uri": "https://your-app.com/callback",
   "app_secret": "your-secret"
 }
 

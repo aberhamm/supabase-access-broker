@@ -1,49 +1,56 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { authenticateAppRequest } from '@/lib/app-api-auth';
+import { enforceRateLimit } from '@/lib/app-api-rate-limit';
+import { logSSOEvent } from '@/lib/audit-service';
 
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ app_id: string }> }
 ) {
+  const { app_id } = await params;
+
+  // Authenticate inline — no middleware header passing
+  let body: Record<string, unknown> = {};
   try {
-    const { app_id } = await params;
+    body = await request.json();
+  } catch {
+    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+  }
 
-    // Get context from middleware headers
-    const appId = request.headers.get('x-app-id');
-    const keyId = request.headers.get('x-key-id');
-    const roleName = request.headers.get('x-role-name');
+  const auth = await authenticateAppRequest(request, app_id, body, {
+    auditEventType: 'webhook_error',
+  });
+  if (!auth.ok) return auth.response;
 
-    // Verify the app_id matches
-    if (appId !== app_id) {
-      return NextResponse.json(
-        { error: 'API key not valid for this app' },
-        { status: 403 }
-      );
-    }
+  const rateLimited = enforceRateLimit(app_id, 'write');
+  if (rateLimited) return rateLimited;
 
-    // Parse the webhook payload
-    const body = await request.json();
+  const { ipAddress, userAgent, authMethod } = auth;
 
-    // Example: Process the webhook
-    console.log('Webhook received:', {
-      appId,
-      keyId,
-      roleName,
-      payload: body,
+  try {
+    // Log receipt metadata only — never log payload contents
+    logSSOEvent({
+      eventType: 'webhook_received',
+      appId: app_id,
+      ipAddress,
+      userAgent,
+      metadata: { auth_method: authMethod },
     });
 
-    // Return success with context information
     return NextResponse.json({
       success: true,
       message: 'Webhook received successfully',
-      context: {
-        app_id: appId,
-        key_id: keyId,
-        role: roleName || null,
-      },
       received_at: new Date().toISOString(),
     });
   } catch (error) {
     console.error('Webhook error:', error);
+    logSSOEvent({
+      eventType: 'webhook_error',
+      appId: app_id,
+      errorCode: 'server_error',
+      ipAddress,
+      userAgent,
+    });
     return NextResponse.json(
       { error: 'Failed to process webhook' },
       { status: 500 }
@@ -57,26 +64,15 @@ export async function GET(
 ) {
   const { app_id } = await params;
 
-  // Get context from middleware headers
-  const appId = request.headers.get('x-app-id');
-  const keyId = request.headers.get('x-key-id');
-  const roleName = request.headers.get('x-role-name');
+  const auth = await authenticateAppRequest(request, app_id, undefined, {
+    auditEventType: 'webhook_error',
+  });
+  if (!auth.ok) return auth.response;
 
-  // Verify the app_id matches
-  if (appId !== app_id) {
-    return NextResponse.json(
-      { error: 'API key not valid for this app' },
-      { status: 403 }
-    );
-  }
+  const rateLimited = enforceRateLimit(app_id, 'read');
+  if (rateLimited) return rateLimited;
 
   return NextResponse.json({
     message: 'Webhook endpoint active',
-    context: {
-      app_id: appId,
-      key_id: keyId,
-      role: roleName || null,
-    },
   });
 }
-

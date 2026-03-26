@@ -93,7 +93,7 @@ const LOGIN_ERROR_MESSAGES: Record<string, string> = {
 
 function getLoginErrorMessage(error: string | null): string | null {
   if (!error) return null;
-  return LOGIN_ERROR_MESSAGES[error] || error;
+  return LOGIN_ERROR_MESSAGES[error] || 'An unexpected error occurred. Please try signing in again.';
 }
 
 export default function LoginPage() {

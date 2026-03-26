@@ -24,7 +24,9 @@ export type SSOEventType =
   | 'user_claims_delete_success'
   | 'user_claims_delete_error'
   | 'user_invite_success'
-  | 'user_invite_error';
+  | 'user_invite_error'
+  | 'webhook_received'
+  | 'webhook_error';
 
 /**
  * Parameters for logging an SSO audit event
