@@ -61,8 +61,8 @@ export default async function SSOSettingsPage() {
             SSO Settings
           </h2>
           <p className="text-muted-foreground max-w-2xl">
-            Manage SSO integration settings across apps. Callback URLs prevent
-            open redirects; app secrets can secure code exchange.
+            Manage SSO integration settings across apps. Allowed redirect URLs prevent
+            open redirects; app secrets secure code exchange.
           </p>
         </div>
       </div>
@@ -82,12 +82,12 @@ export default async function SSOSettingsPage() {
 
         <Card>
           <CardHeader>
-            <CardTitle>Callback URLs</CardTitle>
+            <CardTitle>Redirect URLs</CardTitle>
           </CardHeader>
           <CardContent>
             <div className="text-3xl font-bold">{configuredCallbacks}</div>
             <p className="text-xs text-muted-foreground">
-              Apps with allowlisted callbacks
+              Apps with allowlisted redirects
             </p>
           </CardContent>
         </Card>
@@ -150,7 +150,7 @@ export default async function SSOSettingsPage() {
                           ) : (
                             <ShieldX className="h-4 w-4" />
                           )}
-                          {callbackCount} callback URL
+                          {callbackCount} redirect URL
                           {callbackCount === 1 ? '' : 's'}
                         </span>
                         <span className="text-muted-foreground/60">•</span>

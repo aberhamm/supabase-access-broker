@@ -3,6 +3,7 @@
 import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import type { MFAFactor, TOTPEnrollment, UpdateProfileData } from '@/types/claims';
+import { validateReturnUrl, type ReturnUrlValidation } from '@/lib/return-url';
 
 // =============================================================================
 // Profile Management (Self-Service)
@@ -230,4 +231,17 @@ export async function unenrollMFAFactor(
   }
 }
 
+// =============================================================================
+// Return URL Validation (for external app redirects)
+// =============================================================================
 
+/**
+ * Validate a return_url from a client component.
+ * Wraps the server-side validation so client components can check
+ * return URLs without direct access to the admin client.
+ */
+export async function getValidatedReturnUrl(
+  returnUrl: string
+): Promise<ReturnUrlValidation> {
+  return validateReturnUrl(returnUrl);
+}

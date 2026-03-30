@@ -91,7 +91,7 @@ Manage multiple applications from a single broker:
 - **Role Definitions** — Create roles per application
 - **Permission Assignment** — Assign users to apps with specific roles
 - **API Key Infrastructure** — Generate, validate, and track API keys per app
-- **SSO Configuration** — Allowed callback URLs per application
+- **SSO Configuration** — Allowed redirect URLs per application
 
 ## Quick Start
 

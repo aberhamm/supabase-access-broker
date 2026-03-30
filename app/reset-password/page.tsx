@@ -14,8 +14,10 @@ import {
 } from '@/components/ui/card';
 import { toast } from 'sonner';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { getAppUrl } from '@/lib/app-url';
+import { getValidatedReturnUrl } from '@/app/actions/account';
+import { ReturnUrlBanner } from '@/components/account/ReturnUrlBanner';
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState('');
@@ -23,8 +25,10 @@ export default function ResetPasswordPage() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [isRecoveryMode, setIsRecoveryMode] = useState(false);
+  const [returnUrl, setReturnUrl] = useState<{ url: string; appName: string } | null>(null);
   const supabase = createClient();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const passwordInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
@@ -40,6 +44,18 @@ export default function ResetPasswordPage() {
 
     checkRecoveryMode();
   }, [supabase.auth]);
+
+  // Validate return_url parameter
+  useEffect(() => {
+    const rawReturnUrl = searchParams.get('return_url');
+    if (!rawReturnUrl) return;
+
+    getValidatedReturnUrl(rawReturnUrl).then((result) => {
+      if (result.valid) {
+        setReturnUrl({ url: result.url, appName: result.appName });
+      }
+    });
+  }, [searchParams]);
 
   // Focus password field when in recovery mode
   useEffect(() => {
@@ -59,8 +75,12 @@ export default function ResetPasswordPage() {
     try {
       setLoading(true);
 
+      const redirectTo = returnUrl
+        ? `${getAppUrl()}/reset-password?return_url=${encodeURIComponent(returnUrl.url)}`
+        : `${getAppUrl()}/reset-password`;
+
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${getAppUrl()}/reset-password`,
+        redirectTo,
       });
 
       if (error) throw error;
@@ -103,9 +123,13 @@ export default function ResetPasswordPage() {
 
       toast.success('Password updated successfully!');
 
-      // Redirect to home page
+      // Redirect back to the app or home page
       setTimeout(() => {
-        router.push('/');
+        if (returnUrl) {
+          window.location.href = returnUrl.url;
+        } else {
+          router.push('/');
+        }
       }, 1000);
     } catch (error) {
       const err = error as { error_description?: string; message?: string };
@@ -117,7 +141,11 @@ export default function ResetPasswordPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center p-4">
-      <Card className="w-full max-w-md">
+      <div className="w-full max-w-md space-y-4">
+      {returnUrl && (
+        <ReturnUrlBanner url={returnUrl.url} appName={returnUrl.appName} />
+      )}
+      <Card>
         <CardHeader className="space-y-1">
           <CardTitle className="text-2xl font-bold">
             {isRecoveryMode ? 'Set New Password' : 'Reset Password'}
@@ -205,6 +233,7 @@ export default function ResetPasswordPage() {
           </div>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

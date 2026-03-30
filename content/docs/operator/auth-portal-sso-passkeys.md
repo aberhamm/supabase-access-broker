@@ -56,17 +56,18 @@ GET /sso/complete?app_id=app1&redirect_uri=https://app1.com/auth/callback&state=
 → redirects to https://app1.com/auth/callback?code=...&state=xyz
 ```
 
-### Register allowed callback URLs (required)
+### Register allowed redirect URLs (required)
 
-For security, the portal only redirects to pre-approved callback URLs.
+For security, the portal only redirects to pre-approved URLs. This single allowlist covers all portal-to-app redirects: SSO callbacks, logout redirects, and return links from account management pages.
 
-In Supabase, set `public.apps.allowed_callback_urls` for each app (exact match):
+In Supabase, set `allowed_callback_urls` for each app (exact match):
 
 ```sql
 UPDATE public.apps
 SET allowed_callback_urls = ARRAY[
   'https://app1.com/auth/callback',
-  'https://app1.com/auth/callback/'
+  'https://app1.com/auth/logout',
+  'https://app1.com/profile'
 ]
 WHERE id = 'app1';
 ```

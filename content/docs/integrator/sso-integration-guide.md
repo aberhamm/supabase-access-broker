@@ -167,13 +167,17 @@ export async function GET(request: Request) {
 Contact your dashboard admin to:
 
 1. **Register your app** in the dashboard (if not already done)
-2. **Allowlist your callback URL**: `https://yourapp.com/auth/callback`
+2. **Allowlist your redirect URLs**: any URL the portal should be able to redirect to — SSO callbacks, logout destinations, and account management return links
 
 The admin will run:
 
 ```sql
 UPDATE public.apps
-SET allowed_callback_urls = ARRAY['https://yourapp.com/auth/callback']
+SET allowed_callback_urls = ARRAY[
+  'https://yourapp.com/auth/callback',
+  'https://yourapp.com/auth/logout',
+  'https://yourapp.com/profile'
+]
 WHERE id = 'your-app-id';
 ```
 
@@ -430,11 +434,11 @@ if (!response.ok) {
 
 > **Note:** The auth portal authenticates users and provides their info, but **your app** must manage its own sessions. The portal doesn't set cookies or JWTs in your domain.
 
-### Issue: "Callback URL not allowed"
+### Issue: "Redirect URL not allowed"
 
 **Symptom:** Portal rejects the redirect with an error (you'll see this on the portal's error page, not your app).
 
-**Cause:** Your `redirect_uri` is not allowlisted in `public.apps.allowed_callback_urls`.
+**Cause:** Your `redirect_uri` is not in the app's `allowed_callback_urls` allowlist.
 
 **Fix:** Contact your dashboard admin to add it:
 
@@ -444,7 +448,7 @@ SET allowed_callback_urls = array_append(allowed_callback_urls, 'https://yourapp
 WHERE id = 'your-app-id';
 ```
 
-**Note:** The URL must match exactly — check for trailing slashes, protocol (http vs https), and port numbers.
+**Note:** The URL must match exactly — check for trailing slashes, protocol (http vs https), and port numbers. This allowlist is used for all portal-to-app redirects: SSO callbacks, logout redirects, and account management return links.
 
 ### Issue: Code already used / expired
 

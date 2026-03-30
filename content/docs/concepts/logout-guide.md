@@ -178,7 +178,7 @@ export async function GET(request: Request) {
 }
 ```
 
-**Important:** Your callback URL (`https://yourapp.com/logged-out`) must be registered in your app's `allowed_callback_urls` in the portal database.
+**Important:** Your logout redirect URL (`https://yourapp.com/logged-out`) must be registered in your app's `allowed_callback_urls` allowlist in the portal database.
 
 **Behavior:**
 - User is logged out of YOUR app

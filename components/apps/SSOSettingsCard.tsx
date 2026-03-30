@@ -64,7 +64,7 @@ export function SSOSettingsCard({
     try {
       const normalized = normalizeUrl(newUrl);
       if (urls.includes(normalized)) {
-        toast.info('That callback URL is already in the allowlist.');
+        toast.info('That redirect URL is already in the allowlist.');
         return;
       }
       const newUrls = [...urls, normalized];
@@ -79,11 +79,11 @@ export function SSOSettingsCard({
           setUrls(urls);
           return;
         }
-        toast.success('Callback URL added');
+        toast.success('Redirect URL added');
         onUpdated?.();
       } catch (e) {
         const err = e as { message?: string };
-        toast.error(err.message || 'Failed to add callback URL');
+        toast.error(err.message || 'Failed to add redirect URL');
         setUrls(urls);
       } finally {
         setSaving(false);
@@ -105,11 +105,11 @@ export function SSOSettingsCard({
         setUrls(urls);
         return;
       }
-      toast.success('Callback URL removed');
+      toast.success('Redirect URL removed');
       onUpdated?.();
     } catch (e) {
       const err = e as { message?: string };
-      toast.error(err.message || 'Failed to remove callback URL');
+      toast.error(err.message || 'Failed to remove redirect URL');
       setUrls(urls);
     } finally {
       setSaving(false);
@@ -179,10 +179,10 @@ export function SSOSettingsCard({
         <CardHeader>
           <CardTitle className="text-base flex items-center gap-2">
             <Link2 className="h-4 w-4" />
-            Allowed Callback URLs
+            Allowed Redirect URLs
           </CardTitle>
           <p className="text-sm text-muted-foreground">
-            Only these redirect URIs can be used with SSO for <code className="rounded bg-muted px-1">{app.id}</code>.
+            URLs the portal is allowed to redirect to for <code className="rounded bg-muted px-1">{app.id}</code> — SSO callbacks, logout redirects, and account management return links.
           </p>
         </CardHeader>
         <CardContent className="space-y-4">
@@ -194,7 +194,7 @@ export function SSOSettingsCard({
           </Alert>
 
           <div className="space-y-2">
-            <Label htmlFor="new_callback_url">Add callback URL</Label>
+            <Label htmlFor="new_callback_url">Add redirect URL</Label>
             <div className="flex gap-2">
               <Input
                 id="new_callback_url"
@@ -212,7 +212,7 @@ export function SSOSettingsCard({
 
           {urls.length === 0 ? (
             <div className="rounded-md border border-dashed p-6 text-sm text-muted-foreground">
-              No callback URLs configured yet. Add at least one callback URL to enable SSO redirects for this app.
+              No redirect URLs configured yet. Add at least one URL to enable SSO and portal redirects for this app.
             </div>
           ) : (
             <div className="space-y-2">

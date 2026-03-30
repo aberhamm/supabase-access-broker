@@ -12,8 +12,15 @@ import { MFAFactorsList } from '@/components/users/MFAFactorsList';
 import { MFAEnrollDialog } from '@/components/account/MFAEnrollDialog';
 import { ChangePasswordDialog } from '@/components/account/ChangePasswordDialog';
 import { PageHeader } from '@/components/layout/PageHeader';
+import { validateReturnUrl } from '@/lib/return-url';
+import { ReturnUrlBanner } from '@/components/account/ReturnUrlBanner';
 
-export default async function AccountPage() {
+export default async function AccountPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ return_url?: string }>;
+}) {
+  const params = await searchParams;
   const supabase = await createClient();
   const {
     data: { user },
@@ -32,8 +39,8 @@ export default async function AccountPage() {
     );
   }
 
-  // Fetch passkeys, MFA factors, and profile in parallel
-  const [passkeysResult, mfaResult, profileResult] = await Promise.all([
+  // Fetch passkeys, MFA factors, profile, and validate return URL in parallel
+  const [passkeysResult, mfaResult, profileResult, returnUrlResult] = await Promise.all([
     supabase
       .schema('access_broker_app')
       .from('passkey_credentials')
@@ -47,6 +54,7 @@ export default async function AccountPage() {
       .select('display_name, first_name, last_name, avatar_url, timezone, locale')
       .eq('user_id', user.id)
       .single(),
+    validateReturnUrl(params.return_url),
   ]);
 
   const profile = profileResult.data;
@@ -56,11 +64,19 @@ export default async function AccountPage() {
 
   return (
     <div className="mx-auto max-w-2xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+      {returnUrlResult.valid && (
+        <ReturnUrlBanner url={returnUrlResult.url} appName={returnUrlResult.appName} />
+      )}
       <PageHeader
         title="Account"
         description="Manage your profile, security settings, and passkeys."
         actions={
-          <Link href="/auth/logout" prefetch={false}>
+          <Link
+            href={returnUrlResult.valid
+              ? `/auth/logout?next=${encodeURIComponent(returnUrlResult.url)}`
+              : '/auth/logout'}
+            prefetch={false}
+          >
             <Button variant="outline" size="sm">
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
