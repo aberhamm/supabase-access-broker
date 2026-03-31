@@ -183,7 +183,7 @@ export function EnhancedDashboardNav({
               </Link>
 
               {/* Sign Out */}
-              <Link href="/auth/logout" prefetch={false}>
+              <a href="/auth/logout">
                 <Button
                   variant="ghost"
                   size="sm"
@@ -192,7 +192,7 @@ export function EnhancedDashboardNav({
                   <LogOut className="h-4 w-4" />
                   <span className="hidden xl:inline">Sign Out</span>
                 </Button>
-              </Link>
+              </a>
             </div>
           </div>
         </div>

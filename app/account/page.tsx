@@ -5,7 +5,6 @@ import { listOwnMFAFactors } from '@/app/actions/account';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { LogOut, User, Mail, Calendar, Phone, ShieldCheck, Key } from 'lucide-react';
-import Link from 'next/link';
 import { format } from 'date-fns';
 import { EditProfileDialog } from '@/components/users/EditProfileDialog';
 import { MFAFactorsList } from '@/components/users/MFAFactorsList';
@@ -71,17 +70,16 @@ export default async function AccountPage({
         title="Account"
         description="Manage your profile, security settings, and passkeys."
         actions={
-          <Link
+          <a
             href={returnUrlResult.valid
               ? `/auth/logout?next=${encodeURIComponent(returnUrlResult.url)}`
               : '/auth/logout'}
-            prefetch={false}
           >
             <Button variant="outline" size="sm">
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
             </Button>
-          </Link>
+          </a>
         }
       />
 

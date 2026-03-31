@@ -100,12 +100,12 @@ export function DashboardNav({ email, showApps = true }: DashboardNavProps) {
               My Account
             </Button>
           </Link>
-          <Link href="/auth/logout" prefetch={false}>
+          <a href="/auth/logout">
             <Button variant="ghost" size="sm">
               <LogOut className="mr-2 h-4 w-4" />
               Sign Out
             </Button>
-          </Link>
+          </a>
         </div>
       </div>
     </header>
