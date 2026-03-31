@@ -96,6 +96,27 @@ function getLoginErrorMessage(error: string | null): string | null {
   return LOGIN_ERROR_MESSAGES[error] || 'An unexpected error occurred. Please try signing in again.';
 }
 
+/** Extract a user-friendly message from auth errors, including network failures */
+function friendlyAuthError(error: unknown, fallback: string): string {
+  const err = error as { error_description?: string; message?: string; name?: string };
+  const message = (err.error_description || err.message || '').toLowerCase();
+
+  // Network / connectivity errors
+  if (err.name === 'TypeError' && message.includes('fetch')) {
+    return 'Unable to reach the authentication server. Check your network connection and verify the app URL is configured correctly.';
+  }
+  if (message.includes('networkerror') || message.includes('network request failed')) {
+    return 'Network error — please check your connection and try again.';
+  }
+
+  // Supabase-specific errors
+  if (message.includes('user not found') || message.includes('invalid email')) {
+    return 'This email is not registered. Contact an administrator to get access.';
+  }
+
+  return err.error_description || err.message || fallback;
+}
+
 export default function LoginPage() {
   const [email, setEmail] = useState('');
   const [loading, setLoading] = useState(false);
@@ -113,6 +134,7 @@ export default function LoginPage() {
   const [appStatus, setAppStatus] = useState<'ok' | 'app_not_found' | 'app_disabled' | 'error' | null>(null);
   const [authCategory, setAuthCategory] = useState<AuthCategory>('credentials');
   const [urlError, setUrlError] = useState<string | null>(null);
+  const [formError, setFormError] = useState<string | null>(null);
   const [mode, setMode] = useState<'magic' | 'otp' | 'password'>(() => {
     if (AUTH_FEATURES.EMAIL_OTP) return 'otp';
     if (AUTH_FEATURES.PASSWORD_LOGIN) return 'password';
@@ -327,9 +349,10 @@ export default function LoginPage() {
   const handleMagicLinkLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setUrlError(null);
+    setFormError(null);
 
     if (!email) {
-      toast.error('Please enter your email');
+      setFormError('Please enter your email');
       return;
     }
 
@@ -351,16 +374,7 @@ export default function LoginPage() {
       persistPreferredAuth('credentials');
       toast.success('Check your email for the magic link!');
     } catch (error) {
-      const err = error as { error_description?: string; message?: string };
-      const errorMessage = err.error_description || err.message || '';
-
-      // Provide helpful error messages
-      if (errorMessage.toLowerCase().includes('user not found') ||
-          errorMessage.toLowerCase().includes('invalid email')) {
-        toast.error('This email is not registered. Contact an administrator to get access.');
-      } else {
-        toast.error(errorMessage);
-      }
+      setFormError(friendlyAuthError(error, 'Failed to send magic link'));
     } finally {
       setLoading(false);
     }
@@ -369,12 +383,13 @@ export default function LoginPage() {
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setUrlError(null);
+    setFormError(null);
     if (!email) {
-      toast.error('Please enter your email');
+      setFormError('Please enter your email');
       return;
     }
     if (!password) {
-      toast.error('Please enter your password');
+      setFormError('Please enter your password');
       return;
     }
 
@@ -388,8 +403,7 @@ export default function LoginPage() {
       persistPreferredAuth('credentials');
       window.location.href = nextPath;
     } catch (error) {
-      const err = error as { error_description?: string; message?: string };
-      toast.error(err.error_description || err.message || 'Invalid email or password');
+      setFormError(friendlyAuthError(error, 'Invalid email or password'));
     } finally {
       setLoading(false);
     }
@@ -397,8 +411,9 @@ export default function LoginPage() {
 
   const sendOtp = useCallback(async () => {
     setUrlError(null);
+    setFormError(null);
     if (!email) {
-      toast.error('Please enter your email');
+      setFormError('Please enter your email');
       return;
     }
 
@@ -418,9 +433,7 @@ export default function LoginPage() {
       setResendCountdown(30);
       toast.success('Check your email for the 6-digit code');
     } catch (error) {
-      const err = error as { error_description?: string; message?: string };
-      const errorMessage = err.error_description || err.message || '';
-      toast.error(errorMessage || 'Failed to send code');
+      setFormError(friendlyAuthError(error, 'Failed to send code'));
     } finally {
       setLoading(false);
     }
@@ -434,9 +447,10 @@ export default function LoginPage() {
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setUrlError(null);
+    setFormError(null);
     const token = otpCode.replace(/\D/g, '');
     if (token.length !== 6) {
-      toast.error('Enter the 6-digit code');
+      setFormError('Enter the 6-digit code');
       return;
     }
 
@@ -480,9 +494,8 @@ export default function LoginPage() {
       debugLog('[Login] Redirecting to:', nextPath);
       window.location.href = nextPath;
     } catch (error) {
-      const err = error as { error_description?: string; message?: string };
-      debugError('[Login] OTP verification error:', err);
-      toast.error(err.error_description || err.message || 'Invalid code');
+      debugError('[Login] OTP verification error:', error);
+      setFormError(friendlyAuthError(error, 'Invalid code'));
     } finally {
       setLoading(false);
     }
@@ -559,16 +572,16 @@ export default function LoginPage() {
           )}
         </CardHeader>
         <CardContent className="space-y-6">
-          {/* URL error banner (from failed auth redirects) */}
-          {urlError && (
+          {/* Error banner (auth redirects + form errors) */}
+          {(urlError || formError) && (
             <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm animate-in fade-in-0 slide-in-from-top-2 duration-200">
               <div className="flex items-start justify-between gap-3">
                 <p className="text-destructive font-medium">
-                  {getLoginErrorMessage(urlError)}
+                  {urlError ? getLoginErrorMessage(urlError) : formError}
                 </p>
                 <button
                   type="button"
-                  onClick={() => setUrlError(null)}
+                  onClick={() => { setUrlError(null); setFormError(null); }}
                   className="shrink-0 text-destructive/60 hover:text-destructive transition-colors"
                   aria-label="Dismiss error"
                 >
