@@ -46,7 +46,7 @@ export async function middleware(request: NextRequest) {
   // — no middleware auth needed. Let them pass through to the route handler.
   if (request.nextUrl.pathname.startsWith('/api/webhooks/')) {
     const webhookResponse = NextResponse.next();
-    webhookResponse.headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; frame-ancestors 'self'");
+    webhookResponse.headers.set('Content-Security-Policy', `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ${supabaseUrl}; frame-ancestors 'self'`);
     return webhookResponse;
   }
 
@@ -285,7 +285,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // CSP headers to mitigate XSS impact (auth cookies are not httpOnly per Supabase SSR requirement)
-  response.headers.set('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; frame-ancestors 'self'");
+  response.headers.set('Content-Security-Policy', `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ${supabaseUrl}; frame-ancestors 'self'`);
 
   return response;
 }
