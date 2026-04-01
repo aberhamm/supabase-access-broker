@@ -123,7 +123,7 @@ export function UserProfileHeaderServer({
 
           {/* Right: Quick Actions - Client Component */}
           <div className="w-full lg:w-auto">
-            <UserProfileActions userId={userId} />
+            <UserProfileActions userId={userId} userEmail={email} />
           </div>
         </div>
       </div>

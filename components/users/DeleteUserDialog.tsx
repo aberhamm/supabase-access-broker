@@ -66,9 +66,13 @@ export function DeleteUserDialog({ userId, userEmail }: DeleteUserDialogProps) {
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>
-        <Button variant="destructive" className="w-full">
-          <Trash2 className="mr-2 h-4 w-4" />
-          Delete User
+        <Button
+          variant="outline"
+          size="sm"
+          className="gap-2 hover:bg-destructive hover:text-destructive-foreground hover:border-destructive"
+        >
+          <Trash2 className="h-4 w-4" />
+          Delete
         </Button>
       </DialogTrigger>
       <DialogContent>
