@@ -6,20 +6,22 @@ import { CreateUserDialog } from '@/components/users/CreateUserDialog';
 import { UserStatsHeaderServer } from '@/components/users/UserStatsHeaderServer';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { Users } from 'lucide-react';
+import { getApps } from '@/lib/apps-service';
 
 // Logout is now handled by /auth/logout route for reliable cookie clearing
 
 export default async function UsersPage() {
   const supabase = await createClient();
 
-  // Fetch stats and users in parallel
-  const [statsResult, paginatedData] = await Promise.all([
+  // Fetch stats, users, and apps in parallel
+  const [statsResult, paginatedData, availableApps] = await Promise.all([
     supabase.rpc('get_dashboard_stats'),
     supabase.rpc('get_users_paginated', {
       page_size: 100,
       page_offset: 0,
       search_email: null,
     }),
+    getApps(),
   ]);
 
   if (paginatedData.error) {
@@ -64,7 +66,7 @@ export default async function UsersPage() {
         title="Users"
         description="Manage user accounts, permissions, and access"
         breadcrumbs={[{ label: 'Users', icon: Users }]}
-        actions={<CreateUserDialog />}
+        actions={<CreateUserDialog apps={availableApps} />}
       />
 
       <UserStatsHeaderServer

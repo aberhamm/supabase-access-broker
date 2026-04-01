@@ -13,8 +13,9 @@ import {
   DialogFooter,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { UserPlus, Loader2 } from 'lucide-react';
+import { UserPlus, Plus, Loader2 } from 'lucide-react';
 import { AppRoleSelector } from './AppRoleSelector';
+import { CreateUserWizard } from '@/components/users/CreateUserWizard';
 import {
   getAppUsersAction,
   grantAppAccessByEmailAction,
@@ -141,10 +142,22 @@ export function AppUsersCard({ appId }: AppUsersCardProps) {
                 </Badge>
               )}
             </div>
-            <Button size="sm" onClick={() => setDialogOpen(true)}>
-              <UserPlus className="mr-1 h-4 w-4" />
-              Add User
-            </Button>
+            <div className="flex items-center gap-2">
+              <CreateUserWizard
+                preselectedAppId={appId}
+                onComplete={fetchUsers}
+                trigger={
+                  <Button size="sm" variant="outline">
+                    <Plus className="mr-1 h-4 w-4" />
+                    Create New
+                  </Button>
+                }
+              />
+              <Button size="sm" onClick={() => setDialogOpen(true)}>
+                <UserPlus className="mr-1 h-4 w-4" />
+                Add Existing
+              </Button>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-4">

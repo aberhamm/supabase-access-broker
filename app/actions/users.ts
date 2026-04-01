@@ -1,7 +1,7 @@
 'use server';
 
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { isClaimsAdmin } from '@/lib/claims';
+import { isClaimsAdmin, setAppClaim } from '@/lib/claims';
 import { getAppUrl } from '@/lib/app-url';
 import { revalidatePath } from 'next/cache';
 import type { BanDuration, MFAFactor, UpdateProfileData } from '@/types/claims';
@@ -369,6 +369,42 @@ export async function confirmUserEmail(
 /**
  * Resend confirmation email to a user (admin only)
  */
+/**
+ * Grant access to multiple apps with roles in a single call (admin only)
+ */
+export async function grantMultiAppAccess(
+  userId: string,
+  appAccess: Array<{ appId: string; role: string }>
+): Promise<{ success: boolean; errors: string[] }> {
+  try {
+    const supabase = await requireClaimsAdmin();
+    const errors: string[] = [];
+
+    for (const { appId, role } of appAccess) {
+      const { error: enableError } = await setAppClaim(supabase, userId, appId, 'enabled', true);
+
+      if (enableError) {
+        errors.push(`Failed to enable ${appId}: ${enableError.message}`);
+        continue;
+      }
+
+      const { error: roleError } = await setAppClaim(supabase, userId, appId, 'role', role);
+
+      if (roleError) {
+        errors.push(`Failed to set role for ${appId}: ${roleError.message}`);
+      }
+    }
+
+    revalidatePath(`/users/${userId}`);
+    revalidatePath('/users');
+
+    return { success: errors.length === 0, errors };
+  } catch (error) {
+    const err = error as Error;
+    return { success: false, errors: [err.message] };
+  }
+}
+
 export async function resendConfirmationEmail(
   userEmail: string
 ): Promise<{ success: boolean; error?: string }> {
