@@ -4,15 +4,17 @@ import { useState } from 'react';
 import { toast } from 'sonner';
 import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
+import { Spinner } from '@/components/ui/spinner';
 import { getAppUrl } from '@/lib/app-url';
 
 type SocialButtonsProps = {
   next?: string;
   enableGoogle?: boolean;
   enableGitHub?: boolean;
+  onNavigating?: (message: string) => void;
 };
 
-export function SocialButtons({ next = '/', enableGoogle, enableGitHub }: SocialButtonsProps) {
+export function SocialButtons({ next = '/', enableGoogle, enableGitHub, onNavigating }: SocialButtonsProps) {
   const supabase = createClient();
   const [loading, setLoading] = useState<'google' | 'github' | null>(null);
 
@@ -27,7 +29,9 @@ export function SocialButtons({ next = '/', enableGoogle, enableGitHub }: Social
         options: { redirectTo },
       });
       if (error) throw error;
-      // Browser will redirect
+      // Show full-page overlay while browser redirects to provider
+      const providerName = provider === 'google' ? 'Google' : 'GitHub';
+      onNavigating?.(`Redirecting to ${providerName}...`);
     } catch (e) {
       const message = e instanceof Error ? e.message : 'OAuth sign-in failed';
       toast.error(message);
@@ -41,22 +45,36 @@ export function SocialButtons({ next = '/', enableGoogle, enableGitHub }: Social
         <Button
           type="button"
           variant="outline"
-          className="w-full"
+          className="w-full btn-press"
           disabled={!!loading}
           onClick={() => signIn('google')}
         >
-          {loading === 'google' ? 'Connecting…' : 'Continue with Google'}
+          {loading === 'google' ? (
+            <>
+              <Spinner className="mr-1" />
+              Connecting to Google...
+            </>
+          ) : (
+            'Continue with Google'
+          )}
         </Button>
       )}
       {enableGitHub && (
         <Button
           type="button"
           variant="outline"
-          className="w-full"
+          className="w-full btn-press"
           disabled={!!loading}
           onClick={() => signIn('github')}
         >
-          {loading === 'github' ? 'Connecting…' : 'Continue with GitHub'}
+          {loading === 'github' ? (
+            <>
+              <Spinner className="mr-1" />
+              Connecting to GitHub...
+            </>
+          ) : (
+            'Continue with GitHub'
+          )}
         </Button>
       )}
     </div>

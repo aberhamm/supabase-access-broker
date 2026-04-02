@@ -22,6 +22,8 @@ import { SocialButtons } from '@/components/auth/SocialButtons';
 import { OTPInput } from '@/components/auth/OTPInput';
 import { safeNextPath } from '@/lib/safe-redirect';
 import { debugError, debugLog, debugWarn } from '@/lib/auth-debug';
+import { Spinner } from '@/components/ui/spinner';
+import { TransitionOverlay } from '@/components/auth/TransitionOverlay';
 
 const REMEMBERED_EMAIL_KEY = 'remembered_email';
 const PREFERRED_AUTH_KEY = 'preferred_auth_method';
@@ -133,6 +135,8 @@ export default function LoginPage() {
   const [appMethodsReady, setAppMethodsReady] = useState(false);
   const [appStatus, setAppStatus] = useState<'ok' | 'app_not_found' | 'app_disabled' | 'error' | null>(null);
   const [authCategory, setAuthCategory] = useState<AuthCategory>('credentials');
+  const [navigating, setNavigating] = useState(false);
+  const [navigatingMessage, setNavigatingMessage] = useState('Signing you in...');
   const [urlError, setUrlError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [mode, setMode] = useState<'magic' | 'otp' | 'password'>(() => {
@@ -401,10 +405,11 @@ export default function LoginPage() {
 
       saveEmailIfRemembered(email);
       persistPreferredAuth('credentials');
+      setNavigatingMessage('Signing you in...');
+      setNavigating(true);
       window.location.href = nextPath;
     } catch (error) {
       setFormError(friendlyAuthError(error, 'Invalid email or password'));
-    } finally {
       setLoading(false);
     }
   };
@@ -492,20 +497,38 @@ export default function LoginPage() {
       }
 
       debugLog('[Login] Redirecting to:', nextPath);
+      setNavigatingMessage('Signing you in...');
+      setNavigating(true);
       window.location.href = nextPath;
     } catch (error) {
       debugError('[Login] OTP verification error:', error);
       setFormError(friendlyAuthError(error, 'Invalid code'));
-    } finally {
       setLoading(false);
     }
   };
 
+  const handleNavigating = useCallback((message: string) => {
+    setNavigatingMessage(message);
+    setNavigating(true);
+  }, []);
+
   // Determine if we should show the welcome back state
   const showWelcomeBack = mounted && rememberedEmail && showRemembered;
 
+  // Prefetch the destination page so post-login navigation is instant
+  useEffect(() => {
+    if (!nextPath || nextPath === '/login') return;
+    const link = document.createElement('link');
+    link.rel = 'prefetch';
+    link.href = nextPath;
+    link.as = 'document';
+    document.head.appendChild(link);
+    return () => { document.head.removeChild(link); };
+  }, [nextPath]);
+
   return (
     <div className="relative flex min-h-screen items-center justify-center p-4 overflow-hidden">
+      <TransitionOverlay visible={navigating} message={navigatingMessage} />
       {/* Animated gradient mesh background */}
       <div className="absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-gradient-to-br from-background via-primary/5 to-primary/3" />
@@ -621,6 +644,7 @@ export default function LoginPage() {
                     next={nextPath}
                     enableGoogle={effectiveFeatures.GOOGLE_LOGIN}
                     enableGitHub={effectiveFeatures.GITHUB_LOGIN}
+                    onNavigating={handleNavigating}
                   />
                 </div>
               )}
@@ -645,6 +669,7 @@ export default function LoginPage() {
                     className="w-full"
                     next={nextPath}
                     onBeforeRedirect={() => persistPreferredAuth('passkey')}
+                    onNavigating={handleNavigating}
                   />
                   {(effectiveFeatures.PASSWORD_LOGIN || effectiveFeatures.EMAIL_OTP || effectiveFeatures.MAGIC_LINK) && (
                     <button
@@ -771,7 +796,8 @@ export default function LoginPage() {
                     </div>
                   )}
 
-                  <Button type="submit" className="w-full h-11 font-medium" disabled={loading}>
+                  <Button type="submit" className="w-full h-11 font-medium btn-press" disabled={loading}>
+                    {loading && <Spinner className="mr-1" />}
                     {mode === 'magic' && (loading ? 'Sending magic link...' : 'Send magic link')}
                     {mode === 'otp' && (
                       otpStep === 'email'
