@@ -23,7 +23,7 @@ import { OTPInput } from '@/components/auth/OTPInput';
 import { safeNextPath } from '@/lib/safe-redirect';
 import { debugError, debugLog, debugWarn } from '@/lib/auth-debug';
 import { Spinner } from '@/components/ui/spinner';
-import { TransitionOverlay } from '@/components/auth/TransitionOverlay';
+import { AuthTransition } from '@/components/auth/TransitionOverlay';
 
 const REMEMBERED_EMAIL_KEY = 'remembered_email';
 const PREFERRED_AUTH_KEY = 'preferred_auth_method';
@@ -136,7 +136,6 @@ export default function LoginPage() {
   const [appStatus, setAppStatus] = useState<'ok' | 'app_not_found' | 'app_disabled' | 'error' | null>(null);
   const [authCategory, setAuthCategory] = useState<AuthCategory>('credentials');
   const [navigating, setNavigating] = useState(false);
-  const [navigatingMessage, setNavigatingMessage] = useState('Signing you in...');
   const [urlError, setUrlError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [mode, setMode] = useState<'magic' | 'otp' | 'password'>(() => {
@@ -405,7 +404,6 @@ export default function LoginPage() {
 
       saveEmailIfRemembered(email);
       persistPreferredAuth('credentials');
-      setNavigatingMessage('Signing you in...');
       setNavigating(true);
       window.location.href = nextPath;
     } catch (error) {
@@ -497,7 +495,6 @@ export default function LoginPage() {
       }
 
       debugLog('[Login] Redirecting to:', nextPath);
-      setNavigatingMessage('Signing you in...');
       setNavigating(true);
       window.location.href = nextPath;
     } catch (error) {
@@ -507,8 +504,7 @@ export default function LoginPage() {
     }
   };
 
-  const handleNavigating = useCallback((message: string) => {
-    setNavigatingMessage(message);
+  const handleNavigating = useCallback(() => {
     setNavigating(true);
   }, []);
 
@@ -528,7 +524,6 @@ export default function LoginPage() {
 
   return (
     <div className="relative flex min-h-screen items-center justify-center p-4 overflow-hidden">
-      <TransitionOverlay visible={navigating} message={navigatingMessage} />
       {/* Animated gradient mesh background */}
       <div className="absolute inset-0 -z-10">
         <div className="absolute inset-0 bg-gradient-to-br from-background via-primary/5 to-primary/3" />
@@ -550,8 +545,9 @@ export default function LoginPage() {
         />
       </div>
 
-      <Card className="w-full max-w-md overflow-hidden shadow-2xl glass glass-border">
-        <CardHeader className="space-y-1 pb-6">
+      <Card className="relative w-full max-w-md overflow-hidden shadow-2xl glass glass-border">
+        <AuthTransition visible={navigating} />
+        <CardHeader className={`space-y-1 pb-6 transition-all duration-300 ${navigating ? 'auth-card-leaving' : ''}`}>
           {showWelcomeBack ? (
             // Welcome back state with avatar
             <div className="flex flex-col items-center space-y-4 animate-in fade-in-0 slide-in-from-bottom-2 duration-300">
@@ -594,7 +590,7 @@ export default function LoginPage() {
             </div>
           )}
         </CardHeader>
-        <CardContent className="space-y-6">
+        <CardContent className={`space-y-6 transition-all duration-300 ${navigating ? 'auth-card-leaving' : ''}`}>
           {/* Error banner (auth redirects + form errors) */}
           {(urlError || formError) && (
             <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm animate-in fade-in-0 slide-in-from-top-2 duration-200">
@@ -797,14 +793,10 @@ export default function LoginPage() {
                   )}
 
                   <Button type="submit" className="w-full h-11 font-medium btn-press" disabled={loading}>
-                    {loading && <Spinner className="mr-1" />}
-                    {mode === 'magic' && (loading ? 'Sending magic link...' : 'Send magic link')}
-                    {mode === 'otp' && (
-                      otpStep === 'email'
-                        ? (loading ? 'Sending code...' : 'Send code')
-                        : (loading ? 'Verifying...' : 'Verify code')
-                    )}
-                    {mode === 'password' && (loading ? 'Signing in...' : 'Sign in')}
+                    {loading && <Spinner className="mr-1 spinner-delayed" />}
+                    {mode === 'magic' && 'Send magic link'}
+                    {mode === 'otp' && (otpStep === 'email' ? 'Send code' : 'Verify code')}
+                    {mode === 'password' && 'Sign in'}
                   </Button>
 
                   {/* Mode switcher */}

@@ -13,7 +13,7 @@ type PasskeyButtonProps = {
   next?: string;
   className?: string;
   onBeforeRedirect?: () => void;
-  onNavigating?: (message: string) => void;
+  onNavigating?: () => void;
 };
 
 import type { PublicKeyCredentialRequestOptionsJSON } from '@simplewebauthn/browser';
@@ -95,17 +95,14 @@ function withTimeout<T>(promise: Promise<T>, ms: number, message: string): Promi
 
 export function PasskeyButton({ next = '/', className, onBeforeRedirect, onNavigating }: PasskeyButtonProps) {
   const [loading, setLoading] = useState(false);
-  const [loadingStep, setLoadingStep] = useState('');
   const supabase = createClient();
 
   const handlePasskeySignIn = async () => {
     try {
       setLoading(true);
-      setLoadingStep('Preparing...');
       debugLog('[Passkey] Starting authentication...');
       await supabase.auth.signOut();
 
-      setLoadingStep('Connecting...');
       const optionsRes = await fetch('/api/auth/passkey/login/options', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -128,7 +125,6 @@ export function PasskeyButton({ next = '/', className, onBeforeRedirect, onNavig
       // Add timeout to prevent hanging indefinitely when no credentials exist
       let authResponse;
       try {
-        setLoadingStep('Waiting for passkey...');
         debugLog('[Passkey] Calling startAuthentication...');
         authResponse = await withTimeout(
           startAuthentication({ optionsJSON: options }),
@@ -143,7 +139,6 @@ export function PasskeyButton({ next = '/', className, onBeforeRedirect, onNavig
         throw new Error(friendlyMessage);
       }
 
-      setLoadingStep('Verifying...');
       const verifyRes = await fetch('/api/auth/passkey/login/verify', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -162,9 +157,8 @@ export function PasskeyButton({ next = '/', className, onBeforeRedirect, onNavig
 
       // Navigate to passkey-complete route which reads the httpOnly cookie
       // containing the magic link and redirects to establish the Supabase session.
-      setLoadingStep('Signing you in...');
       onBeforeRedirect?.();
-      onNavigating?.('Completing passkey sign-in...');
+      onNavigating?.();
       window.location.href = '/auth/passkey-complete';
     } catch (e) {
       const message = e instanceof Error ? e.message : 'Passkey sign-in failed';
@@ -176,14 +170,8 @@ export function PasskeyButton({ next = '/', className, onBeforeRedirect, onNavig
 
   return (
     <Button type="button" className={cn('btn-press', className)} onClick={handlePasskeySignIn} disabled={loading}>
-      {loading ? (
-        <>
-          <Spinner className="mr-1" />
-          {loadingStep}
-        </>
-      ) : (
-        'Sign in with Passkey'
-      )}
+      {loading && <Spinner className="mr-1 spinner-delayed" />}
+      Sign in with Passkey
     </Button>
   );
 }

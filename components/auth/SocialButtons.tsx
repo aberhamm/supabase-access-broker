@@ -11,7 +11,7 @@ type SocialButtonsProps = {
   next?: string;
   enableGoogle?: boolean;
   enableGitHub?: boolean;
-  onNavigating?: (message: string) => void;
+  onNavigating?: () => void;
 };
 
 export function SocialButtons({ next = '/', enableGoogle, enableGitHub, onNavigating }: SocialButtonsProps) {
@@ -29,9 +29,8 @@ export function SocialButtons({ next = '/', enableGoogle, enableGitHub, onNaviga
         options: { redirectTo },
       });
       if (error) throw error;
-      // Show full-page overlay while browser redirects to provider
-      const providerName = provider === 'google' ? 'Google' : 'GitHub';
-      onNavigating?.(`Redirecting to ${providerName}...`);
+      // Trigger card-level transition while browser redirects
+      onNavigating?.();
     } catch (e) {
       const message = e instanceof Error ? e.message : 'OAuth sign-in failed';
       toast.error(message);
@@ -49,14 +48,8 @@ export function SocialButtons({ next = '/', enableGoogle, enableGitHub, onNaviga
           disabled={!!loading}
           onClick={() => signIn('google')}
         >
-          {loading === 'google' ? (
-            <>
-              <Spinner className="mr-1" />
-              Connecting to Google...
-            </>
-          ) : (
-            'Continue with Google'
-          )}
+          {loading === 'google' && <Spinner className="mr-1 spinner-delayed" />}
+          Continue with Google
         </Button>
       )}
       {enableGitHub && (
@@ -67,14 +60,8 @@ export function SocialButtons({ next = '/', enableGoogle, enableGitHub, onNaviga
           disabled={!!loading}
           onClick={() => signIn('github')}
         >
-          {loading === 'github' ? (
-            <>
-              <Spinner className="mr-1" />
-              Connecting to GitHub...
-            </>
-          ) : (
-            'Continue with GitHub'
-          )}
+          {loading === 'github' && <Spinner className="mr-1 spinner-delayed" />}
+          Continue with GitHub
         </Button>
       )}
     </div>
