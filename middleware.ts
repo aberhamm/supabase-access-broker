@@ -258,6 +258,28 @@ export async function middleware(request: NextRequest) {
     // Non-admins can use the portal routes (SSO/account); keep them on login by default.
   }
 
+  // If user is signed in and tries to access /signup:
+  // - if SSO params are present and user already has app access, redirect to /sso/complete
+  // - otherwise, let them through to the signup page (it handles existing user UX)
+  if (user && pathname.startsWith('/signup')) {
+    const appId = request.nextUrl.searchParams.get('app_id');
+    const redirectUri = request.nextUrl.searchParams.get('redirect_uri');
+    const state = request.nextUrl.searchParams.get('state');
+
+    if (appId && redirectUri) {
+      const appClaims = (user.app_metadata?.apps as Record<string, { enabled?: boolean }> | undefined)?.[appId];
+      if (appClaims?.enabled) {
+        // User already has access to this app, skip signup
+        const url = request.nextUrl.clone();
+        url.pathname = '/sso/complete';
+        url.searchParams.set('app_id', appId);
+        url.searchParams.set('redirect_uri', redirectUri);
+        if (state) url.searchParams.set('state', state);
+        return NextResponse.redirect(url);
+      }
+    }
+  }
+
   // Admin-gate everything except public + portal routes
   if (user && !isPublicRoute && !isPortalRoute) {
     const isGlobalAdmin = user.app_metadata?.claims_admin === true;

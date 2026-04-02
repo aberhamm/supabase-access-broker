@@ -6,11 +6,12 @@ import { Lock, Mail, KeyRound, Smartphone, Github, Info } from 'lucide-react';
 
 import type { AppConfig, AppAuthMethods } from '@/types/claims';
 import { AUTH_FEATURES } from '@/lib/auth-config';
-import { updateAppAuthMethodsAction } from '@/app/actions/apps';
+import { updateAppAuthMethodsAction, updateAppSelfSignupAction } from '@/app/actions/apps';
 
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Badge } from '@/components/ui/badge';
 
@@ -81,6 +82,10 @@ export function AuthMethodsCard({ app, onUpdated }: { app: AppConfig; onUpdated?
     ...(app.auth_methods ?? {}),
   });
   const [saving, setSaving] = useState<string | null>(null); // key of the toggle being saved
+  const [selfSignup, setSelfSignup] = useState(app.allow_self_signup ?? false);
+  const [defaultRole, setDefaultRole] = useState(app.self_signup_default_role ?? 'user');
+  const [savingSignup, setSavingSignup] = useState(false);
+  const [savingRole, setSavingRole] = useState(false);
 
   const enabledCount = Object.values(methods).filter(Boolean).length;
 
@@ -186,6 +191,101 @@ export function AuthMethodsCard({ app, onUpdated }: { app: AppConfig; onUpdated?
               );
             })}
           </div>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <div className="space-y-1">
+            <CardTitle className="text-base flex items-center gap-2">
+              <KeyRound className="h-4 w-4" />
+              Self-Signup
+            </CardTitle>
+            <p className="text-sm text-muted-foreground">
+              Allow users to create accounts and access this app without an admin invite.
+            </p>
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          <div className="flex items-start justify-between gap-4 py-2">
+            <div className="min-w-0">
+              <Label htmlFor="self-signup-toggle" className="text-sm font-medium cursor-pointer">
+                Allow self-signup
+              </Label>
+              <p className="text-xs text-muted-foreground mt-1">
+                When enabled, users can register at <code className="rounded bg-muted px-1">/signup?app_id={app.id}</code>
+              </p>
+            </div>
+            <Switch
+              id="self-signup-toggle"
+              checked={selfSignup}
+              disabled={savingSignup}
+              onCheckedChange={async (checked) => {
+                const prev = selfSignup;
+                setSelfSignup(checked);
+                setSavingSignup(true);
+                try {
+                  const result = await updateAppSelfSignupAction(app.id, { allow_self_signup: checked });
+                  if (result.error) {
+                    toast.error(result.error);
+                    setSelfSignup(prev);
+                  } else {
+                    toast.success(`Self-signup ${checked ? 'enabled' : 'disabled'}`);
+                    onUpdated?.();
+                  }
+                } catch {
+                  toast.error('Failed to update');
+                  setSelfSignup(prev);
+                } finally {
+                  setSavingSignup(false);
+                }
+              }}
+            />
+          </div>
+
+          {selfSignup && (
+            <div className="space-y-2 animate-in fade-in-0 slide-in-from-top-1 duration-200">
+              <Label htmlFor="default-role" className="text-sm font-medium">
+                Default role
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Role automatically assigned to new self-signup users.
+              </p>
+              <div className="flex gap-2">
+                <Input
+                  id="default-role"
+                  value={defaultRole}
+                  onChange={(e) => setDefaultRole(e.target.value)}
+                  placeholder="user"
+                  disabled={savingRole}
+                  className="max-w-xs"
+                />
+                <button
+                  type="button"
+                  disabled={savingRole || defaultRole === (app.self_signup_default_role ?? 'user')}
+                  className="rounded-md bg-primary px-3 py-2 text-sm font-medium text-primary-foreground hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                  onClick={async () => {
+                    setSavingRole(true);
+                    try {
+                      const result = await updateAppSelfSignupAction(app.id, { self_signup_default_role: defaultRole || 'user' });
+                      if (result.error) {
+                        toast.error(result.error);
+                      } else {
+                        toast.success('Default role updated');
+                        onUpdated?.();
+                      }
+                    } catch {
+                      toast.error('Failed to update');
+                    } finally {
+                      setSavingRole(false);
+                    }
+                  }}
+                >
+                  {savingRole ? 'Saving...' : 'Save'}
+                </button>
+              </div>
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

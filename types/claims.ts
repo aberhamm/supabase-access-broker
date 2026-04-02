@@ -159,6 +159,8 @@ export interface AppConfig {
   sso_client_secret_hash?: string | null;
   sso_client_secrets?: SsoClientSecret[] | null;
   auth_methods?: AppAuthMethods | null;
+  allow_self_signup?: boolean;
+  self_signup_default_role?: string;
   created_at: string;
   updated_at: string;
 }
@@ -189,6 +191,8 @@ export interface UpdateAppData {
   color?: string;
   icon?: string;
   enabled?: boolean;
+  allow_self_signup?: boolean;
+  self_signup_default_role?: string;
 }
 
 export interface CreateRoleData {

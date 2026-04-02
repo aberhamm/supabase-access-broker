@@ -5,6 +5,7 @@ import { createAuthCode, validateRedirectUri, isRedirectUriAllowed, lookupUserBy
 import type { AppAuthMethods } from '@/types/claims';
 import { logSSOEvent, extractHostname, extractClientIP } from '@/lib/audit-service';
 import { getAppUrl } from '@/lib/app-url';
+import { enforceRateLimit } from '@/lib/app-api-rate-limit';
 
 /** Standard OAuth-style error codes */
 type SSOErrorCode =
@@ -180,8 +181,75 @@ export async function GET(request: Request) {
       });
     }
 
+    // Create admin client early — needed for both auto-grant and auth method checks
+    const supabaseAdmin = await createAdminClient();
+
+    // Self-signup auto-grant: if signup=1 is present, grant access before checking claims
+    const isSignup = url.searchParams.get('signup') === '1';
+    let freshUser = user;
+
+    if (isSignup) {
+      // Rate-limit signup grants per app
+      const rateLimited = enforceRateLimit(`signup:${appId}`, 'write');
+      if (rateLimited) {
+        return NextResponse.redirect(
+          buildErrorPageUrl(appOrigin, {
+            error: 'temporarily_unavailable',
+            errorDescription: 'Too many signup attempts. Please try again later.',
+            appId,
+            redirectUri,
+            state,
+          })
+        );
+      }
+
+      // Check if app allows self-signup
+      const { data: signupAppData } = await supabaseAdmin
+        .schema('access_broker_app')
+        .from('apps')
+        .select('allow_self_signup,self_signup_default_role')
+        .eq('id', appId)
+        .single();
+
+      if (signupAppData?.allow_self_signup) {
+        const defaultRole = signupAppData.self_signup_default_role || 'user';
+
+        const { data: rpcResult, error: rpcError } = await supabaseAdmin.rpc('set_app_claims_batch', {
+          p_uid: authUserId,
+          p_app_id: appId,
+          p_claims: { enabled: true, role: defaultRole },
+        });
+
+        if (rpcError) {
+          debugWarn('[SSO Complete] Auto-grant RPC error', { error: rpcError.message, appId, userId: authUserId });
+        } else {
+          const result = rpcResult as { status: string } | null;
+          if (result?.status === 'OK') {
+            debugLog('[SSO Complete] Self-signup auto-grant succeeded', { appId, userId: authUserId, role: defaultRole });
+
+            logSSOEvent({
+              eventType: 'self_signup_grant',
+              userId: authUserId,
+              ...auditContext,
+              metadata: { role: defaultRole },
+            });
+
+            // Re-fetch user to get fresh claims
+            const { data: freshUserData } = await supabaseAdmin.auth.admin.getUserById(authUserId);
+            if (freshUserData?.user) {
+              freshUser = freshUserData.user;
+            }
+          } else {
+            debugWarn('[SSO Complete] Auto-grant failed', { status: result?.status, appId, userId: authUserId });
+          }
+        }
+      } else {
+        debugLog('[SSO Complete] Self-signup not enabled for app', { appId });
+      }
+    }
+
     // Check if user has been granted access to this app
-    const appMetadata = user.app_metadata as { apps?: Record<string, { enabled?: boolean }> } | null;
+    const appMetadata = freshUser.app_metadata as { apps?: Record<string, { enabled?: boolean }> } | null;
     const userAppClaims = appMetadata?.apps?.[appId];
     if (!userAppClaims || userAppClaims.enabled === false) {
       logSSOEvent({
@@ -203,7 +271,6 @@ export async function GET(request: Request) {
     }
 
     // Check that the app has at least one auth method enabled (server-side enforcement)
-    const supabaseAdmin = await createAdminClient();
     const { data: appData } = await supabaseAdmin
       .schema('access_broker_app')
       .from('apps')

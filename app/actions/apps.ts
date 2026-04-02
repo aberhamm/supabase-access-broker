@@ -343,6 +343,51 @@ export async function updateAppAuthMethodsAction(
 }
 
 // ============================================================================
+// Self-Signup Actions
+// ============================================================================
+
+export async function updateAppSelfSignupAction(
+  appId: string,
+  settings: { allow_self_signup?: boolean; self_signup_default_role?: string }
+): Promise<{ data: { ok: true } | null; error: string | null }> {
+  try {
+    const supabase = await createClient();
+
+    const { data: isAdmin } = await isClaimsAdmin(supabase);
+    if (!isAdmin) {
+      return { data: null, error: 'Unauthorized: You must be a claims_admin' };
+    }
+
+    const updateData: Record<string, unknown> = {};
+    if (settings.allow_self_signup !== undefined) {
+      updateData.allow_self_signup = settings.allow_self_signup;
+    }
+    if (settings.self_signup_default_role !== undefined) {
+      updateData.self_signup_default_role = settings.self_signup_default_role;
+    }
+
+    const { error } = await supabase
+      .schema('access_broker_app')
+      .from('apps')
+      .update(updateData)
+      .eq('id', appId);
+
+    if (error) {
+      return { data: null, error: error.message || 'Failed to update self-signup settings' };
+    }
+
+    refreshCache();
+    revalidatePath('/apps');
+    revalidatePath(`/apps/${appId}`);
+
+    return { data: { ok: true }, error: null };
+  } catch (e) {
+    const err = e as Error;
+    return { data: null, error: err.message || 'Failed to update self-signup settings' };
+  }
+}
+
+// ============================================================================
 // Role Management Actions
 // ============================================================================
 

@@ -15,8 +15,7 @@ import {
 } from '@/components/ui/card';
 import { toast } from 'sonner';
 import { getAppUrl } from '@/lib/app-url';
-import { AUTH_FEATURES } from '@/lib/auth-config';
-import type { AppAuthMethods } from '@/types/claims';
+import { useAppAuthMethods } from '@/lib/use-app-auth-methods';
 import { PasskeyButton } from '@/components/auth/PasskeyButton';
 import { SocialButtons } from '@/components/auth/SocialButtons';
 import { OTPInput } from '@/components/auth/OTPInput';
@@ -129,17 +128,9 @@ export default function LoginPage() {
   const [rememberedEmail, setRememberedEmail] = useState<string | null>(null);
   const [showRemembered, setShowRemembered] = useState(true);
   const [mounted, setMounted] = useState(false);
-  const [appAuthMethods, setAppAuthMethods] = useState<AppAuthMethods | null>(null);
-  const [appMethodsReady, setAppMethodsReady] = useState(false);
-  const [appStatus, setAppStatus] = useState<'ok' | 'app_not_found' | 'app_disabled' | 'error' | null>(null);
   const [authCategory, setAuthCategory] = useState<AuthCategory>('credentials');
   const [urlError, setUrlError] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
-  const [mode, setMode] = useState<'magic' | 'otp' | 'password'>(() => {
-    if (AUTH_FEATURES.EMAIL_OTP) return 'otp';
-    if (AUTH_FEATURES.PASSWORD_LOGIN) return 'password';
-    return 'magic';
-  });
   const supabase = createClient();
   const emailInputRef = React.useRef<HTMLInputElement>(null);
 
@@ -212,52 +203,11 @@ export default function LoginPage() {
     return params.get('reauth') === '1';
   }, []);
 
-  // Fetch per-app auth methods when app_id is present in URL
-  useEffect(() => {
-    if (!appId) {
-      setAppMethodsReady(true);
-      return;
-    }
-    fetch(`/api/apps/${appId}/auth-methods`)
-      .then((r) => (r.ok ? r.json() : null))
-      .then((data: { auth_methods: AppAuthMethods | null; status?: string } | null) => {
-        setAppAuthMethods(data?.auth_methods ?? null);
-        setAppStatus((data?.status as 'ok' | 'app_not_found' | 'app_disabled' | 'error') ?? 'error');
-      })
-      .catch(() => { setAppAuthMethods(null); setAppStatus('error'); })
-      .finally(() => setAppMethodsReady(true));
-  }, [appId]);
+  const { effectiveFeatures, appStatus, appMethodsReady, mode, setMode } = useAppAuthMethods(appId);
 
-  const effectiveFeatures = useMemo(() => {
-    if (!appId) return AUTH_FEATURES;
-    // App-scoped login: if auth_methods is null/unconfigured, block all methods
-    if (!appAuthMethods) {
-      return {
-        PASSKEYS: false,
-        GOOGLE_LOGIN: false,
-        GITHUB_LOGIN: false,
-        EMAIL_OTP: false,
-        PASSWORD_LOGIN: false,
-        MAGIC_LINK: false,
-      };
-    }
-    return {
-      PASSKEYS: AUTH_FEATURES.PASSKEYS && !!appAuthMethods.passkeys,
-      GOOGLE_LOGIN: AUTH_FEATURES.GOOGLE_LOGIN && !!appAuthMethods.google,
-      GITHUB_LOGIN: AUTH_FEATURES.GITHUB_LOGIN && !!appAuthMethods.github,
-      EMAIL_OTP: AUTH_FEATURES.EMAIL_OTP && !!appAuthMethods.email_otp,
-      PASSWORD_LOGIN: AUTH_FEATURES.PASSWORD_LOGIN && !!appAuthMethods.password,
-      MAGIC_LINK: AUTH_FEATURES.MAGIC_LINK && !!appAuthMethods.magic_link,
-    };
-  }, [appId, appAuthMethods]);
-
-  // Update login mode and auth category when per-app effective features resolve
+  // If passkeys are disabled, ensure we fall back to credentials
   useEffect(() => {
     if (!appMethodsReady || !appId) return;
-    if (effectiveFeatures.EMAIL_OTP) setMode('otp');
-    else if (effectiveFeatures.PASSWORD_LOGIN) setMode('password');
-    else setMode('magic');
-    // If passkeys are disabled, ensure we fall back to credentials
     if (!effectiveFeatures.PASSKEYS && authCategory === 'passkey') {
       setAuthCategory('credentials');
     }

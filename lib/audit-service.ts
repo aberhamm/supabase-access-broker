@@ -26,7 +26,8 @@ export type SSOEventType =
   | 'user_invite_success'
   | 'user_invite_error'
   | 'webhook_received'
-  | 'webhook_error';
+  | 'webhook_error'
+  | 'self_signup_grant';
 
 /**
  * Parameters for logging an SSO audit event

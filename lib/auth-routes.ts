@@ -1,5 +1,6 @@
 export const PUBLIC_ROUTE_PREFIXES = [
   '/login',
+  '/signup',
   '/auth/callback',
   '/auth/confirm',
   '/auth/logout',

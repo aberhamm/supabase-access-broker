@@ -5,7 +5,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { createClient } from '@/lib/supabase/client';
 import { debugError, debugLog } from '@/lib/auth-debug';
 import { hasAnyAppAdmin } from '@/types/claims';
-import { safeNextPath } from '@/lib/safe-redirect';
+import { safeNextPath, isPortalPath } from '@/lib/safe-redirect';
 
 function AuthCallbackContent() {
   const router = useRouter();
@@ -45,13 +45,13 @@ function AuthCallbackContent() {
 
           debugLog('[Auth Callback] Session set successfully');
 
-          // Check admin access
+          // Check admin access (portal paths like /sso/ bypass this gate)
           const user = data.user;
           const isGlobalAdmin = user?.app_metadata?.claims_admin === true;
           const apps = user?.app_metadata?.apps;
           const isAppAdmin = hasAnyAppAdmin(apps);
 
-          if (!isGlobalAdmin && !isAppAdmin) {
+          if (!isGlobalAdmin && !isAppAdmin && !isPortalPath(next)) {
             router.push('/access-denied');
             return;
           }
@@ -82,13 +82,13 @@ function AuthCallbackContent() {
           return;
         }
 
-        // Get user and check admin access
+        // Get user and check admin access (portal paths like /sso/ bypass this gate)
         const { data: { user } } = await supabase.auth.getUser();
         const isGlobalAdmin = user?.app_metadata?.claims_admin === true;
         const apps = user?.app_metadata?.apps;
         const isAppAdmin = hasAnyAppAdmin(apps);
 
-        if (!isGlobalAdmin && !isAppAdmin) {
+        if (!isGlobalAdmin && !isAppAdmin && !isPortalPath(next)) {
           router.push('/access-denied');
           return;
         }
