@@ -13,8 +13,7 @@ WORKDIR /app
 COPY package.json pnpm-lock.yaml ./
 
 # Install dependencies
-# Use --no-frozen-lockfile to allow pnpm to update if needed
-RUN pnpm install --no-frozen-lockfile
+RUN pnpm install --frozen-lockfile
 
 # Builder stage
 FROM base AS builder
