@@ -218,3 +218,44 @@ export async function cleanupOldAuthCodes() {
     .delete()
     .lt('expires_at', new Date().toISOString());
 }
+
+/**
+ * Toggle self-signup settings on a test app
+ */
+export async function setAppSelfSignup(
+  appId: string,
+  settings: { allow_self_signup: boolean; self_signup_default_role?: string }
+) {
+  const updateData: Record<string, unknown> = {
+    allow_self_signup: settings.allow_self_signup,
+  };
+  if (settings.self_signup_default_role !== undefined) {
+    updateData.self_signup_default_role = settings.self_signup_default_role;
+  }
+
+  const { error } = await supabase
+    .schema('access_broker_app')
+    .from('apps')
+    .update(updateData)
+    .eq('id', appId);
+
+  if (error) throw error;
+}
+
+/**
+ * Remove a user's app access (clear app claims)
+ */
+export async function revokeUserAppAccess(userId: string, appId: string) {
+  const { data, error: fetchError } = await supabase.auth.admin.getUserById(userId);
+  if (fetchError || !data?.user) throw new Error('User not found');
+
+  const currentMetadata = { ...data.user.app_metadata } || {};
+  const apps = { ...(currentMetadata.apps || {}) };
+  delete apps[appId];
+
+  const { error } = await supabase.auth.admin.updateUserById(userId, {
+    app_metadata: { ...currentMetadata, apps },
+  });
+
+  if (error) throw error;
+}

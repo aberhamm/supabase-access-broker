@@ -17,6 +17,9 @@ export default defineConfig({
   /* Global setup to run before all tests */
   globalSetup: './e2e/setup/global-setup.ts',
 
+  /* Global teardown to clean up test accounts after all tests */
+  globalTeardown: './e2e/setup/global-teardown.ts',
+
   /* Run tests in files in parallel */
   fullyParallel: true,
 
