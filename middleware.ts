@@ -225,16 +225,19 @@ export async function middleware(request: NextRequest) {
   }
 
   // If user is signed in and tries to access /login:
-  // - if SSO params are present, redirect to /sso/complete
+  // - if SSO params are present, show interstitial so user can confirm or switch accounts
+  //   (unless reauth=1 is set, meaning user explicitly chose to re-login from the error page)
   // - otherwise, redirect admins to dashboard, non-admins can stay on /login (or go to /account)
   if (user && pathname.startsWith('/login')) {
     const appId = request.nextUrl.searchParams.get('app_id');
     const redirectUri = request.nextUrl.searchParams.get('redirect_uri');
     const state = request.nextUrl.searchParams.get('state');
+    const reauth = request.nextUrl.searchParams.get('reauth');
 
-    if (appId && redirectUri) {
+    if (appId && redirectUri && reauth !== '1') {
       const url = request.nextUrl.clone();
-      url.pathname = '/sso/complete';
+      url.pathname = '/sso/continue';
+      url.searchParams.delete('reauth');
       url.searchParams.set('app_id', appId);
       url.searchParams.set('redirect_uri', redirectUri);
       if (state) url.searchParams.set('state', state);
@@ -259,7 +262,7 @@ export async function middleware(request: NextRequest) {
   }
 
   // If user is signed in and tries to access /signup:
-  // - if SSO params are present and user already has app access, redirect to /sso/complete
+  // - if SSO params are present and user already has app access, show interstitial
   // - otherwise, let them through to the signup page (it handles existing user UX)
   if (user && pathname.startsWith('/signup')) {
     const appId = request.nextUrl.searchParams.get('app_id');
@@ -269,9 +272,9 @@ export async function middleware(request: NextRequest) {
     if (appId && redirectUri) {
       const appClaims = (user.app_metadata?.apps as Record<string, { enabled?: boolean }> | undefined)?.[appId];
       if (appClaims?.enabled) {
-        // User already has access to this app, skip signup
+        // User already has access to this app — show interstitial instead of auto-completing
         const url = request.nextUrl.clone();
-        url.pathname = '/sso/complete';
+        url.pathname = '/sso/continue';
         url.searchParams.set('app_id', appId);
         url.searchParams.set('redirect_uri', redirectUri);
         if (state) url.searchParams.set('state', state);

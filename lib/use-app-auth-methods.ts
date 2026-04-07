@@ -23,8 +23,8 @@ export function useAppAuthMethods(appId: string | null): AppAuthMethodsResult {
   const [allowSelfSignup, setAllowSelfSignup] = useState(false);
   const [selfSignupDefaultRole, setSelfSignupDefaultRole] = useState('user');
   const [mode, setMode] = useState<AuthMode>(() => {
-    if (AUTH_FEATURES.EMAIL_OTP) return 'otp';
     if (AUTH_FEATURES.PASSWORD_LOGIN) return 'password';
+    if (AUTH_FEATURES.EMAIL_OTP) return 'otp';
     return 'magic';
   });
 
@@ -75,8 +75,8 @@ export function useAppAuthMethods(appId: string | null): AppAuthMethodsResult {
   // Update mode when per-app effective features resolve
   useEffect(() => {
     if (!appMethodsReady || !appId) return;
-    if (effectiveFeatures.EMAIL_OTP) setMode('otp');
-    else if (effectiveFeatures.PASSWORD_LOGIN) setMode('password');
+    if (effectiveFeatures.PASSWORD_LOGIN) setMode('password');
+    else if (effectiveFeatures.EMAIL_OTP) setMode('otp');
     else setMode('magic');
   }, [appMethodsReady, appId, effectiveFeatures]);
 

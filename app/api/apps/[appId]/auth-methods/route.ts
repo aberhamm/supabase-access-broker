@@ -15,7 +15,7 @@ export async function GET(
     const { data, error } = await supabase
       .schema('access_broker_app')
       .from('apps')
-      .select('enabled,auth_methods,allow_self_signup,self_signup_default_role')
+      .select('name,enabled,auth_methods,allow_self_signup,self_signup_default_role')
       .eq('id', appId)
       .maybeSingle();
 
@@ -33,6 +33,7 @@ export async function GET(
     }
 
     return NextResponse.json({
+      app_name: data.name ?? null,
       auth_methods: data.auth_methods ?? null,
       allow_self_signup: data.allow_self_signup ?? false,
       self_signup_default_role: data.self_signup_default_role ?? 'user',

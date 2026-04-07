@@ -17,7 +17,7 @@ import { Badge } from '@/components/ui/badge';
 
 const DEFAULT_METHODS: AppAuthMethods = {
   password: true,
-  magic_link: true,
+  magic_link: false,
   email_otp: true,
   passkeys: true,
   google: false,
@@ -39,8 +39,8 @@ const METHOD_DEFS = [
     label: 'Magic Link',
     description: 'Passwordless email link',
     icon: Mail,
-    requiresGlobal: true, // magic link is on by default
-    globalFlag: null,
+    requiresGlobal: AUTH_FEATURES.MAGIC_LINK,
+    globalFlag: 'NEXT_PUBLIC_AUTH_MAGIC_LINK',
   },
   {
     key: 'email_otp' as const,

@@ -9,11 +9,11 @@ export const AUTH_FEATURES = {
   // Email OTP (6-digit code) vs magic link
   EMAIL_OTP: process.env.NEXT_PUBLIC_AUTH_EMAIL_OTP === 'true',
 
-  // Traditional password sign-in
-  PASSWORD_LOGIN: process.env.NEXT_PUBLIC_AUTH_PASSWORD === 'true',
+  // Traditional password sign-in (ON unless explicitly disabled)
+  PASSWORD_LOGIN: process.env.NEXT_PUBLIC_AUTH_PASSWORD !== 'false',
 
-  // Existing behavior: magic links (kept ON unless explicitly disabled)
-  MAGIC_LINK: process.env.NEXT_PUBLIC_AUTH_MAGIC_LINK !== 'false',
+  // Magic links (default OFF; set to 'true' to enable)
+  MAGIC_LINK: process.env.NEXT_PUBLIC_AUTH_MAGIC_LINK === 'true',
 } as const;
 
 export const AUTH_PORTAL = {
