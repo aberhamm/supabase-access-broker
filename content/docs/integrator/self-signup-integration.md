@@ -12,6 +12,8 @@ Self-service signup allows new users to create an account and gain access to you
 
 **Prerequisites:** Your app must be registered in Access Broker and an operator must have enabled self-signup for it. See [Configuring Self-Service Signup](/docs/operator/self-signup-configuration) for the operator-side setup.
 
+> **Want to see it in action?** The included demo page at `/demo/sso-demo.html` has both "Sign In" and "Sign Up" buttons. See the [Demo Guide](/DEMO_GUIDE.md) to set it up locally.
+
 ## How it works
 
 1. Your app redirects the user to the Access Broker signup page with your `app_id`

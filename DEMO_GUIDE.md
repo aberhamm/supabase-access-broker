@@ -45,33 +45,74 @@ WHERE id = 'demo-app';
 2. Go to `/login` and create a new account
 3. As admin, grant the user access to `demo-app`
 
-### Step 5: Open the Demo Page
+### Step 5: Enable Self-Service Signup (Optional)
+
+To test the signup flow, enable self-signup on the demo app:
+
+**Option A: From the dashboard**
+1. Go to **Apps** → **demo-app** settings
+2. Under **Authentication Methods**, toggle **Allow self-signup**
+3. Set the default role (e.g., `user`)
+
+**Option B: Via SQL**
+```sql
+UPDATE access_broker_app.apps
+SET allow_self_signup = true,
+    self_signup_default_role = 'user'
+WHERE id = 'demo-app';
+```
+
+### Step 6: Open the Demo Page
 
 Navigate to:
 ```
 http://localhost:3050/demo/sso-demo.html
 ```
 
-### Step 6: Test the Flow
+### Step 7: Test the Flows
 
+The demo page has two buttons:
+
+#### Sign In Flow
 1. Click **"Sign In with Auth Portal"**
 2. You'll be redirected to the login page
 3. Sign in with your test credentials
 4. You'll be redirected back to the demo page
-5. The demo will:
+
+#### Sign Up Flow
+1. Click **"Sign Up with Auth Portal"**
+2. You'll be redirected to the signup page
+3. Create a new account (password, OTP, magic link, or social)
+4. Access is automatically granted with the default role
+5. You'll be redirected back to the demo page
+
+Both flows end the same way — the demo page will:
    - Exchange the auth code
    - Display user information
-   - Show access status
+   - Show access status and role
    - Display the full payload
 
 ## What to Test
 
 ### ✅ Successful Login Flow
-- [ ] Click "Sign In" redirects to `/login`
+- [ ] Click "Sign In" redirects to `/login` with SSO params
 - [ ] After signing in, redirects back to demo page with `?code=...&state=...`
 - [ ] Code is exchanged successfully
 - [ ] User info is displayed
 - [ ] Access badge shows "Granted"
+
+### ✅ Successful Signup Flow
+- [ ] Click "Sign Up" redirects to `/signup` with SSO params
+- [ ] Signup page shows available auth methods for the app
+- [ ] After creating account, user is auto-granted the default role
+- [ ] Redirects back to demo page with `?code=...&state=...`
+- [ ] Code is exchanged and user info displayed with correct role
+
+### ✅ Self-Signup States
+- [ ] With `allow_self_signup = false`: signup page shows "contact your administrator"
+- [ ] With `allow_self_signup = true`: signup page shows auth forms
+- [ ] Existing logged-in user sees "Continue with this account" prompt
+- [ ] "Sign in" link on signup page preserves SSO params
 
 ### ✅ Access Control
 - [ ] User with `app_claims.enabled = true` shows "Access Granted"

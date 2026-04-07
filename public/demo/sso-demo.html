@@ -77,6 +77,13 @@
       cursor: not-allowed;
       transform: none;
     }
+    button.secondary {
+      background: #48bb78;
+    }
+    button.secondary:hover {
+      background: #38a169;
+      box-shadow: 0 4px 12px rgba(72, 187, 120, 0.4);
+    }
     .config {
       background: #edf2f7;
       padding: 16px;
@@ -200,6 +207,10 @@
       Sign In with Auth Portal
     </button>
 
+    <button id="signup-btn" class="secondary" onclick="signup()">
+      Sign Up with Auth Portal
+    </button>
+
     <button id="logout-btn" style="display: none; background: #e53e3e;" onclick="logout()">
       Clear Session
     </button>
@@ -221,19 +232,27 @@
       status.querySelector('.status-text').textContent = text;
     }
 
-    function login() {
+    function redirectToPortal(path) {
       const state = crypto.randomUUID();
       sessionStorage.setItem('sso_state', state);
 
-      const url = new URL(`${PORTAL_URL}/login`);
+      const url = new URL(`${PORTAL_URL}${path}`);
       url.searchParams.set('app_id', APP_ID);
       url.searchParams.set('redirect_uri', window.location.href.split('?')[0]);
       url.searchParams.set('state', state);
 
-      showStatus('Redirecting...', 'Taking you to the auth portal');
+      showStatus('Redirecting...', `Taking you to the auth portal (${path})`);
       setTimeout(() => {
         window.location.href = url.toString();
       }, 500);
+    }
+
+    function login() {
+      redirectToPortal('/login');
+    }
+
+    function signup() {
+      redirectToPortal('/signup');
     }
 
     async function exchangeCode(code, state) {
@@ -286,6 +305,7 @@
       document.getElementById('payload').textContent = JSON.stringify(payload, null, 2);
 
       document.getElementById('login-btn').style.display = 'none';
+      document.getElementById('signup-btn').style.display = 'none';
       document.getElementById('logout-btn').style.display = 'block';
       document.getElementById('status').style.display = 'none';
 
@@ -300,6 +320,7 @@
       document.getElementById('user-info').style.display = 'none';
       document.getElementById('status').style.display = 'none';
       document.getElementById('login-btn').style.display = 'block';
+      document.getElementById('signup-btn').style.display = 'block';
       document.getElementById('logout-btn').style.display = 'none';
     }
 
