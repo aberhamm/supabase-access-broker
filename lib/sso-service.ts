@@ -62,6 +62,15 @@ function isAllowedInsecureRedirect(url: URL): boolean {
 }
 
 /**
+ * Check if a URL uses a custom scheme (e.g. exp://, lookbook://, myapp://).
+ * Custom schemes are used by native mobile apps and Expo for deep linking.
+ * These are allowed as redirect URIs when registered in an app's allowed_callback_urls.
+ */
+function isCustomScheme(url: URL): boolean {
+  return url.protocol !== 'https:' && url.protocol !== 'http:';
+}
+
+/**
  * Result of validating a logout redirect URL
  */
 export interface LogoutRedirectValidation {
@@ -96,8 +105,8 @@ export async function isLogoutRedirectAllowed(
     return { allowed: false };
   }
 
-  // Check protocol (https required, except localhost)
-  if (url.protocol !== 'https:' && !(url.protocol === 'http:' && isAllowedInsecureRedirect(url))) {
+  // Check protocol (https required, except localhost and custom schemes for native apps)
+  if (url.protocol !== 'https:' && !isCustomScheme(url) && !(url.protocol === 'http:' && isAllowedInsecureRedirect(url))) {
     return { allowed: false };
   }
 
@@ -161,8 +170,8 @@ export async function isRedirectUriAllowed(params: {
     return false;
   }
 
-  // Check protocol (https required, except localhost)
-  if (url.protocol !== 'https:' && !(url.protocol === 'http:' && isAllowedInsecureRedirect(url))) {
+  // Check protocol (https required, except localhost and custom schemes for native apps)
+  if (url.protocol !== 'https:' && !isCustomScheme(url) && !(url.protocol === 'http:' && isAllowedInsecureRedirect(url))) {
     return false;
   }
 
@@ -199,8 +208,8 @@ export async function validateRedirectUri(params: {
     throw new Error('Invalid redirect_uri');
   }
 
-  if (url.protocol !== 'https:' && !(url.protocol === 'http:' && isAllowedInsecureRedirect(url))) {
-    throw new Error('redirect_uri must be https (or http for localhost)');
+  if (url.protocol !== 'https:' && !isCustomScheme(url) && !(url.protocol === 'http:' && isAllowedInsecureRedirect(url))) {
+    throw new Error('redirect_uri must be https, a custom scheme, or http for localhost');
   }
 
   const supabase = await createAdminClient();
