@@ -226,7 +226,8 @@ export async function validateRedirectUri(params: {
 
   const allowed = (data.allowed_callback_urls || []) as string[];
   if (!allowed.includes(redirectUri)) {
-    throw new Error('redirect_uri not allowed for this app');
+    console.error('[SSO] redirect_uri not allowed:', { redirectUri, allowed, appId });
+    throw new Error(`redirect_uri not allowed for this app: ${redirectUri}`);
   }
 }
 
