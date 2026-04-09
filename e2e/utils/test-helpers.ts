@@ -249,7 +249,7 @@ export async function revokeUserAppAccess(userId: string, appId: string) {
   const { data, error: fetchError } = await supabase.auth.admin.getUserById(userId);
   if (fetchError || !data?.user) throw new Error('User not found');
 
-  const currentMetadata = { ...data.user.app_metadata } || {};
+  const currentMetadata = { ...(data.user.app_metadata || {}) };
   const apps = { ...(currentMetadata.apps || {}) };
   delete apps[appId];
 
