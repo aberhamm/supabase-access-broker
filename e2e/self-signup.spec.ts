@@ -2,7 +2,6 @@ import { test, expect } from '@playwright/test';
 import {
   ensureTestUser,
   createTestApp,
-  grantUserAppAccess,
   revokeUserAppAccess,
   setAppSelfSignup,
   supabase,
@@ -111,30 +110,26 @@ test.describe('Self-Service Signup', () => {
       // Ensure user does NOT have access to the app
       await revokeUserAppAccess(testUserId, TEST_APP.id);
 
-      // Sign in as the test user via Supabase auth
-      await page.goto('/login');
-      const { data } = await supabase.auth.signInWithPassword({
+      // Sign in via admin-generated magic link (works regardless of auth config,
+      // and sets proper cookies that the SSR Supabase client can read)
+      const { data: linkData, error: linkError } = await supabase.auth.admin.generateLink({
+        type: 'magiclink',
         email: TEST_USER.email,
-        password: TEST_USER.password,
+        options: {
+          redirectTo: `${APP_URL}/auth/callback?next=%2F`,
+        },
       });
-      if (!data.session) {
-        test.skip(true, 'Could not sign in test user — password auth may be disabled');
+
+      if (linkError || !linkData.properties?.hashed_token) {
+        test.skip(true, 'Could not generate magic link for test user');
         return;
       }
 
-      // Set the session in the browser
-      await page.evaluate(
-        ({ accessToken, refreshToken }) => {
-          localStorage.setItem(
-            'sb-' + new URL(document.location.href).hostname + '-auth-token',
-            JSON.stringify({ access_token: accessToken, refresh_token: refreshToken })
-          );
-        },
-        {
-          accessToken: data.session.access_token,
-          refreshToken: data.session.refresh_token,
-        }
+      // Confirm the magic link to establish a cookie-based session
+      await page.goto(
+        `/auth/confirm?token_hash=${encodeURIComponent(linkData.properties.hashed_token)}&type=email&next=%2F`
       );
+      await page.waitForURL((url) => !url.pathname.includes('/auth/confirm'), { timeout: 15000 });
 
       // Navigate to signup page
       await page.goto(

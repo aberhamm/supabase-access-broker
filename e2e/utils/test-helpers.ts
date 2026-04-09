@@ -121,9 +121,37 @@ export async function deleteTestUser() {
 }
 
 /**
- * Create or update test app
+ * Create or update test app.
+ * Uses upsert with a fallback select to handle flaky RLS errors on INSERT
+ * (service_role should bypass RLS but intermittently doesn't on some instances).
  */
 export async function createTestApp() {
+  const appPayload = {
+    id: TEST_APP.id,
+    name: TEST_APP.name,
+    description: TEST_APP.description,
+    color: TEST_APP.color,
+    enabled: true,
+    allowed_callback_urls: [DEMO_CALLBACK],
+    sso_client_secret_hash: TEST_APP_SECRET_HASH,
+  };
+
+  // Try upsert first — handles both create and update in one call
+  const { data, error } = await supabase
+    .schema('access_broker_app')
+    .from('apps')
+    .upsert(appPayload, { onConflict: 'id' })
+    .select()
+    .single();
+
+  if (!error && data) {
+    console.log(`Test app upserted: ${TEST_APP.id}`);
+    return data;
+  }
+
+  console.warn('Upsert failed, falling back to select:', error?.message);
+
+  // Fallback: if upsert failed (e.g. RLS), check if the app already exists
   const { data: existing } = await supabase
     .schema('access_broker_app')
     .from('apps')
@@ -133,8 +161,8 @@ export async function createTestApp() {
 
   if (existing) {
     console.log(`Test app already exists: ${TEST_APP.id}`);
-    // Update to ensure callback URL is set
-    const { error: updateError } = await supabase
+    // Try to update callback URLs
+    await supabase
       .schema('access_broker_app')
       .from('apps')
       .update({
@@ -143,36 +171,10 @@ export async function createTestApp() {
         sso_client_secret_hash: TEST_APP_SECRET_HASH,
       })
       .eq('id', TEST_APP.id);
-
-    if (updateError) console.warn('Could not update test app:', updateError.message);
     return existing;
   }
 
-  console.log(`Creating test app: ${TEST_APP.id}`);
-  const { data, error } = await supabase.schema('access_broker_app').from('apps').insert({
-    id: TEST_APP.id,
-    name: TEST_APP.name,
-    description: TEST_APP.description,
-    color: TEST_APP.color,
-    enabled: true,
-    allowed_callback_urls: [DEMO_CALLBACK],
-    sso_client_secret_hash: TEST_APP_SECRET_HASH,
-  }).select().single();
-
-  if (error) {
-    // If app exists (race condition), fetch and return it
-    if (error.code === '23505') {
-      const { data: app } = await supabase
-        .schema('access_broker_app')
-        .from('apps')
-        .select('*')
-        .eq('id', TEST_APP.id)
-        .single();
-      if (app) return app;
-    }
-    throw error;
-  }
-  return data;
+  throw error || new Error('Failed to create or find test app');
 }
 
 /**
