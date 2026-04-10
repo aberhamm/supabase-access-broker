@@ -6,7 +6,8 @@ import {
   deleteClaim,
   isClaimsAdmin,
   setAppClaim,
-  deleteAppClaim,
+  setAppMetadataClaim,
+  deleteAppMetadataClaim,
   isAppAdmin,
 } from '@/lib/claims';
 import { revalidatePath } from 'next/cache';
@@ -144,7 +145,12 @@ export async function toggleClaimsAdminAction(uid: string, isAdmin: boolean) {
 // ============================================================================
 
 /**
- * Set a claim for a specific app
+ * Set a custom claim for a specific app.
+ *
+ * Custom claims are stored under apps[appId].metadata[key] to match the
+ * layout the app-facing PATCH /api/apps/{appId}/users/{userId}/claims
+ * endpoint uses, so manual operator edits and programmatic billing-webhook
+ * writes share the same storage location.
  */
 export async function setAppClaimAction(
   uid: string,
@@ -178,7 +184,7 @@ export async function setAppClaimAction(
     return { error: 'Invalid JSON value' };
   }
 
-  const { data, error } = await setAppClaim(
+  const { data, error } = await setAppMetadataClaim(
     supabase,
     uid,
     appId,
@@ -189,6 +195,9 @@ export async function setAppClaimAction(
   if (error) {
     return { error: error.message || 'Failed to set app claim' };
   }
+  if (data?.status && data.status !== 'OK') {
+    return { error: data.status.replace(/^error:\s*/, '') || 'Failed to set app claim' };
+  }
 
   revalidatePath(`/users/${uid}`);
   revalidatePath('/users');
@@ -198,7 +207,8 @@ export async function setAppClaimAction(
 }
 
 /**
- * Delete a claim from a specific app
+ * Delete a custom claim from a specific app (i.e., remove a single key under
+ * apps[appId].metadata).
  */
 export async function deleteAppClaimAction(
   uid: string,
@@ -223,10 +233,18 @@ export async function deleteAppClaimAction(
     };
   }
 
-  const { data, error } = await deleteAppClaim(supabase, uid, appId, claim);
+  const { data, error } = await deleteAppMetadataClaim(
+    supabase,
+    uid,
+    appId,
+    claim
+  );
 
   if (error) {
     return { error: error.message || 'Failed to delete app claim' };
+  }
+  if (data?.status && data.status !== 'OK') {
+    return { error: data.status.replace(/^error:\s*/, '') || 'Failed to delete app claim' };
   }
 
   revalidatePath(`/users/${uid}`);

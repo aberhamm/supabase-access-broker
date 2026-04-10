@@ -46,13 +46,33 @@ export function AppClaimsList({ userId, apps }: AppClaimsListProps) {
     setExpandedApps(newExpanded);
   };
 
+  // System claims managed by the App Access card (not shown as custom claims)
+  const SYSTEM_KEYS = new Set(['enabled', 'role', 'permissions', 'metadata']);
+
+  // Custom claims live under apps[appId].metadata (see migration 024 and the
+  // PATCH /api/apps/{appId}/users/{userId}/claims endpoint). We flatten each
+  // metadata key into its own row, and — for backward compatibility — still
+  // surface any legacy non-system keys that may have been written at the top
+  // level before claims were consolidated under `metadata`.
   const getClaimEntries = (appData: Record<string, unknown>) => {
     if (!appData || typeof appData !== 'object') return [];
 
-    // Filter out reserved/system app claims
-    return Object.entries(appData).filter(
-      ([key]) => !['enabled', 'role', 'permissions'].includes(key)
-    );
+    const entries: Array<[string, unknown]> = [];
+    const metadata = appData.metadata;
+    if (metadata && typeof metadata === 'object' && !Array.isArray(metadata)) {
+      for (const [key, value] of Object.entries(
+        metadata as Record<string, unknown>
+      )) {
+        entries.push([key, value]);
+      }
+    }
+
+    for (const [key, value] of Object.entries(appData)) {
+      if (SYSTEM_KEYS.has(key)) continue;
+      entries.push([key, value]);
+    }
+
+    return entries;
   };
 
   if (!apps || Object.keys(apps).length === 0) {

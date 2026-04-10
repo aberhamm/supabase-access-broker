@@ -133,7 +133,7 @@ CREATE OR REPLACE FUNCTION get_app_claim(uid uuid, app_id text, claim text) RETU
     END;
 $$;
 
--- Set a claim for a specific app
+-- Set a claim for a specific app (claims_admin OR admin for this app)
 CREATE OR REPLACE FUNCTION set_app_claim(uid uuid, app_id text, claim text, value jsonb) RETURNS "text"
     LANGUAGE "plpgsql" SECURITY DEFINER SET search_path = public
     AS $$
@@ -142,7 +142,7 @@ CREATE OR REPLACE FUNCTION set_app_claim(uid uuid, app_id text, claim text, valu
       current_app jsonb;
       updated_app jsonb;
     BEGIN
-      IF NOT is_claims_admin() THEN
+      IF NOT (is_claims_admin() OR is_app_admin(app_id)) THEN
           RETURN 'error: access denied';
       ELSE
         -- Get current apps object
@@ -166,7 +166,7 @@ CREATE OR REPLACE FUNCTION set_app_claim(uid uuid, app_id text, claim text, valu
     END;
 $$;
 
--- Delete a claim from a specific app
+-- Delete a claim from a specific app (claims_admin OR admin for this app)
 CREATE OR REPLACE FUNCTION delete_app_claim(uid uuid, app_id text, claim text) RETURNS "text"
     LANGUAGE "plpgsql" SECURITY DEFINER SET search_path = public
     AS $$
@@ -175,7 +175,7 @@ CREATE OR REPLACE FUNCTION delete_app_claim(uid uuid, app_id text, claim text) R
       current_app jsonb;
       updated_app jsonb;
     BEGIN
-      IF NOT is_claims_admin() THEN
+      IF NOT (is_claims_admin() OR is_app_admin(app_id)) THEN
           RETURN 'error: access denied';
       ELSE
         -- Get current apps object
@@ -299,6 +299,159 @@ AS $$
       ORDER BY email
       LIMIT p_limit
       OFFSET p_offset;
+    END;
+$$;
+
+-- Atomic batch update of multiple app claims (migration 014_set_app_claims_batch.sql,
+-- 024_app_claim_metadata_and_admin_auth.sql).
+-- Accepts any subset of { enabled, role, permissions, metadata } in p_claims;
+-- merges them into apps[p_app_id] in a single statement. Authorized for
+-- claims_admin OR admin for the target app.
+CREATE OR REPLACE FUNCTION set_app_claims_batch(
+  p_uid uuid,
+  p_app_id text,
+  p_claims jsonb
+) RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER SET search_path = public
+    AS $$
+    DECLARE
+      current_apps jsonb;
+      current_app jsonb;
+      updated_app jsonb;
+      ts timestamptz;
+    BEGIN
+      IF NOT (is_claims_admin() OR is_app_admin(p_app_id)) THEN
+          RETURN json_build_object('status', 'error: access denied')::jsonb;
+      END IF;
+
+      SELECT coalesce(raw_app_meta_data->'apps', '{}'::jsonb)
+        FROM auth.users INTO current_apps WHERE id = p_uid;
+
+      IF NOT FOUND THEN
+          RETURN json_build_object('status', 'error: user not found')::jsonb;
+      END IF;
+
+      current_app := coalesce(current_apps->p_app_id, '{}'::jsonb);
+      updated_app := current_app || p_claims;
+      current_apps := current_apps || json_build_object(p_app_id, updated_app)::jsonb;
+
+      UPDATE auth.users
+        SET raw_app_meta_data = raw_app_meta_data || json_build_object('apps', current_apps)::jsonb
+        WHERE id = p_uid;
+
+      ts := now();
+
+      RETURN json_build_object(
+        'status', 'OK',
+        'updated_at', ts,
+        'app_claims', updated_app
+      )::jsonb;
+    END;
+$$;
+
+-- Per-key metadata mutators (migration 024_app_claim_metadata_and_admin_auth.sql).
+-- The portal admin UI writes custom app claims through apps[app_id].metadata[key]
+-- so they remain addressable via the PATCH /claims API's `metadata` field.
+-- These RPCs do atomic read-modify-write so concurrent edits on different keys
+-- of the same user/app don't clobber each other.
+CREATE OR REPLACE FUNCTION set_app_metadata_claim(
+  p_uid uuid,
+  p_app_id text,
+  p_key text,
+  p_value jsonb
+) RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER SET search_path = public
+    AS $$
+    DECLARE
+      current_apps jsonb;
+      current_app jsonb;
+      current_metadata jsonb;
+      updated_metadata jsonb;
+      updated_app jsonb;
+      ts timestamptz;
+    BEGIN
+      IF NOT (is_claims_admin() OR is_app_admin(p_app_id)) THEN
+          RETURN json_build_object('status', 'error: access denied')::jsonb;
+      END IF;
+
+      IF p_key IS NULL OR length(p_key) = 0 THEN
+          RETURN json_build_object('status', 'error: empty metadata key')::jsonb;
+      END IF;
+
+      SELECT coalesce(raw_app_meta_data->'apps', '{}'::jsonb)
+        FROM auth.users INTO current_apps WHERE id = p_uid;
+
+      IF NOT FOUND THEN
+          RETURN json_build_object('status', 'error: user not found')::jsonb;
+      END IF;
+
+      current_app := coalesce(current_apps->p_app_id, '{}'::jsonb);
+      current_metadata := coalesce(current_app->'metadata', '{}'::jsonb);
+      updated_metadata := current_metadata || json_build_object(p_key, p_value)::jsonb;
+      updated_app := current_app || json_build_object('metadata', updated_metadata)::jsonb;
+      current_apps := current_apps || json_build_object(p_app_id, updated_app)::jsonb;
+
+      UPDATE auth.users
+        SET raw_app_meta_data = raw_app_meta_data || json_build_object('apps', current_apps)::jsonb
+        WHERE id = p_uid;
+
+      ts := now();
+
+      RETURN json_build_object(
+        'status', 'OK',
+        'updated_at', ts,
+        'app_claims', updated_app
+      )::jsonb;
+    END;
+$$;
+
+CREATE OR REPLACE FUNCTION delete_app_metadata_claim(
+  p_uid uuid,
+  p_app_id text,
+  p_key text
+) RETURNS "jsonb"
+    LANGUAGE "plpgsql" SECURITY DEFINER SET search_path = public
+    AS $$
+    DECLARE
+      current_apps jsonb;
+      current_app jsonb;
+      current_metadata jsonb;
+      updated_metadata jsonb;
+      updated_app jsonb;
+      ts timestamptz;
+    BEGIN
+      IF NOT (is_claims_admin() OR is_app_admin(p_app_id)) THEN
+          RETURN json_build_object('status', 'error: access denied')::jsonb;
+      END IF;
+
+      IF p_key IS NULL OR length(p_key) = 0 THEN
+          RETURN json_build_object('status', 'error: empty metadata key')::jsonb;
+      END IF;
+
+      SELECT coalesce(raw_app_meta_data->'apps', '{}'::jsonb)
+        FROM auth.users INTO current_apps WHERE id = p_uid;
+
+      IF NOT FOUND THEN
+          RETURN json_build_object('status', 'error: user not found')::jsonb;
+      END IF;
+
+      current_app := coalesce(current_apps->p_app_id, '{}'::jsonb);
+      current_metadata := coalesce(current_app->'metadata', '{}'::jsonb);
+      updated_metadata := current_metadata - p_key;
+      updated_app := current_app || json_build_object('metadata', updated_metadata)::jsonb;
+      current_apps := current_apps || json_build_object(p_app_id, updated_app)::jsonb;
+
+      UPDATE auth.users
+        SET raw_app_meta_data = raw_app_meta_data || json_build_object('apps', current_apps)::jsonb
+        WHERE id = p_uid;
+
+      ts := now();
+
+      RETURN json_build_object(
+        'status', 'OK',
+        'updated_at', ts,
+        'app_claims', updated_app
+      )::jsonb;
     END;
 $$;
 

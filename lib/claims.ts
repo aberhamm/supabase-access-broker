@@ -159,6 +159,61 @@ export async function deleteAppClaim(
 }
 
 /**
+ * Set a single key inside apps[appId].metadata atomically (migration 024).
+ *
+ * This is the write path for the portal's "custom app claims" UI: it mirrors
+ * the layout that the app-facing PATCH /api/apps/{appId}/users/{userId}/claims
+ * endpoint expects, so manual operator edits and programmatic billing-webhook
+ * writes land in the same place.
+ */
+export async function setAppMetadataClaim(
+  supabase: SupabaseClient,
+  uid: string,
+  appId: string,
+  key: string,
+  value: unknown
+) {
+  const { data, error } = await supabase.rpc('set_app_metadata_claim', {
+    p_uid: uid,
+    p_app_id: appId,
+    p_key: key,
+    p_value: value,
+  });
+  return {
+    data: data as {
+      status: string;
+      updated_at?: string;
+      app_claims?: Record<string, unknown>;
+    } | null,
+    error,
+  };
+}
+
+/**
+ * Delete a single key inside apps[appId].metadata atomically (migration 024).
+ */
+export async function deleteAppMetadataClaim(
+  supabase: SupabaseClient,
+  uid: string,
+  appId: string,
+  key: string
+) {
+  const { data, error } = await supabase.rpc('delete_app_metadata_claim', {
+    p_uid: uid,
+    p_app_id: appId,
+    p_key: key,
+  });
+  return {
+    data: data as {
+      status: string;
+      updated_at?: string;
+      app_claims?: Record<string, unknown>;
+    } | null,
+    error,
+  };
+}
+
+/**
  * Check if current user is admin for a specific app
  */
 export async function isAppAdmin(supabase: SupabaseClient, appId: string) {
