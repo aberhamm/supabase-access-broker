@@ -28,6 +28,8 @@ jobs:
         run: pnpm install
 
       - name: Install Playwright system deps
+        env:
+          DEBIAN_FRONTEND: noninteractive
         run: |
           sudo apt-get install -y --no-install-recommends \
             libnss3 libatk1.0-0 libatk-bridge2.0-0 libcups2 libdrm2 \
