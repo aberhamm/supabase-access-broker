@@ -117,16 +117,18 @@ function SSOErrorContent() {
                 className="w-full"
               >
                 <ArrowLeft className="h-4 w-4 mr-2" />
-                Back to Login
+                {canRetry ? 'Sign in with a different account' : 'Back to Login'}
               </Button>
-              <Button
-                onClick={() => router.push('/account')}
-                variant="ghost"
-                className="w-full"
-              >
-                <User className="h-4 w-4 mr-2" />
-                Go to Account
-              </Button>
+              {!canRetry && (
+                <Button
+                  onClick={() => router.push('/account')}
+                  variant="ghost"
+                  className="w-full"
+                >
+                  <User className="h-4 w-4 mr-2" />
+                  Go to Account
+                </Button>
+              )}
             </div>
           </CardContent>
         </Card>

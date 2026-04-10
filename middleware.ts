@@ -244,18 +244,24 @@ export async function middleware(request: NextRequest) {
       return NextResponse.redirect(url);
     }
 
-    // Determine admin access for redirect decision
-    const isGlobalAdmin = user.app_metadata?.claims_admin === true;
-    const apps = user.app_metadata?.apps;
-    const isAppAdmin = hasAnyAppAdmin(apps);
-    const hasAdminAccess = isGlobalAdmin || isAppAdmin;
+    // If SSO params are present with reauth=1, the user is re-authenticating
+    // for an SSO flow — don't redirect them away from /login
+    if (appId && redirectUri && reauth === '1') {
+      // Let the login page handle the re-auth flow
+    } else {
+      // No SSO flow — redirect admins to dashboard
+      const isGlobalAdmin = user.app_metadata?.claims_admin === true;
+      const apps = user.app_metadata?.apps;
+      const isAppAdmin = hasAnyAppAdmin(apps);
+      const hasAdminAccess = isGlobalAdmin || isAppAdmin;
 
-    if (hasAdminAccess) {
-      debugLog('[MIDDLEWARE] Admin user already logged in, redirecting to dashboard');
-      const url = request.nextUrl.clone();
-      url.pathname = '/';
-      url.search = '';
-      return NextResponse.redirect(url);
+      if (hasAdminAccess) {
+        debugLog('[MIDDLEWARE] Admin user already logged in, redirecting to dashboard');
+        const url = request.nextUrl.clone();
+        url.pathname = '/';
+        url.search = '';
+        return NextResponse.redirect(url);
+      }
     }
 
     // Non-admins can use the portal routes (SSO/account); keep them on login by default.
