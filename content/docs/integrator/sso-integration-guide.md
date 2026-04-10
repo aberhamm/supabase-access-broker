@@ -197,7 +197,11 @@ When you exchange the code (Step 2), you receive:
   "app_claims": {
     "enabled": true,
     "role": "user",
-    "permissions": ["read", "write"]
+    "permissions": ["read", "write"],
+    "metadata": {
+      "tier": "pro",
+      "plan_features": ["alerts", "watchlist"]
+    }
   },
   "expires_in": 300
 }
@@ -210,7 +214,26 @@ When you exchange the code (Step 2), you receive:
 - **`app_claims.enabled`**: **MUST be `true`** to grant access
 - **`app_claims.role`**: User's role in your app (e.g., `"admin"`, `"user"`)
 - **`app_claims.permissions`**: Array of permission strings
+- **`app_claims.metadata`**: Free-form JSON object your app owns. Use it for anything outside the broker's built-in claim vocabulary (subscription tier, plan feature flags, billing references, etc.). See [Storing app-specific data](#storing-app-specific-data-in-metadata).
 - **`expires_in`**: Code validity window (usually 5 minutes)
+
+### Storing app-specific data in `metadata`
+
+Only `enabled`, `role`, `permissions`, and `metadata` are allowed as top-level keys under `app_claims`. Anything else you want to attach to a user — subscription tier, quota counters, plan feature flags, external billing IDs — goes inside `metadata`:
+
+```json
+{
+  "enabled": true,
+  "role": "user",
+  "metadata": {
+    "tier": "pro",
+    "stripe_customer_id": "cus_abc123",
+    "plan_features": ["alerts", "watchlist"]
+  }
+}
+```
+
+Read it with `app_claims.metadata.tier`, `app_claims.metadata.plan_features`, etc. Writes go through `PATCH /api/apps/{appId}/users/{userId}/claims` with a `metadata` object — see [Update User Claims](#update-user-claims) for the merge semantics.
 
 ### Security Requirements
 
@@ -659,19 +682,37 @@ Query parameters:
 
 Allowed fields: `enabled`, `role`, `permissions`, `metadata`.
 
+**Merge semantics:**
+
+- Top-level fields (`enabled`, `role`, `permissions`) are replaced wholesale. `permissions` is an array — if you want to add one permission, include the full array you want to end up with.
+- `metadata` is **deep-merged** with the existing metadata object. Sibling keys you don't include are preserved. Keys you do include are overwritten. To remove a metadata key, set it to `null` (it will be stored as JSON null — there is no "unset" operation through this endpoint).
+
 ```json
-// Request
+// Request — promote to admin and note the upgrade in metadata.
+// Assumes existing metadata was { "tier": "free", "stripe_customer_id": "cus_abc123" }.
 {
   "app_secret": "your-secret",
   "role": "admin",
-  "permissions": ["read", "write", "delete"]
+  "permissions": ["read", "write", "delete"],
+  "metadata": {
+    "tier": "pro"
+  }
 }
 
-// Response (200)
+// Response (200) — stripe_customer_id was NOT in the request but is preserved
+// because metadata is deep-merged.
 {
   "user_id": "uuid",
-  "app_claims": { "enabled": true, "role": "admin", "permissions": ["read", "write", "delete"] },
-  "updated_at": "2026-03-21T12:00:00Z"
+  "app_claims": {
+    "enabled": true,
+    "role": "admin",
+    "permissions": ["read", "write", "delete"],
+    "metadata": {
+      "tier": "pro",
+      "stripe_customer_id": "cus_abc123"
+    }
+  },
+  "updated_at": "2026-04-11T12:00:00Z"
 }
 ```
 

@@ -118,6 +118,29 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
+    // Deep-merge metadata rather than clobbering it. set_app_claims_batch
+    // uses a shallow JSONB merge (current_app || p_claims), so a PATCH with
+    // { metadata: { tier: "pro" } } would wipe out sibling keys like
+    // plan_features. Merge incoming metadata with the existing object (using
+    // the user record we already fetched above — no extra round-trip).
+    if (
+      updates.metadata &&
+      typeof updates.metadata === 'object' &&
+      !Array.isArray(updates.metadata)
+    ) {
+      const existingApps = (userData.user.app_metadata?.apps ?? {}) as Record<
+        string,
+        Record<string, unknown> | undefined
+      >;
+      const existingMetadata =
+        (existingApps[appId]?.metadata as Record<string, unknown> | undefined) ??
+        {};
+      updates.metadata = {
+        ...existingMetadata,
+        ...(updates.metadata as Record<string, unknown>),
+      };
+    }
+
     // Apply claim updates atomically via batch RPC
     const { data: rpcResult, error: rpcError } = await supabase.rpc('set_app_claims_batch', {
       p_uid: userId,
