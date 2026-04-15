@@ -124,6 +124,7 @@ export interface AppAuthMethods {
   passkeys: boolean;
   google: boolean;
   github: boolean;
+  apple: boolean;
 }
 
 export interface AppInfo {

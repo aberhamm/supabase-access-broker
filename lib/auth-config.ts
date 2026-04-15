@@ -5,6 +5,7 @@ export const AUTH_FEATURES = {
   // OAuth providers
   GOOGLE_LOGIN: process.env.NEXT_PUBLIC_AUTH_GOOGLE === 'true',
   GITHUB_LOGIN: process.env.NEXT_PUBLIC_AUTH_GITHUB === 'true',
+  APPLE_LOGIN: process.env.NEXT_PUBLIC_AUTH_APPLE === 'true',
 
   // Email OTP (6-digit code) vs magic link
   EMAIL_OTP: process.env.NEXT_PUBLIC_AUTH_EMAIL_OTP === 'true',

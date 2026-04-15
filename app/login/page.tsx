@@ -565,18 +565,19 @@ export default function LoginPage() {
               )}
 
               {/* Social login buttons (always visible when enabled) */}
-              {(effectiveFeatures.GOOGLE_LOGIN || effectiveFeatures.GITHUB_LOGIN) && (
+              {(effectiveFeatures.GOOGLE_LOGIN || effectiveFeatures.GITHUB_LOGIN || effectiveFeatures.APPLE_LOGIN) && (
                 <div className="space-y-3">
                   <SocialButtons
                     next={nextPath}
                     enableGoogle={effectiveFeatures.GOOGLE_LOGIN}
                     enableGitHub={effectiveFeatures.GITHUB_LOGIN}
+                    enableApple={effectiveFeatures.APPLE_LOGIN}
                   />
                 </div>
               )}
 
               {/* Divider between social and passkey/email section */}
-              {(effectiveFeatures.GOOGLE_LOGIN || effectiveFeatures.GITHUB_LOGIN) &&
+              {(effectiveFeatures.GOOGLE_LOGIN || effectiveFeatures.GITHUB_LOGIN || effectiveFeatures.APPLE_LOGIN) &&
                (effectiveFeatures.PASSKEYS || effectiveFeatures.PASSWORD_LOGIN || effectiveFeatures.EMAIL_OTP || effectiveFeatures.MAGIC_LINK) && (
                 <div className="relative">
                   <div className="absolute inset-0 flex items-center">

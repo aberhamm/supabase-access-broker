@@ -6,19 +6,22 @@ import { createClient } from '@/lib/supabase/client';
 import { Button } from '@/components/ui/button';
 import { getAppUrl } from '@/lib/app-url';
 
+type Provider = 'google' | 'github' | 'apple';
+
 type SocialButtonsProps = {
   next?: string;
   enableGoogle?: boolean;
   enableGitHub?: boolean;
+  enableApple?: boolean;
 };
 
-export function SocialButtons({ next = '/', enableGoogle, enableGitHub }: SocialButtonsProps) {
+export function SocialButtons({ next = '/', enableGoogle, enableGitHub, enableApple }: SocialButtonsProps) {
   const supabase = createClient();
-  const [loading, setLoading] = useState<'google' | 'github' | null>(null);
+  const [loading, setLoading] = useState<Provider | null>(null);
 
   const redirectTo = `${getAppUrl()}/auth/callback?next=${encodeURIComponent(next)}`;
 
-  const signIn = async (provider: 'google' | 'github') => {
+  const signIn = async (provider: Provider) => {
     try {
       setLoading(provider);
       await supabase.auth.signOut();
@@ -46,6 +49,17 @@ export function SocialButtons({ next = '/', enableGoogle, enableGitHub }: Social
           onClick={() => signIn('google')}
         >
           {loading === 'google' ? 'Connecting…' : 'Continue with Google'}
+        </Button>
+      )}
+      {enableApple && (
+        <Button
+          type="button"
+          variant="outline"
+          className="w-full"
+          disabled={!!loading}
+          onClick={() => signIn('apple')}
+        >
+          {loading === 'apple' ? 'Connecting…' : 'Continue with Apple'}
         </Button>
       )}
       {enableGitHub && (

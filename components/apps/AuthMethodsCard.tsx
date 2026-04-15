@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { Lock, Mail, KeyRound, Smartphone, Github, Info } from 'lucide-react';
+import { Lock, Mail, KeyRound, Smartphone, Github, Apple, Info } from 'lucide-react';
 
 import type { AppConfig, AppAuthMethods } from '@/types/claims';
 import { AUTH_FEATURES } from '@/lib/auth-config';
@@ -22,6 +22,7 @@ const DEFAULT_METHODS: AppAuthMethods = {
   passkeys: true,
   google: false,
   github: false,
+  apple: false,
 };
 
 // Each method definition for rendering
@@ -73,6 +74,14 @@ const METHOD_DEFS = [
     icon: Github,
     requiresGlobal: AUTH_FEATURES.GITHUB_LOGIN,
     globalFlag: 'NEXT_PUBLIC_AUTH_GITHUB',
+  },
+  {
+    key: 'apple' as const,
+    label: 'Apple',
+    description: 'Sign in with Apple OAuth',
+    icon: Apple,
+    requiresGlobal: AUTH_FEATURES.APPLE_LOGIN,
+    globalFlag: 'NEXT_PUBLIC_AUTH_APPLE',
   },
 ] as const;
 
