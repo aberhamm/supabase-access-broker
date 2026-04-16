@@ -84,9 +84,19 @@ build_image() {
         build_args="$build_args --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=$supabase_anon"
         build_args="$build_args --build-arg NEXT_PUBLIC_APP_URL=$app_url"
 
+        # Pass every other NEXT_PUBLIC_* var from .env.production as a build arg.
+        # Required because NEXT_PUBLIC_* values are baked into the Next.js bundle
+        # at build time — setting them only at runtime has no effect.
+        while IFS='=' read -r key value; do
+            case "$key" in NEXT_PUBLIC_SUPABASE_URL|NEXT_PUBLIC_SUPABASE_ANON_KEY|NEXT_PUBLIC_APP_URL) continue ;; esac
+            value=$(echo "$value" | tr -d '"' | tr -d "'")
+            build_args="$build_args --build-arg $key=$value"
+        done < <(grep -E '^NEXT_PUBLIC_' "${SCRIPT_DIR}/.env.production")
+
         log "Building with:"
         log "  NEXT_PUBLIC_SUPABASE_URL=${supabase_url:0:30}..."
         log "  NEXT_PUBLIC_APP_URL=$app_url"
+        log "  NEXT_PUBLIC_AUTH_* flags: $(grep -E '^NEXT_PUBLIC_AUTH_' "${SCRIPT_DIR}/.env.production" | tr '\n' ' ')"
     else
         error ".env.production not found - cannot build without NEXT_PUBLIC_* vars"
         exit 1
@@ -185,9 +195,17 @@ if [[ -f ".env.production" ]]; then
     BUILD_ARGS="\$BUILD_ARGS --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=\$SUPABASE_ANON"
     BUILD_ARGS="\$BUILD_ARGS --build-arg NEXT_PUBLIC_APP_URL=\$APP_URL"
 
+    # Pass every other NEXT_PUBLIC_* var as a build arg (NEXT_PUBLIC_* must be baked at build time).
+    while IFS='=' read -r key value; do
+        case "\$key" in NEXT_PUBLIC_SUPABASE_URL|NEXT_PUBLIC_SUPABASE_ANON_KEY|NEXT_PUBLIC_APP_URL) continue ;; esac
+        value=\$(echo "\$value" | tr -d '"' | tr -d "'")
+        BUILD_ARGS="\$BUILD_ARGS --build-arg \$key=\$value"
+    done < <(grep -E '^NEXT_PUBLIC_' .env.production)
+
     echo "Building with:"
     echo "  NEXT_PUBLIC_SUPABASE_URL=\${SUPABASE_URL:0:30}..."
     echo "  NEXT_PUBLIC_APP_URL=\$APP_URL"
+    echo "  NEXT_PUBLIC_AUTH_* flags: \$(grep -E '^NEXT_PUBLIC_AUTH_' .env.production | tr '\n' ' ')"
 else
     echo "ERROR: .env.production not found - cannot build without NEXT_PUBLIC_* vars" >&2
     exit 1
