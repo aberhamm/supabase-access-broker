@@ -4,9 +4,10 @@ import dotenv from 'dotenv';
 // Load environment variables from .env.local
 dotenv.config({ path: '.env.local' });
 
-// Force port 3050 for E2E tests to avoid conflicts with dev server on 3000
-process.env.PORT = '3050';
-process.env.NEXT_PUBLIC_APP_URL = 'http://localhost:3050';
+// Default to 3050 locally; CI overrides to 3051 to avoid the prod container.
+const e2ePort = process.env.E2E_PORT || '3050';
+process.env.PORT = e2ePort;
+process.env.NEXT_PUBLIC_APP_URL = `http://localhost:${e2ePort}`;
 
 /**
  * See https://playwright.dev/docs/test-configuration.
@@ -38,7 +39,7 @@ export default defineConfig({
   /* Shared settings for all the projects below. See https://playwright.dev/docs/api/class-testoptions. */
   use: {
     /* Base URL to use in actions like `await page.goto('/')`. */
-    baseURL: 'http://localhost:3050',
+    baseURL: `http://localhost:${e2ePort}`,
 
     /* Collect trace when retrying the failed test. See https://playwright.dev/docs/trace-viewer */
     trace: 'on-first-retry',
@@ -63,13 +64,13 @@ export default defineConfig({
 
   /* Run a production-style server before tests to avoid flaky dev manifest errors */
   webServer: {
-    command: 'pnpm build && PORT=3050 NEXT_PUBLIC_APP_URL=http://localhost:3050 pnpm start',
-    url: 'http://localhost:3050',
+    command: `pnpm build && PORT=${e2ePort} NEXT_PUBLIC_APP_URL=http://localhost:${e2ePort} pnpm start`,
+    url: `http://localhost:${e2ePort}`,
     reuseExistingServer: false,
     timeout: 300 * 1000,
     env: {
-      PORT: '3050',
-      NEXT_PUBLIC_APP_URL: 'http://localhost:3050',
+      PORT: e2ePort,
+      NEXT_PUBLIC_APP_URL: `http://localhost:${e2ePort}`,
     },
   },
 });

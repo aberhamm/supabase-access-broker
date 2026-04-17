@@ -45,7 +45,9 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
-          NEXT_PUBLIC_APP_URL: http://localhost:3050
+          # Use 3051 so E2E doesn't collide with the prod container on :3050
+          E2E_PORT: '3051'
+          NEXT_PUBLIC_APP_URL: http://localhost:3051
           NEXT_PUBLIC_AUTH_PASSWORD: true
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
