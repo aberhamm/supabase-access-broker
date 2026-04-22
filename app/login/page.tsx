@@ -593,7 +593,7 @@ export default function LoginPage() {
               {effectiveFeatures.PASSKEYS && authCategory === 'passkey' && (
                 <div className="space-y-3 animate-in fade-in-0 slide-in-from-bottom-2 duration-200">
                   <PasskeyButton
-                    className="w-full"
+                    className="w-full h-11 text-sm font-medium"
                     next={nextPath}
                     onBeforeRedirect={() => persistPreferredAuth('passkey')}
                   />
@@ -638,7 +638,7 @@ export default function LoginPage() {
                         onChange={(e) => setEmail(e.target.value)}
                         disabled={loading}
                         required
-                        autoComplete="username email"
+                        autoComplete="username webauthn"
                         autoFocus={!rememberedEmail}
                         className="h-11"
                       />
