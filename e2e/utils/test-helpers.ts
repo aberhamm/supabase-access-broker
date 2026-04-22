@@ -245,6 +245,33 @@ export async function setAppSelfSignup(
 }
 
 /**
+ * Merge auth_methods flags on a test app (preserves existing keys).
+ */
+export async function setAppAuthMethods(
+  appId: string,
+  methods: Partial<Record<'password' | 'magic_link' | 'email_otp' | 'passkeys' | 'google' | 'github' | 'apple', boolean>>
+) {
+  const { data, error: fetchError } = await supabase
+    .schema('access_broker_app')
+    .from('apps')
+    .select('auth_methods')
+    .eq('id', appId)
+    .single();
+
+  if (fetchError) throw fetchError;
+
+  const merged = { ...(data?.auth_methods ?? {}), ...methods };
+
+  const { error } = await supabase
+    .schema('access_broker_app')
+    .from('apps')
+    .update({ auth_methods: merged })
+    .eq('id', appId);
+
+  if (error) throw error;
+}
+
+/**
  * Remove a user's app access (clear app claims)
  */
 export async function revokeUserAppAccess(userId: string, appId: string) {

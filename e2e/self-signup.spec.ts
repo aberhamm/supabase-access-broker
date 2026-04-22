@@ -4,6 +4,7 @@ import {
   createTestApp,
   revokeUserAppAccess,
   setAppSelfSignup,
+  setAppAuthMethods,
   supabase,
   TEST_USER,
   TEST_APP,
@@ -64,17 +65,20 @@ test.describe('Self-Service Signup', () => {
         allow_self_signup: true,
         self_signup_default_role: 'user',
       });
+      // Signup is OAuth-only — enable Google so the buttons render.
+      await setAppAuthMethods(TEST_APP.id, { google: true });
     });
 
     test.afterAll(async () => {
       await setAppSelfSignup(TEST_APP.id, { allow_self_signup: false });
+      await setAppAuthMethods(TEST_APP.id, { google: false, apple: false });
     });
 
-    test('shows auth forms when self-signup is enabled', async ({ page }) => {
+    test('shows OAuth signup buttons when self-signup is enabled', async ({ page }) => {
       await page.goto(`/signup?app_id=${TEST_APP.id}&redirect_uri=${encodeURIComponent(DEMO_CALLBACK)}`);
       await expect(page.getByText('Create account')).toBeVisible({ timeout: 10000 });
-      // At least one auth input should be visible
-      await expect(page.getByRole('textbox', { name: 'Email' })).toBeVisible();
+      // OAuth-only signup: at least one of Apple/Google must be visible.
+      await expect(page.getByRole('button', { name: /Continue with (Google|Apple)/ })).toBeVisible();
     });
 
     test('shows sign-in link that preserves SSO params', async ({ page }) => {

@@ -28,30 +28,16 @@ test.describe('SSO Integration - Simplified E2E', () => {
   test('should generate SSO redirect URL with correct parameters', async ({ page }) => {
     await page.goto('/demo/sso-demo.html');
 
-    // Intercept the navigation when clicking sign in
-    const [response] = await Promise.all([
-      page.waitForResponse(response =>
-        response.url().includes('/login') || response.url().includes('/sso/complete')
-      ),
-      page.click('text=Sign In with Auth Portal')
-    ]);
+    await page.click('text=Sign In with Auth Portal');
 
-    const url = new URL(response.url());
+    // Demo page navigates to /login; middleware may redirect to /sso/continue
+    // or /sso/complete depending on session state. All three carry the SSO params.
+    await page.waitForURL(/\/(login|sso\/(complete|continue))\b/, { timeout: 15000 });
 
-    // SSO params should be directly in the URL (not in a 'next' param)
-    // The middleware handles SSO params specially
-    if (url.pathname === '/login') {
-      // Check SSO params are in the login URL directly
-      expect(url.searchParams.get('app_id')).toBe(TEST_APP.id);
-      expect(url.searchParams.get('redirect_uri')).toContain('/demo/sso-demo.html');
-      expect(url.searchParams.get('state')).toBeTruthy();
-    }
-    // If redirected to /sso/complete (user already logged in), check params
-    else if (url.pathname === '/sso/complete') {
-      expect(url.searchParams.get('app_id')).toBe(TEST_APP.id);
-      expect(url.searchParams.get('redirect_uri')).toContain('/demo/sso-demo.html');
-      expect(url.searchParams.get('state')).toBeTruthy();
-    }
+    const url = new URL(page.url());
+    expect(url.searchParams.get('app_id')).toBe(TEST_APP.id);
+    expect(url.searchParams.get('redirect_uri')).toContain('/demo/sso-demo.html');
+    expect(url.searchParams.get('state')).toBeTruthy();
   });
 
   test('should exchange code and display user info (manual verification)', async ({ page, browserName }) => {
