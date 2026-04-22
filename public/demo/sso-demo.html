@@ -217,7 +217,9 @@
   </div>
 
   <script>
-    const PORTAL_URL = 'http://localhost:3050';
+    // Demo page is served by the portal itself, so use the current origin.
+    // Works in dev (:3050), E2E CI (:3051), and prod without edits.
+    const PORTAL_URL = window.location.origin;
     const APP_ID = 'demo-app';
 
     // Update display

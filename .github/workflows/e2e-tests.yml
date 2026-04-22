@@ -49,6 +49,10 @@ jobs:
           E2E_PORT: '3051'
           NEXT_PUBLIC_APP_URL: http://localhost:3051
           NEXT_PUBLIC_AUTH_PASSWORD: true
+          # Enable OAuth providers globally so per-app auth_methods toggles take effect
+          # in the self-signup E2E tests. Actual OAuth config lives in Supabase.
+          NEXT_PUBLIC_AUTH_GOOGLE: true
+          NEXT_PUBLIC_AUTH_APPLE: true
 
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: always()
