@@ -184,11 +184,16 @@ export async function GET(request: Request) {
     // Create admin client early — needed for both auto-grant and auth method checks
     const supabaseAdmin = await createAdminClient();
 
-    // Self-signup auto-grant: if signup=1 is present, grant access before checking claims
+    // Self-signup auto-grant: when an app has allow_self_signup=true, grant access
+    // on first SSO completion regardless of whether the user came via /signup
+    // (signup=1) or /login. The signup flag stays for telemetry only.
     const isSignup = url.searchParams.get('signup') === '1';
+    const initialAppMetadata = user.app_metadata as { apps?: Record<string, { enabled?: boolean }> } | null;
+    const initialClaims = initialAppMetadata?.apps?.[appId];
+    const hasExistingClaim = !!initialClaims && initialClaims.enabled !== false;
     let freshUser = user;
 
-    if (isSignup) {
+    if (!hasExistingClaim) {
       // Rate-limit signup grants per app
       const rateLimited = enforceRateLimit(`signup:${appId}`, 'write');
       if (rateLimited) {
@@ -225,13 +230,13 @@ export async function GET(request: Request) {
         } else {
           const result = rpcResult as { status: string } | null;
           if (result?.status === 'OK') {
-            debugLog('[SSO Complete] Self-signup auto-grant succeeded', { appId, userId: authUserId, role: defaultRole });
+            debugLog('[SSO Complete] Self-signup auto-grant succeeded', { appId, userId: authUserId, role: defaultRole, viaSignupFlow: isSignup });
 
             logSSOEvent({
               eventType: 'self_signup_grant',
               userId: authUserId,
               ...auditContext,
-              metadata: { role: defaultRole },
+              metadata: { role: defaultRole, viaSignupFlow: isSignup },
             });
 
             // Re-fetch user to get fresh claims
