@@ -131,10 +131,22 @@ export async function isLogoutRedirectAllowed(
       return { allowed: false };
     }
 
-    // Check each app's allowed_callback_urls for the redirect URL
+    // Match by origin (scheme + host + port) against registered callback URLs.
+    // Apps register one callback per origin in allowed_callback_urls; any URL
+    // on that origin is then a valid post-auth/post-logout return target.
+    // The OAuth 2.0 redirect_uri contract (exact match) is enforced separately
+    // in isRedirectUriAllowed for the auth code exchange itself.
+    const targetOrigin = url.origin;
     for (const app of data) {
       const allowedUrls = (app.allowed_callback_urls || []) as string[];
-      if (allowedUrls.includes(redirectUrl)) {
+      const originMatches = allowedUrls.some((entry) => {
+        try {
+          return new URL(entry).origin === targetOrigin;
+        } catch {
+          return false;
+        }
+      });
+      if (originMatches) {
         return {
           allowed: true,
           appId: app.id,

@@ -17,7 +17,7 @@ import { ReturnUrlBanner } from '@/components/account/ReturnUrlBanner';
 export default async function AccountPage({
   searchParams,
 }: {
-  searchParams: Promise<{ return_url?: string }>;
+  searchParams: Promise<{ return_url?: string; logout_url?: string }>;
 }) {
   const params = await searchParams;
   const supabase = await createClient();
@@ -38,8 +38,8 @@ export default async function AccountPage({
     );
   }
 
-  // Fetch passkeys, MFA factors, profile, and validate return URL in parallel
-  const [passkeysResult, mfaResult, profileResult, returnUrlResult] = await Promise.all([
+  // Fetch passkeys, MFA factors, profile, and validate return/logout URLs in parallel
+  const [passkeysResult, mfaResult, profileResult, returnUrlResult, logoutUrlResult] = await Promise.all([
     supabase
       .schema('access_broker_app')
       .from('passkey_credentials')
@@ -54,7 +54,17 @@ export default async function AccountPage({
       .eq('user_id', user.id)
       .single(),
     validateReturnUrl(params.return_url),
+    validateReturnUrl(params.logout_url),
   ]);
+
+  // Sign Out hop target: prefer the explicit logout_url (e.g. the app's SLO
+  // endpoint that clears its own session), then fall back to return_url, then
+  // the portal /login.
+  const signOutHref = logoutUrlResult.valid
+    ? `/auth/logout?next=${encodeURIComponent(logoutUrlResult.url)}`
+    : returnUrlResult.valid
+    ? `/auth/logout?next=${encodeURIComponent(returnUrlResult.url)}`
+    : '/auth/logout';
 
   const profile = profileResult.data;
 
@@ -70,11 +80,7 @@ export default async function AccountPage({
         title="Account"
         description="Manage your profile, security settings, and passkeys."
         actions={
-          <a
-            href={returnUrlResult.valid
-              ? `/auth/logout?next=${encodeURIComponent(returnUrlResult.url)}`
-              : '/auth/logout'}
-          >
+          <a href={signOutHref}>
             <Button variant="outline" size="sm">
               <LogOut className="h-4 w-4 mr-2" />
               Sign Out
