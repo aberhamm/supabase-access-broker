@@ -99,12 +99,12 @@ Manage multiple applications from a single broker:
 
 ```bash
 # Clone and install
-git clone <repo-url>
+git clone https://github.com/aberhamm/supabase-access-broker.git
 cd supabase-access-broker
 pnpm install
 
 # Configure environment
-cp env.example .env.local
+cp .env.example .env.local
 # Edit .env.local with your Supabase credentials
 
 # Run migrations
@@ -201,12 +201,12 @@ USING (
 
 | Guide | Purpose |
 |-------|---------|
-| **[Complete Integration Guide](./content/docs/guides/complete-integration-guide.md)** | Step-by-step implementation |
-| **[SSO Integration Guide](./content/docs/guides/sso-integration-guide.md)** | Connect your apps to the broker |
-| **[Claims Guide](./content/docs/authorization/claims-guide.md)** | Understanding JWT claims |
-| **[Authorization Patterns](./content/docs/authorization/authorization-patterns.md)** | RBAC implementation |
+| **[Complete Integration Guide](./content/docs/integrator/complete-integration-guide.md)** | Step-by-step implementation |
+| **[SSO Integration Guide](./content/docs/integrator/sso-integration-guide.md)** | Connect your apps to the broker |
+| **[Claims Guide](./content/docs/concepts/claims-guide.md)** | Understanding JWT claims |
+| **[Authorization Patterns](./content/docs/concepts/authorization-patterns.md)** | RBAC implementation |
 | **[API Reference](./docs/EXTERNAL_API_CONTRACT.md)** | RPC function documentation |
-| **[Multi-App Guide](./content/docs/advanced/multi-app-guide.md)** | Managing multiple applications |
+| **[Multi-App Guide](./content/docs/operator/multi-app-guide.md)** | Managing multiple applications |
 
 **[Full Documentation Index](./content/docs/INDEX.md)**
 
@@ -233,7 +233,7 @@ See [Docker Deployment Guide](./DOCKER_DEPLOYMENT.md) for full production setup.
 
 ### Vercel / Other Platforms
 
-Standard Next.js deployment. See [Environment Configuration](./content/docs/guides/environment-configuration.md).
+Standard Next.js deployment. See [Environment Configuration](./content/docs/operator/environment-configuration.md).
 
 ## Architecture
 
