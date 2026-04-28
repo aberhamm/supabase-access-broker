@@ -160,9 +160,12 @@ export async function middleware(request: NextRequest) {
 
   // Clean up corrupted/invalid auth cookies if session is missing but cookies exist
   // Be careful not to clear cookies on transient errors - only clear if we got a definitive
-  // "no session" response (not an error)
+  // "no session" response (not an error). The PKCE code-verifier cookie is named
+  // sb-<ref>-auth-token-code-verifier and is set DURING an OAuth handshake when the
+  // user has no session yet — exclude it so its presence doesn't trigger cleanup
+  // (and so it survives until /auth/callback can exchange it).
   const hasAuthCookies = request.cookies.getAll().some(c =>
-    c.name.includes('sb-') && c.name.includes('-auth-token')
+    c.name.includes('sb-') && c.name.includes('-auth-token') && !c.name.includes('-code-verifier')
   );
 
   // Only clear cookies if:
@@ -187,8 +190,10 @@ export async function middleware(request: NextRequest) {
       debugWarn('[MIDDLEWARE] Clearing invalid auth cookies', {
         reason: shouldClearRejectedSessionCookies ? 'rejected_session' : 'missing_session',
       });
+      // Clear session token cookies but preserve any in-flight PKCE code-verifier
+      // — wiping it mid-OAuth-handshake breaks /auth/callback's code exchange.
       const cookiesToClear = request.cookies.getAll()
-        .filter(c => c.name.includes('sb-') && (c.name.includes('-auth-token') || c.name.includes('-code-verifier')));
+        .filter(c => c.name.includes('sb-') && c.name.includes('-auth-token') && !c.name.includes('-code-verifier'));
       cookiesToClear.forEach(c => {
         response.cookies.delete(c.name);
       });
