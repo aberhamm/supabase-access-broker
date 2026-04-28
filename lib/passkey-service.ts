@@ -285,7 +285,7 @@ export async function verifyAuthentication(params: {
 export async function generateSupabaseMagicLinkForUser(params: {
   userId: string;
   redirectTo: string;
-}): Promise<string> {
+}): Promise<{ actionLink: string; hashedToken: string }> {
   const supabaseAdmin = await createAdminClient();
 
   const { data: userData, error: userErr } = await supabaseAdmin.auth.admin.getUserById(
@@ -303,8 +303,11 @@ export async function generateSupabaseMagicLinkForUser(params: {
   if (error) throw error;
 
   const actionLink = data.properties?.action_link;
-  if (!actionLink) throw new Error('Failed to generate action link');
-  return actionLink;
+  const hashedToken = data.properties?.hashed_token;
+  if (!actionLink || !hashedToken) {
+    throw new Error('Failed to generate action link');
+  }
+  return { actionLink, hashedToken };
 }
 
 export function getDefaultPasskeyRpIdDebug(): { rpId: string; origin: string; host: string } {

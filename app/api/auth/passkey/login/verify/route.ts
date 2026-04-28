@@ -21,18 +21,29 @@ export async function POST(request: Request) {
     }
 
     const baseUrl = getAppUrl();
+    // redirectTo is required by admin.generateLink (it bakes it into the
+    // action_link), but we don't actually follow the action_link anymore —
+    // we verify the hashed_token server-side via /auth/confirm.
     const redirectTo = `${baseUrl}/auth/callback?next=${encodeURIComponent(next)}`;
-    const action_link = await generateSupabaseMagicLinkForUser({
+    const { hashedToken } = await generateSupabaseMagicLinkForUser({
       userId: verification.userId,
       redirectTo,
     });
 
-    // Store the magic link in an httpOnly cookie instead of exposing it in the
-    // response body. The client navigates to /auth/passkey-complete which reads
-    // the cookie and redirects. This prevents XSS from stealing the magic link.
+    // Store a same-origin /auth/confirm URL in an httpOnly cookie. The client
+    // navigates to /auth/passkey-complete which reads the cookie and
+    // redirects. /auth/confirm verifies the token server-side via verifyOtp,
+    // sets session cookies on the redirect response, and forwards to next —
+    // avoiding the implicit-flow hash-fragment path that admin-generated
+    // magic links would otherwise return through Supabase.
+    const confirmUrl = new URL('/auth/confirm', baseUrl);
+    confirmUrl.searchParams.set('token_hash', hashedToken);
+    confirmUrl.searchParams.set('type', 'email');
+    confirmUrl.searchParams.set('next', next);
+
     const isSecure = baseUrl.startsWith('https://');
     const res = NextResponse.json({ verified: true });
-    res.cookies.set(PASSKEY_COOKIE_NAME, action_link, {
+    res.cookies.set(PASSKEY_COOKIE_NAME, confirmUrl.toString(), {
       httpOnly: true,
       secure: isSecure,
       sameSite: 'lax',

@@ -17,16 +17,17 @@ export async function GET(request: NextRequest) {
     return response;
   }
 
-  const actionLink = cookie.value;
+  const cookieValue = cookie.value;
 
-  // Validate the action_link is a URL pointing to our Supabase instance
+  // Validate the cookie holds a same-origin /auth/confirm URL. The verify
+  // route writes only that exact shape; anything else is treated as
+  // malformed and discarded.
   try {
-    const url = new URL(actionLink);
-    const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
-    if (supabaseUrl && !actionLink.startsWith(supabaseUrl)) {
-      throw new Error('Invalid action link origin');
+    const url = new URL(cookieValue);
+    const expectedOrigin = new URL(appOrigin).origin;
+    if (url.origin !== expectedOrigin || url.pathname !== '/auth/confirm') {
+      throw new Error('Invalid passkey redirect target');
     }
-    void url; // used for validation
   } catch {
     const loginUrl = new URL('/login', appOrigin);
     loginUrl.searchParams.set('error', 'invalid_token');
@@ -35,8 +36,8 @@ export async function GET(request: NextRequest) {
     return response;
   }
 
-  // Clear the cookie and redirect to the Supabase magic link
-  const response = NextResponse.redirect(actionLink);
+  // Clear the cookie and redirect to the same-origin confirm endpoint.
+  const response = NextResponse.redirect(cookieValue);
   response.cookies.delete(PASSKEY_COOKIE_NAME);
   return response;
 }
