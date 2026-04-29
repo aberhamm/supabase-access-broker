@@ -17,6 +17,7 @@ import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getAppUrl } from '@/lib/app-url';
 import { getValidatedReturnUrl, changePassword } from '@/app/actions/account';
+import { sendPasswordResetEmail } from '@/app/actions/auth-email';
 import { ReturnUrlBanner } from '@/components/account/ReturnUrlBanner';
 import { PASSWORD_MIN_LENGTH } from '@/lib/password-policy';
 
@@ -80,16 +81,20 @@ export default function ResetPasswordPage() {
         ? `${getAppUrl()}/reset-password?return_url=${encodeURIComponent(returnUrl.url)}`
         : `${getAppUrl()}/reset-password`;
 
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo,
-      });
+      // Server action enforces per-IP and per-email rate limits before
+      // forwarding to Supabase. Always returns ok=true (regardless of
+      // whether the email exists) — toast is enumeration-safe.
+      const result = await sendPasswordResetEmail({ email, redirectTo });
 
-      if (error) throw error;
+      if (!result.ok) {
+        toast.error(result.error);
+        return;
+      }
 
-      toast.success('Password reset link sent! Check your email.');
+      toast.success('If an account exists for that email, a reset link has been sent.');
     } catch (error) {
       const err = error as { error_description?: string; message?: string };
-      toast.error(err.error_description || err.message);
+      toast.error(err.error_description || err.message || 'Failed to send reset link');
     } finally {
       setLoading(false);
     }

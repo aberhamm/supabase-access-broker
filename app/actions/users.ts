@@ -6,7 +6,18 @@ import { getAppUrl } from '@/lib/app-url';
 import { revalidatePath } from 'next/cache';
 import type { BanDuration, MFAFactor, UpdateProfileData } from '@/types/claims';
 import { validatePassword } from '@/lib/password-policy';
-import { assertStepUp } from '@/lib/mfa-gate';
+import { assertStepUp, MFA_STEP_UP_REQUIRED, MFA_ENROLLMENT_REQUIRED } from '@/lib/mfa-gate';
+
+function withCode(error: unknown, fallback: string): { success: false; error: string; code?: string } {
+  if (error instanceof Error) {
+    const code = (error as Error & { code?: string }).code;
+    if (code === MFA_STEP_UP_REQUIRED || code === MFA_ENROLLMENT_REQUIRED) {
+      return { success: false, error: error.message, code };
+    }
+    return { success: false, error: error.message || fallback };
+  }
+  return { success: false, error: fallback };
+}
 
 export interface CreateUserParams {
   email: string;
@@ -81,8 +92,7 @@ export async function createUserWithPassword(params: CreateUserParams) {
       user: data.user,
     };
   } catch (error) {
-    const err = error as Error;
-    return { success: false, error: err.message };
+    return withCode(error, 'Failed to create user');
   }
 }
 
@@ -125,8 +135,7 @@ export async function inviteUserWithEmail(params: InviteUserParams) {
       user: data.user,
     };
   } catch (error) {
-    const err = error as Error;
-    return { success: false, error: err.message };
+    return withCode(error, 'Failed to invite user');
   }
 }
 
@@ -171,8 +180,7 @@ export async function deleteUser(userId: string) {
 
     return { success: true };
   } catch (error) {
-    const err = error as Error;
-    return { success: false, error: err.message };
+    return withCode(error, 'Failed to delete user');
   }
 }
 
@@ -280,7 +288,7 @@ export async function listUserMFAFactors(userId: string): Promise<{
 export async function deleteMFAFactorAdmin(
   userId: string,
   factorId: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; code?: string }> {
   try {
     const supabase = await requireClaimsAdmin({ stepUp: true });
 
@@ -296,8 +304,7 @@ export async function deleteMFAFactorAdmin(
     revalidatePath(`/users/${userId}`);
     return { success: true };
   } catch (error) {
-    const err = error as Error;
-    return { success: false, error: err.message };
+    return withCode(error, 'Failed to delete MFA factor');
   }
 }
 
@@ -390,7 +397,7 @@ export async function confirmUserEmail(
 export async function grantMultiAppAccess(
   userId: string,
   appAccess: Array<{ appId: string; role: string }>
-): Promise<{ success: boolean; errors: string[] }> {
+): Promise<{ success: boolean; errors: string[]; code?: string }> {
   try {
     const supabase = await requireClaimsAdmin({ stepUp: true });
     const errors: string[] = [];
@@ -415,8 +422,14 @@ export async function grantMultiAppAccess(
 
     return { success: errors.length === 0, errors };
   } catch (error) {
-    const err = error as Error;
-    return { success: false, errors: [err.message] };
+    if (error instanceof Error) {
+      const code = (error as Error & { code?: string }).code;
+      if (code === MFA_STEP_UP_REQUIRED || code === MFA_ENROLLMENT_REQUIRED) {
+        return { success: false, errors: [error.message], code };
+      }
+      return { success: false, errors: [error.message] };
+    }
+    return { success: false, errors: ['Failed to grant app access'] };
   }
 }
 

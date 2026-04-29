@@ -104,3 +104,21 @@ export async function assertStepUp(supabase: SupabaseClient): Promise<void> {
     throw err;
   }
 }
+
+/**
+ * Re-throw an error from a catch block while preserving the step-up code.
+ *
+ * The default `throw new Error(err.message)` pattern in many server actions
+ * loses the `code` property that assertStepUp() attaches, which means the
+ * client-side withStepUp() can't detect that step-up is needed. Use this
+ * helper instead when you want to wrap or sanitize the error message.
+ */
+export function rethrowWithCode(err: unknown, fallbackMessage: string): never {
+  if (err instanceof Error) {
+    const code = (err as Error & { code?: string }).code;
+    const wrapped = new Error(err.message) as Error & { code?: string };
+    if (code) wrapped.code = code;
+    throw wrapped;
+  }
+  throw new Error(fallbackMessage);
+}

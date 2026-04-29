@@ -21,6 +21,7 @@ import { SocialButtons } from '@/components/auth/SocialButtons';
 import { OTPInput } from '@/components/auth/OTPInput';
 import { safeNextPath } from '@/lib/safe-redirect';
 import { debugError, debugLog, debugWarn } from '@/lib/auth-debug';
+import { sendMagicLinkEmail, sendLoginOtpEmail } from '@/app/actions/auth-email';
 
 const REMEMBERED_EMAIL_KEY = 'remembered_email';
 const PREFERRED_AUTH_KEY = 'preferred_auth_method';
@@ -317,15 +318,17 @@ export default function LoginPage() {
       setLoading(true);
       await clearExistingSession('magic_link');
 
-      const { error } = await supabase.auth.signInWithOtp({
+      // Server action enforces per-IP and per-email rate limits before
+      // forwarding to Supabase, so brute-force OTP harvesting is bounded.
+      const result = await sendMagicLinkEmail({
         email,
-        options: {
-          emailRedirectTo: `${getAppUrl()}/auth/callback?next=${encodeURIComponent(nextPath)}`,
-          shouldCreateUser: false,
-        },
+        redirectTo: `${getAppUrl()}/auth/callback?next=${encodeURIComponent(nextPath)}`,
       });
 
-      if (error) throw error;
+      if (!result.ok) {
+        setFormError(result.error);
+        return;
+      }
 
       saveEmailIfRemembered(email);
       persistPreferredAuth('credentials');
@@ -377,13 +380,15 @@ export default function LoginPage() {
     try {
       setLoading(true);
       await clearExistingSession('otp_request');
-      const { error } = await supabase.auth.signInWithOtp({
-        email,
-        options: {
-          shouldCreateUser: false,
-        },
-      });
-      if (error) throw error;
+
+      // Server action enforces per-IP and per-email rate limits before
+      // forwarding to Supabase, so brute-force OTP harvesting is bounded.
+      const result = await sendLoginOtpEmail({ email });
+
+      if (!result.ok) {
+        setFormError(result.error);
+        return;
+      }
 
       setOtpStep('code');
       setCodeSentTo(email);
@@ -394,7 +399,7 @@ export default function LoginPage() {
     } finally {
       setLoading(false);
     }
-  }, [email, clearExistingSession, supabase]);
+  }, [email, clearExistingSession]);
 
   const handleSendOtp = async (e: React.FormEvent) => {
     e.preventDefault();

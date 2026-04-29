@@ -7,6 +7,7 @@ import { createClient } from '@/lib/supabase/server';
 import { isClaimsAdmin } from '@/lib/claims';
 import { hasAnyAppAdmin } from '@/types/claims';
 import { KeyboardShortcutsDialog } from '@/components/KeyboardShortcutsDialog';
+import { StepUpProvider } from '@/components/auth/StepUpProvider';
 
 export default async function DashboardLayout({
   children,
@@ -35,13 +36,15 @@ export default async function DashboardLayout({
   }
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
-      <EnhancedDashboardNav email={email} showApps={isGlobalAdmin || isAppAdmin} />
-      <main className="container mx-auto flex-1 space-y-6 px-4 py-6 sm:space-y-8 sm:py-8">
-        {children}
-      </main>
-      <DashboardFooter />
-      <KeyboardShortcutsDialog />
-    </div>
+    <StepUpProvider>
+      <div className="min-h-screen bg-background flex flex-col">
+        <EnhancedDashboardNav email={email} showApps={isGlobalAdmin || isAppAdmin} />
+        <main className="container mx-auto flex-1 space-y-6 px-4 py-6 sm:space-y-8 sm:py-8">
+          {children}
+        </main>
+        <DashboardFooter />
+        <KeyboardShortcutsDialog />
+      </div>
+    </StepUpProvider>
   );
 }

@@ -12,7 +12,7 @@ import {
   getExternalSources as getExternalSourcesService,
 } from '@/lib/external-keys-service';
 import { isClaimsAdmin, isAppAdmin } from '@/lib/claims';
-import { assertStepUp } from '@/lib/mfa-gate';
+import { assertStepUp, rethrowWithCode } from '@/lib/mfa-gate';
 import {
   CreateApiKeyData,
   UpdateApiKeyData,
@@ -74,9 +74,7 @@ export async function createApiKey(
     return result;
   } catch (error) {
     console.error('Error in createApiKey action:', error);
-    throw new Error(
-      error instanceof Error ? error.message : 'Failed to create API key'
-    );
+    rethrowWithCode(error, 'Failed to create API key');
   }
 }
 
@@ -96,9 +94,7 @@ export async function updateApiKey(
     revalidatePath(`/apps/${appId}`);
   } catch (error) {
     console.error('Error in updateApiKey action:', error);
-    throw new Error(
-      error instanceof Error ? error.message : 'Failed to update API key'
-    );
+    rethrowWithCode(error, 'Failed to update API key');
   }
 }
 
@@ -114,9 +110,7 @@ export async function deleteApiKey(id: string, appId: string): Promise<void> {
     revalidatePath(`/apps/${appId}`);
   } catch (error) {
     console.error('Error in deleteApiKey action:', error);
-    throw new Error(
-      error instanceof Error ? error.message : 'Failed to delete API key'
-    );
+    rethrowWithCode(error, 'Failed to delete API key');
   }
 }
 
@@ -136,9 +130,7 @@ export async function toggleApiKey(
     revalidatePath(`/apps/${appId}`);
   } catch (error) {
     console.error('Error in toggleApiKey action:', error);
-    throw new Error(
-      error instanceof Error ? error.message : 'Failed to toggle API key'
-    );
+    rethrowWithCode(error, 'Failed to toggle API key');
   }
 }
 
@@ -202,9 +194,7 @@ export async function createExternalSource(
     return sourceId as string;
   } catch (error) {
     console.error('Error in createExternalSource action:', error);
-    throw new Error(
-      error instanceof Error ? error.message : 'Failed to create external source'
-    );
+    rethrowWithCode(error, 'Failed to create external source');
   }
 }
 
@@ -242,9 +232,7 @@ export async function updateExternalSource(
     revalidatePath(`/apps/${appId}`);
   } catch (error) {
     console.error('Error in updateExternalSource action:', error);
-    throw new Error(
-      error instanceof Error ? error.message : 'Failed to update external source'
-    );
+    rethrowWithCode(error, 'Failed to update external source');
   }
 }
 
@@ -277,9 +265,7 @@ export async function deleteExternalSource(
     revalidatePath(`/apps/${appId}`);
   } catch (error) {
     console.error('Error in deleteExternalSource action:', error);
-    throw new Error(
-      error instanceof Error ? error.message : 'Failed to delete external source'
-    );
+    rethrowWithCode(error, 'Failed to delete external source');
   }
 }
 

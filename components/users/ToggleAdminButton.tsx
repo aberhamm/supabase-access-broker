@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Shield, ShieldOff } from 'lucide-react';
 import { toggleClaimsAdminAction } from '@/app/actions/claims';
 import { toast } from 'sonner';
+import { useStepUp } from '@/components/auth/StepUpProvider';
 
 interface ToggleAdminButtonProps {
   userId: string;
@@ -13,12 +14,20 @@ interface ToggleAdminButtonProps {
 
 export function ToggleAdminButton({ userId, isAdmin }: ToggleAdminButtonProps) {
   const [loading, setLoading] = useState(false);
+  const { withStepUp } = useStepUp();
 
   const handleToggle = async () => {
     setLoading(true);
 
     try {
-      const result = await toggleClaimsAdminAction(userId, !isAdmin);
+      // Highest-risk action in the system — granting/revoking global admin —
+      // always passes through the MFA gate when the user has enrolled.
+      const result = await withStepUp(
+        () => toggleClaimsAdminAction(userId, !isAdmin),
+        isAdmin
+          ? 'Confirm to remove global admin access'
+          : 'Confirm to grant global admin access',
+      );
 
       if (result.error) {
         toast.error(result.error);

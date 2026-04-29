@@ -26,6 +26,7 @@ import { createApiKey } from '@/app/actions/api-keys';
 import { toast } from 'sonner';
 import { Plus, AlertTriangle } from 'lucide-react';
 import { CopyButton } from '@/components/users/CopyButton';
+import { useStepUp } from '@/components/auth/StepUpProvider';
 
 interface CreateApiKeyDialogProps {
   appId: string;
@@ -45,6 +46,7 @@ export function CreateApiKeyDialog({
   const [roleId, setRoleId] = useState<string>('');
   const [expiresAt, setExpiresAt] = useState('');
   const [createdSecret, setCreatedSecret] = useState<string | null>(null);
+  const { withStepUp } = useStepUp();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -57,13 +59,19 @@ export function CreateApiKeyDialog({
     setLoading(true);
 
     try {
-      const result = await createApiKey({
-        app_id: appId,
-        name: name.trim(),
-        description: description.trim() || undefined,
-        role_id: roleId || undefined,
-        expires_at: expiresAt || undefined,
-      });
+      // withStepUp opens the MFA challenge modal if the action returns the
+      // step-up code, then retries the action automatically on success.
+      const result = await withStepUp(
+        () =>
+          createApiKey({
+            app_id: appId,
+            name: name.trim(),
+            description: description.trim() || undefined,
+            role_id: roleId || undefined,
+            expires_at: expiresAt || undefined,
+          }),
+        'Confirm to issue a new API key',
+      );
 
       setCreatedSecret(result.secret);
       toast.success('API key created successfully');
