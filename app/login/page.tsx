@@ -108,9 +108,16 @@ function friendlyAuthError(error: unknown, fallback: string): string {
     return 'Network error — please check your connection and try again.';
   }
 
-  // Supabase-specific errors
-  if (message.includes('user not found') || message.includes('invalid email')) {
-    return 'This email is not registered. Contact an administrator to get access.';
+  // Supabase-specific errors. Note: we deliberately collapse "user not found",
+  // "invalid email", and "invalid credentials" into a single non-disclosive
+  // message to prevent account enumeration via login probing.
+  if (
+    message.includes('user not found') ||
+    message.includes('invalid email') ||
+    message.includes('invalid login') ||
+    message.includes('invalid credentials')
+  ) {
+    return 'Invalid email or password.';
   }
 
   return err.error_description || err.message || fallback;

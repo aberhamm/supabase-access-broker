@@ -7,6 +7,7 @@ import {
   buildAuditContext,
   extractHostname,
 } from '@/lib/audit-service';
+import { getServerAppUrl } from '@/lib/app-url';
 
 /**
  * Centralized logout route handler with Single Logout (SLO) support.
@@ -263,25 +264,4 @@ function extractProjectRef(supabaseUrl: string): string {
   return 'unknown';
 }
 
-/**
- * Get the base URL for redirects
- */
-function getBaseUrl(request: NextRequest): string {
-  if (process.env.NEXT_PUBLIC_APP_URL) {
-    return process.env.NEXT_PUBLIC_APP_URL;
-  }
-
-  const forwardedHost = request.headers.get('x-forwarded-host');
-  if (forwardedHost) {
-    const protocol = request.headers.get('x-forwarded-proto') || 'https';
-    return `${protocol}://${forwardedHost}`;
-  }
-
-  const host = request.headers.get('host');
-  if (host) {
-    const protocol = host.includes('localhost') ? 'http' : 'https';
-    return `${protocol}://${host}`;
-  }
-
-  return new URL(request.url).origin;
-}
+const getBaseUrl = (request: NextRequest) => getServerAppUrl(request);

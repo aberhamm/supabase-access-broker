@@ -81,22 +81,24 @@ export async function POST(request: Request) {
 
     const user = data?.[0] as { id: string; email: string; raw_app_meta_data: Record<string, unknown> } | undefined;
 
-    if (!user) {
+    // Tenant scoping: only disclose users who have a claim for the calling app.
+    // Otherwise an app-credential holder can confirm whether any email exists
+    // anywhere in the broker, which is a cross-tenant enumeration leak.
+    const appMetadata = user?.raw_app_meta_data as Record<string, unknown> | undefined;
+    const apps = appMetadata?.apps as Record<string, unknown> | undefined;
+    const appClaims = (apps?.[appId] ?? null) as Record<string, unknown> | null;
+
+    if (!user || appClaims === null) {
       logSSOEvent({
         eventType: 'user_lookup_error',
         appId,
         errorCode: 'user_not_found',
         ipAddress,
         userAgent,
-        metadata: { lookup_method: lookupMethod },
+        metadata: { lookup_method: lookupMethod, auth_method: authMethod },
       });
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
-
-    // Extract app claims using raw_app_meta_data (RPC returns this, not app_metadata)
-    const appMetadata = user.raw_app_meta_data as Record<string, unknown> | undefined;
-    const apps = appMetadata?.apps as Record<string, unknown> | undefined;
-    const appClaims = (apps?.[appId] ?? null) as Record<string, unknown> | null;
 
     logSSOEvent({
       eventType: 'user_lookup_success',

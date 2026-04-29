@@ -8,6 +8,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { createUserWithPassword, inviteUserWithEmail } from '@/app/actions/users';
+import { PASSWORD_MIN_LENGTH } from '@/lib/password-policy';
 
 interface IdentityStepProps {
   onUserCreated: (userId: string, email: string) => void;
@@ -32,8 +33,8 @@ export function IdentityStep({ onUserCreated, onCancel, loading, setLoading }: I
       return;
     }
 
-    if (password.length < 6) {
-      toast.error('Password must be at least 6 characters');
+    if (password.length < PASSWORD_MIN_LENGTH) {
+      toast.error(`Password must be at least ${PASSWORD_MIN_LENGTH} characters`);
       return;
     }
 

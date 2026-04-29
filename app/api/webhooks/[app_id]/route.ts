@@ -3,6 +3,18 @@ import { authenticateAppRequest } from '@/lib/app-api-auth';
 import { enforceRateLimit } from '@/lib/app-api-rate-limit';
 import { logSSOEvent } from '@/lib/audit-service';
 
+/**
+ * Placeholder webhook receiver for consuming apps.
+ *
+ * NOT a generic third-party webhook relay (e.g. Stripe → broker). Authentication
+ * is by the consuming app's own API key / app secret via authenticateAppRequest.
+ * The endpoint is a stub that customer apps fork to add their own logic — it
+ * does not implement HMAC signature verification because the trust boundary is
+ * the app credential, not a per-source signing key.
+ *
+ * If you need to accept signed third-party webhooks, do not extend this route;
+ * add a new route that verifies HMAC + timestamp/replay window per source.
+ */
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ app_id: string }> }

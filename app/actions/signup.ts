@@ -8,13 +8,16 @@ import { createAdminClient } from '@/lib/supabase/server';
  * Called from the signup page after password/OTP auth succeeds client-side.
  * Validates that the app allows self-signup before granting.
  */
+// Single non-disclosive error string for any "you can't sign up to this app" condition.
+// Avoids enumeration of which apps exist / are enabled / allow self-signup.
+const SELF_SIGNUP_DENIED = 'This app is not available for self-signup.';
+
 export async function autoGrantAppAccess(appId: string): Promise<{ error: string | null }> {
   try {
     if (!appId || appId.length > 64) {
-      return { error: 'Invalid app ID' };
+      return { error: SELF_SIGNUP_DENIED };
     }
 
-    // Get the current user from session
     const supabase = await createClient();
     const { data: { user }, error: userError } = await supabase.auth.getUser();
 
@@ -22,13 +25,11 @@ export async function autoGrantAppAccess(appId: string): Promise<{ error: string
       return { error: 'Not authenticated' };
     }
 
-    // Check if user already has access
     const existingClaims = (user.app_metadata?.apps as Record<string, { enabled?: boolean }> | undefined)?.[appId];
     if (existingClaims?.enabled) {
-      return { error: null }; // Already has access, no-op
+      return { error: null };
     }
 
-    // Check if app exists and allows self-signup
     const adminClient = await createAdminClient();
     const { data: appData, error: appError } = await adminClient
       .schema('access_broker_app')
@@ -37,21 +38,12 @@ export async function autoGrantAppAccess(appId: string): Promise<{ error: string
       .eq('id', appId)
       .single();
 
-    if (appError || !appData) {
-      return { error: 'App not found' };
-    }
-
-    if (!appData.enabled) {
-      return { error: 'App is disabled' };
-    }
-
-    if (!appData.allow_self_signup) {
-      return { error: 'Self-signup is not enabled for this app' };
+    if (appError || !appData || !appData.enabled || !appData.allow_self_signup) {
+      return { error: SELF_SIGNUP_DENIED };
     }
 
     const defaultRole = appData.self_signup_default_role || 'user';
 
-    // Grant access via set_app_claims_batch RPC
     const { data: rpcResult, error: rpcError } = await adminClient.rpc('set_app_claims_batch', {
       p_uid: user.id,
       p_app_id: appId,
@@ -59,17 +51,16 @@ export async function autoGrantAppAccess(appId: string): Promise<{ error: string
     });
 
     if (rpcError) {
-      return { error: rpcError.message || 'Failed to grant access' };
+      return { error: 'Failed to grant access. Please try again.' };
     }
 
     const result = rpcResult as { status: string } | null;
     if (!result || result.status !== 'OK') {
-      return { error: result?.status ?? 'Unexpected error granting access' };
+      return { error: 'Failed to grant access. Please try again.' };
     }
 
     return { error: null };
-  } catch (e) {
-    const err = e as Error;
-    return { error: err.message || 'Failed to grant app access' };
+  } catch {
+    return { error: 'Failed to grant access. Please try again.' };
   }
 }

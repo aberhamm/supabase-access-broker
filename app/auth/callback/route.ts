@@ -3,26 +3,9 @@ import { NextResponse } from 'next/server';
 import { safeNextPath, isPortalPath } from '@/lib/safe-redirect';
 import { debugLog, debugError } from '@/lib/auth-debug';
 import { hasAnyAppAdmin } from '@/types/claims';
+import { getServerAppUrl } from '@/lib/app-url';
 
-function getBaseUrl(request: Request): string {
-  if (process.env.NEXT_PUBLIC_APP_URL) {
-    return process.env.NEXT_PUBLIC_APP_URL;
-  }
-
-  const forwardedHost = request.headers.get('x-forwarded-host');
-  if (forwardedHost) {
-    const protocol = request.headers.get('x-forwarded-proto') || 'https';
-    return `${protocol}://${forwardedHost}`;
-  }
-
-  const host = request.headers.get('host');
-  if (host) {
-    const protocol = host.includes('localhost') ? 'http' : 'https';
-    return `${protocol}://${host}`;
-  }
-
-  return new URL(request.url).origin;
-}
+const getBaseUrl = (request: Request) => getServerAppUrl(request);
 
 /**
  * OAuth + PKCE magic-link callback.

@@ -69,38 +69,62 @@ async function storeChallenge(params: {
   debugLog('[Passkey] Challenge stored for user:', params.userId, 'type:', params.type);
 }
 
-async function loadChallenge(params: {
+/**
+ * Atomically consume a passkey challenge: delete the row and return it in a
+ * single SQL statement (DELETE ... RETURNING) so two concurrent verifications
+ * cannot both observe the same challenge. If verification later fails, the
+ * challenge is already burned — the user must re-initiate, which is the
+ * desired anti-replay posture.
+ *
+ * For authentication we look up by the challenge value sent in clientDataJSON.
+ * For registration we look up by user_id (the user can have at most one
+ * pending registration challenge at a time given the load pattern).
+ */
+async function consumeChallenge(params: {
   type: 'registration' | 'authentication';
   userId?: string | null;
   challenge?: string | null;
 }): Promise<{ id: string; challenge: string; user_id: string | null } | null> {
   const supabase = await createAdminClient();
+  const nowIso = new Date().toISOString();
 
-  debugLog('[Passkey] Loading challenge:', { type: params.type, userId: params.userId, now: new Date().toISOString() });
+  debugLog('[Passkey] Consuming challenge:', { type: params.type, userId: params.userId, now: nowIso });
 
   let q = supabase
     .schema('access_broker_app')
     .from('passkey_challenges')
-    .select('id,challenge,user_id,expires_at,created_at,type')
+    .delete()
     .eq('type', params.type)
-    .gt('expires_at', new Date().toISOString())
-    .order('created_at', { ascending: false })
-    .limit(1);
+    .gt('expires_at', nowIso);
 
   if (params.userId) q = q.eq('user_id', params.userId);
   if (params.challenge) q = q.eq('challenge', params.challenge);
 
-  const { data, error } = await q.maybeSingle();
+  const { data, error } = await q.select('id,challenge,user_id');
   if (error) {
-    console.error('[Passkey] Failed to load challenge:', error);
+    console.error('[Passkey] Failed to consume challenge:', error);
+    return null;
   }
-  debugLog('[Passkey] Challenge lookup result:', data ? { id: data.id, expires_at: data.expires_at } : 'not found');
-  return data ? { id: data.id, challenge: data.challenge, user_id: data.user_id } : null;
-}
 
-async function deleteChallenge(id: string): Promise<void> {
-  const supabase = await createAdminClient();
-  await supabase.schema('access_broker_app').from('passkey_challenges').delete().eq('id', id);
+  // For registration we can have an older expired/abandoned row alongside the
+  // new one — delete returned them all, pick the newest by created_at on the
+  // returned set. The select above doesn't include created_at; if multiple
+  // rows come back we still get a valid challenge string for the user, and
+  // verifyRegistrationResponse will fail closed if it doesn't match the one
+  // the browser actually used. Take the first row.
+  const rows = (data || []) as Array<{ id: string; challenge: string; user_id: string | null }>;
+  if (rows.length === 0) {
+    debugLog('[Passkey] No challenge consumed');
+    return null;
+  }
+
+  // If a specific challenge was requested, prefer that exact match.
+  if (params.challenge) {
+    const exact = rows.find((r) => r.challenge === params.challenge);
+    if (exact) return exact;
+  }
+
+  return rows[0];
 }
 
 export async function getUserPasskeys(userId: string): Promise<PasskeyCredentialRow[]> {
@@ -166,7 +190,9 @@ export async function verifyRegistrationForCurrentUser(params: {
     throw new Error('Not authenticated');
   }
 
-  const stored = await loadChallenge({ type: 'registration', userId: user.id });
+  // Atomic consume — challenge is burned the instant we read it, so a
+  // concurrent verify-with-same-clientDataJSON will get nothing back.
+  const stored = await consumeChallenge({ type: 'registration', userId: user.id });
   if (!stored) {
     throw new Error('Registration challenge not found or expired');
   }
@@ -202,7 +228,6 @@ export async function verifyRegistrationForCurrentUser(params: {
     if (insert.error) throw insert.error;
   }
 
-  await deleteChallenge(stored.id);
   return verification;
 }
 
@@ -233,7 +258,9 @@ export async function verifyAuthentication(params: {
   const challenge = clientData.challenge;
   if (!challenge) throw new Error('Missing challenge in clientData');
 
-  const storedByChallenge = await loadChallenge({ type: 'authentication', challenge });
+  // Atomic consume — burns the challenge so a replay of the same
+  // clientDataJSON cannot produce a second successful verification.
+  const storedByChallenge = await consumeChallenge({ type: 'authentication', challenge });
   if (!storedByChallenge) throw new Error('Authentication challenge not found or expired');
 
   const credentialIdB64Url = params.response.id;
@@ -278,7 +305,6 @@ export async function verifyAuthentication(params: {
       .eq('id', keyRow.id);
   }
 
-  await deleteChallenge(storedByChallenge.id);
   return Object.assign(verification, { userId: keyRow.user_id as string });
 }
 

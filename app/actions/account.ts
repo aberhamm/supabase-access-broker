@@ -4,6 +4,7 @@ import { createClient } from '@/lib/supabase/server';
 import { revalidatePath } from 'next/cache';
 import type { MFAFactor, TOTPEnrollment, UpdateProfileData } from '@/types/claims';
 import { validateReturnUrl, type ReturnUrlValidation } from '@/lib/return-url';
+import { validatePassword } from '@/lib/password-policy';
 
 // =============================================================================
 // Profile Management (Self-Service)
@@ -76,6 +77,11 @@ export async function changePassword(
   newPassword: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
+    const policy = await validatePassword(newPassword);
+    if (!policy.ok) {
+      return { success: false, error: policy.error };
+    }
+
     const supabase = await createClient();
 
     const { error } = await supabase.auth.updateUser({

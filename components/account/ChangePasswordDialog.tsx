@@ -16,6 +16,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { KeyRound } from 'lucide-react';
 import { changePassword } from '@/app/actions/account';
+import { PASSWORD_MIN_LENGTH } from '@/lib/password-policy';
 
 export function ChangePasswordDialog() {
   const [open, setOpen] = useState(false);
@@ -26,8 +27,8 @@ export function ChangePasswordDialog() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters');
+    if (newPassword.length < PASSWORD_MIN_LENGTH) {
+      toast.error(`Password must be at least ${PASSWORD_MIN_LENGTH} characters`);
       return;
     }
 
@@ -94,7 +95,7 @@ export function ChangePasswordDialog() {
               onChange={(e) => setNewPassword(e.target.value)}
               placeholder="Enter new password"
               disabled={loading}
-              minLength={6}
+              minLength={PASSWORD_MIN_LENGTH}
               required
             />
           </div>
@@ -108,12 +109,13 @@ export function ChangePasswordDialog() {
               onChange={(e) => setConfirmPassword(e.target.value)}
               placeholder="Confirm new password"
               disabled={loading}
+              minLength={PASSWORD_MIN_LENGTH}
               required
             />
           </div>
 
           <p className="text-xs text-muted-foreground">
-            Password must be at least 6 characters.
+            At least {PASSWORD_MIN_LENGTH} characters. Avoid common or breached passwords.
           </p>
 
           <DialogFooter>

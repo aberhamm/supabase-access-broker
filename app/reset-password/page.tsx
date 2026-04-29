@@ -16,8 +16,9 @@ import { toast } from 'sonner';
 import Link from 'next/link';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { getAppUrl } from '@/lib/app-url';
-import { getValidatedReturnUrl } from '@/app/actions/account';
+import { getValidatedReturnUrl, changePassword } from '@/app/actions/account';
 import { ReturnUrlBanner } from '@/components/account/ReturnUrlBanner';
+import { PASSWORD_MIN_LENGTH } from '@/lib/password-policy';
 
 export default function ResetPasswordPage() {
   const [email, setEmail] = useState('');
@@ -102,8 +103,8 @@ export default function ResetPasswordPage() {
       return;
     }
 
-    if (password.length < 6) {
-      toast.error('Password must be at least 6 characters');
+    if (password.length < PASSWORD_MIN_LENGTH) {
+      toast.error(`Password must be at least ${PASSWORD_MIN_LENGTH} characters`);
       return;
     }
 
@@ -115,11 +116,13 @@ export default function ResetPasswordPage() {
     try {
       setLoading(true);
 
-      const { error } = await supabase.auth.updateUser({
-        password: password,
-      });
+      // Server action enforces length + HIBP breach check server-side.
+      const result = await changePassword(password);
 
-      if (error) throw error;
+      if (!result.success) {
+        toast.error(result.error || 'Failed to update password');
+        return;
+      }
 
       toast.success('Password updated successfully!');
 
@@ -191,11 +194,11 @@ export default function ResetPasswordPage() {
                   disabled={loading}
                   required
                   autoComplete="new-password"
-                  minLength={6}
+                  minLength={PASSWORD_MIN_LENGTH}
                   aria-describedby="password-hint"
                 />
                 <p id="password-hint" className="text-xs text-muted-foreground">
-                  Minimum 6 characters
+                  At least {PASSWORD_MIN_LENGTH} characters. Avoid common or breached passwords.
                 </p>
               </div>
               <div className="space-y-2">
@@ -209,7 +212,7 @@ export default function ResetPasswordPage() {
                   disabled={loading}
                   required
                   autoComplete="new-password"
-                  minLength={6}
+                  minLength={PASSWORD_MIN_LENGTH}
                   aria-describedby="confirm-hint"
                 />
                 <p id="confirm-hint" className="text-xs text-muted-foreground">

@@ -5,6 +5,7 @@ import { isClaimsAdmin, setAppClaim } from '@/lib/claims';
 import { getAppUrl } from '@/lib/app-url';
 import { revalidatePath } from 'next/cache';
 import type { BanDuration, MFAFactor, UpdateProfileData } from '@/types/claims';
+import { validatePassword } from '@/lib/password-policy';
 
 export interface CreateUserParams {
   email: string;
@@ -46,6 +47,13 @@ async function requireClaimsAdmin() {
  */
 export async function createUserWithPassword(params: CreateUserParams) {
   try {
+    if (params.password) {
+      const policy = await validatePassword(params.password);
+      if (!policy.ok) {
+        return { success: false, error: policy.error };
+      }
+    }
+
     const supabase = await requireClaimsAdmin();
 
     // Create user with password
