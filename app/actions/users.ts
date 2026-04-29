@@ -6,6 +6,7 @@ import { getAppUrl } from '@/lib/app-url';
 import { revalidatePath } from 'next/cache';
 import type { BanDuration, MFAFactor, UpdateProfileData } from '@/types/claims';
 import { validatePassword } from '@/lib/password-policy';
+import { assertStepUp } from '@/lib/mfa-gate';
 
 export interface CreateUserParams {
   email: string;
@@ -18,7 +19,7 @@ export interface InviteUserParams {
   isClaimsAdmin?: boolean;
 }
 
-async function requireClaimsAdmin() {
+async function requireClaimsAdmin(opts?: { stepUp?: boolean }) {
   const sessionClient = await createClient();
   const {
     data: { user },
@@ -39,6 +40,12 @@ async function requireClaimsAdmin() {
     throw new Error('Unauthorized: You must be a claims_admin');
   }
 
+  // Step-up: user-management writes (create, invite, delete, password reset
+  // for another user) require MFA when enrolled.
+  if (opts?.stepUp) {
+    await assertStepUp(sessionClient);
+  }
+
   return createAdminClient();
 }
 
@@ -54,7 +61,7 @@ export async function createUserWithPassword(params: CreateUserParams) {
       }
     }
 
-    const supabase = await requireClaimsAdmin();
+    const supabase = await requireClaimsAdmin({ stepUp: true });
 
     // Create user with password
     const { data, error } = await supabase.auth.admin.createUser({
@@ -84,7 +91,7 @@ export async function createUserWithPassword(params: CreateUserParams) {
  */
 export async function inviteUserWithEmail(params: InviteUserParams) {
   try {
-    const supabase = await requireClaimsAdmin();
+    const supabase = await requireClaimsAdmin({ stepUp: true });
 
     // Get the origin for the redirect URL
     const origin = getAppUrl();
@@ -154,7 +161,7 @@ export async function triggerPasswordReset(userEmail: string) {
  */
 export async function deleteUser(userId: string) {
   try {
-    const supabase = await requireClaimsAdmin();
+    const supabase = await requireClaimsAdmin({ stepUp: true });
 
     const { error } = await supabase.auth.admin.deleteUser(userId);
 
@@ -275,7 +282,7 @@ export async function deleteMFAFactorAdmin(
   factorId: string
 ): Promise<{ success: boolean; error?: string }> {
   try {
-    const supabase = await requireClaimsAdmin();
+    const supabase = await requireClaimsAdmin({ stepUp: true });
 
     const { error } = await supabase.auth.admin.mfa.deleteFactor({
       userId,
@@ -385,7 +392,7 @@ export async function grantMultiAppAccess(
   appAccess: Array<{ appId: string; role: string }>
 ): Promise<{ success: boolean; errors: string[] }> {
   try {
-    const supabase = await requireClaimsAdmin();
+    const supabase = await requireClaimsAdmin({ stepUp: true });
     const errors: string[] = [];
 
     for (const { appId, role } of appAccess) {

@@ -12,6 +12,7 @@ import {
   getExternalSources as getExternalSourcesService,
 } from '@/lib/external-keys-service';
 import { isClaimsAdmin, isAppAdmin } from '@/lib/claims';
+import { assertStepUp } from '@/lib/mfa-gate';
 import {
   CreateApiKeyData,
   UpdateApiKeyData,
@@ -23,7 +24,7 @@ import {
 } from '@/types/claims';
 import { revalidatePath } from 'next/cache';
 
-async function requireAppAccess(appId: string): Promise<string> {
+async function requireAppAccess(appId: string, opts?: { stepUp?: boolean }): Promise<string> {
   const supabase = await createClient();
   const { data: { user } } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
@@ -31,6 +32,13 @@ async function requireAppAccess(appId: string): Promise<string> {
   const { data: isAdmin } = await isClaimsAdmin(supabase);
   const { data: isAppAdminUser } = await isAppAdmin(supabase, appId);
   if (!isAdmin && !isAppAdminUser) throw new Error('Unauthorized');
+
+  // Sensitive write actions require AAL2 (or, in soft mode, that the user has
+  // not yet enrolled MFA). Read actions skip the gate to keep dashboards
+  // snappy.
+  if (opts?.stepUp) {
+    await assertStepUp(supabase);
+  }
 
   return user.id;
 }
@@ -56,7 +64,7 @@ export async function createApiKey(
   data: CreateApiKeyData
 ): Promise<{ id: string; secret: string }> {
   try {
-    const userId = await requireAppAccess(data.app_id);
+    const userId = await requireAppAccess(data.app_id, { stepUp: true });
 
     const result = await createApiKeyService(data, userId);
 
@@ -81,7 +89,7 @@ export async function updateApiKey(
   data: UpdateApiKeyData
 ): Promise<void> {
   try {
-    await requireAppAccess(appId);
+    await requireAppAccess(appId, { stepUp: true });
     await updateApiKeyService(id, data);
 
     // Revalidate the app page
@@ -99,7 +107,7 @@ export async function updateApiKey(
  */
 export async function deleteApiKey(id: string, appId: string): Promise<void> {
   try {
-    await requireAppAccess(appId);
+    await requireAppAccess(appId, { stepUp: true });
     await deleteApiKeyService(id);
 
     // Revalidate the app page
@@ -121,7 +129,7 @@ export async function toggleApiKey(
   enabled: boolean
 ): Promise<void> {
   try {
-    await requireAppAccess(appId);
+    await requireAppAccess(appId, { stepUp: true });
     await updateApiKeyService(id, { enabled });
 
     // Revalidate the app page
@@ -172,7 +180,7 @@ export async function createExternalSource(
   data: CreateExternalSourceData
 ): Promise<string> {
   try {
-    await requireAppAccess(data.app_id);
+    await requireAppAccess(data.app_id, { stepUp: true });
     const supabase = await createClient();
 
     const { data: sourceId, error } = await supabase.rpc(
@@ -209,7 +217,7 @@ export async function updateExternalSource(
   data: UpdateExternalSourceData
 ): Promise<void> {
   try {
-    await requireAppAccess(appId);
+    await requireAppAccess(appId, { stepUp: true });
     const supabase = await createClient();
 
     const { data: result, error } = await supabase.rpc(
@@ -248,7 +256,7 @@ export async function deleteExternalSource(
   appId: string
 ): Promise<void> {
   try {
-    await requireAppAccess(appId);
+    await requireAppAccess(appId, { stepUp: true });
     const supabase = await createClient();
 
     const { data: result, error } = await supabase.rpc(

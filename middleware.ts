@@ -3,6 +3,7 @@ import { NextResponse, type NextRequest } from 'next/server';
 import { debugLog, debugWarn, debugTrace, isDebugAuthEnabled } from '@/lib/auth-debug';
 import { PUBLIC_ROUTE_PREFIXES, PORTAL_ROUTE_PREFIXES } from '@/lib/auth-routes';
 import { hasAnyAppAdmin } from '@/types/claims';
+import { buildCspHeader, generateNonce } from '@/lib/csp';
 
 type AuthErrorLike = {
   code?: string | null;
@@ -36,17 +37,27 @@ function isDefinitiveAuthFailure(error: AuthErrorLike | null | undefined): boole
 }
 
 export async function middleware(request: NextRequest) {
-  const response = NextResponse.next();
   const debugAuth = isDebugAuthEnabled();
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
+  const isDev = process.env.NODE_ENV !== 'production';
+
+  // Per-request CSP nonce. Set on the inbound request headers so the root
+  // layout can read it via next/headers and apply it to <script> tags.
+  const nonce = generateNonce();
+  const csp = buildCspHeader({ nonce, supabaseUrl, isDev });
+
+  const requestHeaders = new Headers(request.headers);
+  requestHeaders.set('x-nonce', nonce);
+
+  const response = NextResponse.next({ request: { headers: requestHeaders } });
 
   // Webhook routes handle their own auth inline (authenticateAppRequest)
   // — no middleware auth needed. Let them pass through to the route handler.
   if (request.nextUrl.pathname.startsWith('/api/webhooks/')) {
-    const webhookResponse = NextResponse.next();
-    webhookResponse.headers.set('Content-Security-Policy', `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ${supabaseUrl}; frame-ancestors 'self'`);
+    const webhookResponse = NextResponse.next({ request: { headers: requestHeaders } });
+    webhookResponse.headers.set('Content-Security-Policy', csp);
     return webhookResponse;
   }
 
@@ -320,8 +331,12 @@ export async function middleware(request: NextRequest) {
     debugLog('[MIDDLEWARE] User has admin access, allowing request');
   }
 
-  // CSP headers to mitigate XSS impact (auth cookies are not httpOnly per Supabase SSR requirement)
-  response.headers.set('Content-Security-Policy', `default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; connect-src 'self' ${supabaseUrl}; frame-ancestors 'self'`);
+  // Tightened CSP — drops 'unsafe-inline' for scripts in favor of nonce +
+  // 'strict-dynamic'. Auth cookies still need to be readable by the
+  // Supabase browser SDK (per @supabase/ssr design), so XSS containment
+  // here is the primary defense — inline-script injection no longer
+  // executes.
+  response.headers.set('Content-Security-Policy', csp);
 
   return response;
 }

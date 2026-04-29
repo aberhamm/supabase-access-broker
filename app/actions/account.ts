@@ -5,6 +5,7 @@ import { revalidatePath } from 'next/cache';
 import type { MFAFactor, TOTPEnrollment, UpdateProfileData } from '@/types/claims';
 import { validateReturnUrl, type ReturnUrlValidation } from '@/lib/return-url';
 import { validatePassword } from '@/lib/password-policy';
+import { requireStepUp } from '@/lib/mfa-gate';
 
 // =============================================================================
 // Profile Management (Self-Service)
@@ -219,9 +220,17 @@ export async function verifyTOTP(
  */
 export async function unenrollMFAFactor(
   factorId: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; code?: string }> {
   try {
     const supabase = await createClient();
+
+    // Step-up: removing an MFA factor must require the *current* MFA factor
+    // to be presented in this session. Otherwise a stolen-cookie attacker
+    // can disable MFA entirely.
+    const stepUp = await requireStepUp(supabase);
+    if (!stepUp.ok) {
+      return { success: false, error: stepUp.message, code: stepUp.code };
+    }
 
     const { error } = await supabase.auth.mfa.unenroll({ factorId });
 

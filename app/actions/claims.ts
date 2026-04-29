@@ -11,6 +11,7 @@ import {
   isAppAdmin,
 } from '@/lib/claims';
 import { revalidatePath } from 'next/cache';
+import { requireStepUp } from '@/lib/mfa-gate';
 
 // Input validation constants
 const MAX_UID_LENGTH = 36; // UUID length
@@ -56,6 +57,12 @@ export async function setClaimAction(
   const { data: isAdmin } = await isClaimsAdmin(supabase);
   if (!isAdmin) {
     return { error: 'Unauthorized: You must be a claims_admin' };
+  }
+
+  // Step-up: top-level claim writes (especially `claims_admin`) need MFA.
+  const stepUp = await requireStepUp(supabase);
+  if (!stepUp.ok) {
+    return { error: stepUp.message, code: stepUp.code };
   }
 
   // Parse the value as JSON
@@ -120,6 +127,12 @@ export async function toggleClaimsAdminAction(uid: string, isAdmin: boolean) {
   const { data: currentIsAdmin } = await isClaimsAdmin(supabase);
   if (!currentIsAdmin) {
     return { error: 'Unauthorized: You must be a claims_admin' };
+  }
+
+  // Step-up: granting/revoking global admin is the most sensitive op we do.
+  const stepUp = await requireStepUp(supabase);
+  if (!stepUp.ok) {
+    return { error: stepUp.message, code: stepUp.code };
   }
 
   const { data, error } = await setClaim(
