@@ -1,69 +1,84 @@
 /**
- * In-memory sliding window rate limiter.
+ * Postgres-backed rate limiter.
  *
- * Each key (e.g. API key hash) gets a window of timestamps.
- * Requests older than the window are pruned on each check.
- * Resets on process restart — acceptable for Next.js serverless.
+ * Limits are stored in access_broker_app.rate_limits and consumed atomically
+ * via the consume_rate_limit RPC. Survives process restarts and is shared
+ * across replicas.
+ *
+ * Bucket key is composed by the caller — typical patterns:
+ *   - "login:ip:1.2.3.4"
+ *   - "login:email:user@example.com"
+ *   - "passkey-options:ip:1.2.3.4"
+ *   - "app-api:write:<api_key_hash>"
+ *
+ * On RPC failure (DB unavailable) we fail OPEN — refusing requests when the
+ * DB is down would create a self-inflicted DoS. Failures are logged so they
+ * surface in monitoring.
  */
 
-interface WindowEntry {
-  timestamps: number[];
-}
+import { createAdminClient } from '@/lib/supabase/server';
 
-const windows = new Map<string, WindowEntry>();
+export type RateLimitResult = {
+  allowed: boolean;
+  remaining: number;
+  resetAt: number; // epoch ms
+  hits: number;
+};
 
-// Periodically clean up stale entries to prevent memory leaks
-const CLEANUP_INTERVAL_MS = 60_000;
-let lastCleanup = Date.now();
-
-function cleanup(windowMs: number) {
-  const now = Date.now();
-  if (now - lastCleanup < CLEANUP_INTERVAL_MS) return;
-  lastCleanup = now;
-
-  const cutoff = now - windowMs;
-  for (const [key, entry] of windows) {
-    entry.timestamps = entry.timestamps.filter((t) => t > cutoff);
-    if (entry.timestamps.length === 0) {
-      windows.delete(key);
-    }
-  }
-}
-
-/**
- * Check if a request is allowed under the rate limit.
- *
- * @param key - Unique identifier (e.g. API key hash or app_id)
- * @param maxRequests - Maximum requests allowed in the window
- * @param windowMs - Window size in milliseconds
- * @returns Object with `allowed`, `remaining`, and `resetAt` (epoch ms)
- */
-export function checkRateLimit(
-  key: string,
+export async function checkRateLimit(
+  bucket: string,
   maxRequests: number,
-  windowMs: number
-): { allowed: boolean; remaining: number; resetAt: number } {
-  const now = Date.now();
-  const cutoff = now - windowMs;
+  windowMs: number,
+): Promise<RateLimitResult> {
+  const windowSeconds = Math.max(1, Math.ceil(windowMs / 1000));
 
-  cleanup(windowMs);
+  try {
+    const supabase = await createAdminClient();
+    const { data, error } = await supabase
+      .schema('access_broker_app')
+      .rpc('consume_rate_limit', {
+        p_bucket: bucket,
+        p_max_requests: maxRequests,
+        p_window_seconds: windowSeconds,
+      });
 
-  let entry = windows.get(key);
-  if (!entry) {
-    entry = { timestamps: [] };
-    windows.set(key, entry);
+    if (error) {
+      console.error('[rate-limit] consume_rate_limit RPC error — failing open:', {
+        bucket,
+        error: error.message,
+      });
+      return failOpen(maxRequests, windowMs);
+    }
+
+    const row = (data ?? null) as
+      | { allowed: boolean; hits: number; remaining: number; reset_at: number }
+      | null;
+
+    if (!row) {
+      console.error('[rate-limit] consume_rate_limit returned no row — failing open:', { bucket });
+      return failOpen(maxRequests, windowMs);
+    }
+
+    return {
+      allowed: row.allowed,
+      remaining: row.remaining,
+      resetAt: row.reset_at * 1000,
+      hits: row.hits,
+    };
+  } catch (e) {
+    console.error('[rate-limit] consume_rate_limit threw — failing open:', {
+      bucket,
+      error: e instanceof Error ? e.message : String(e),
+    });
+    return failOpen(maxRequests, windowMs);
   }
+}
 
-  // Prune old timestamps
-  entry.timestamps = entry.timestamps.filter((t) => t > cutoff);
-
-  const remaining = Math.max(0, maxRequests - entry.timestamps.length);
-  const resetAt = entry.timestamps.length > 0 ? entry.timestamps[0] + windowMs : now + windowMs;
-
-  if (entry.timestamps.length >= maxRequests) {
-    return { allowed: false, remaining: 0, resetAt };
-  }
-
-  entry.timestamps.push(now);
-  return { allowed: true, remaining: remaining - 1, resetAt };
+function failOpen(maxRequests: number, windowMs: number): RateLimitResult {
+  return {
+    allowed: true,
+    remaining: maxRequests,
+    resetAt: Date.now() + windowMs,
+    hits: 0,
+  };
 }

@@ -195,7 +195,7 @@ export async function GET(request: Request) {
 
     if (!hasExistingClaim) {
       // Rate-limit signup grants per app
-      const rateLimited = enforceRateLimit(`signup:${appId}`, 'write');
+      const rateLimited = await enforceRateLimit(`signup:${appId}`, 'write');
       if (rateLimited) {
         return NextResponse.redirect(
           buildErrorPageUrl(appOrigin, {

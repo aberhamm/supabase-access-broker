@@ -19,7 +19,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
   const auth = await authenticateAppRequest(request, appId);
   if (!auth.ok) return auth.response;
 
-  const rateLimited = enforceRateLimit(appId, 'read');
+  const rateLimited = await enforceRateLimit(appId, 'read');
   if (rateLimited) return rateLimited;
 
   const { ipAddress, userAgent, authMethod } = auth;
@@ -79,7 +79,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   const auth = await authenticateAppRequest(request, appId, body);
   if (!auth.ok) return auth.response;
 
-  const rateLimited = enforceRateLimit(appId, 'write');
+  const rateLimited = await enforceRateLimit(appId, 'write');
   if (rateLimited) return rateLimited;
 
   // app_secret already stripped by authenticateAppRequest
@@ -201,7 +201,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
   const auth = await authenticateAppRequest(request, appId, body);
   if (!auth.ok) return auth.response;
 
-  const rateLimitedDel = enforceRateLimit(appId, 'write');
+  const rateLimitedDel = await enforceRateLimit(appId, 'write');
   if (rateLimitedDel) return rateLimitedDel;
 
   // app_secret already stripped by authenticateAppRequest

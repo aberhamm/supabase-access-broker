@@ -1,12 +1,29 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { createAdminClient } from '@/lib/supabase/server';
+import { enforceAuthLimit, getClientIp } from '@/lib/auth-rate-limit';
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ appId: string }> }
 ) {
   try {
     const { appId } = await params;
+
+    // Public endpoint — rate-limit per IP to prevent app catalog enumeration.
+    const limit = await enforceAuthLimit({
+      action: 'passkey-options',
+      ip: getClientIp(request.headers),
+      identifier: appId,
+    });
+    if (!limit.allowed) {
+      return NextResponse.json(
+        { auth_methods: null, status: 'rate_limited' },
+        {
+          status: 429,
+          headers: { 'Retry-After': String(limit.retryAfterSec) },
+        },
+      );
+    }
 
     // Use admin client to bypass RLS — this endpoint is called by
     // unauthenticated users during the SSO login flow, and the apps

@@ -21,7 +21,7 @@ export async function POST(
   const auth = await authenticateAppRequest(request, appId, body);
   if (!auth.ok) return auth.response;
 
-  const rateLimited = enforceRateLimit(appId, 'write');
+  const rateLimited = await enforceRateLimit(appId, 'write');
   if (rateLimited) return rateLimited;
 
   // app_secret already stripped by authenticateAppRequest

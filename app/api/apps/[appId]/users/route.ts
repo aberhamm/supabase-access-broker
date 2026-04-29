@@ -13,7 +13,7 @@ export async function GET(
   const auth = await authenticateAppRequest(request, appId);
   if (!auth.ok) return auth.response;
 
-  const rateLimited = enforceRateLimit(appId, 'read');
+  const rateLimited = await enforceRateLimit(appId, 'read');
   if (rateLimited) return rateLimited;
 
   const { ipAddress, userAgent, authMethod } = auth;

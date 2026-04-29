@@ -34,7 +34,7 @@ export async function POST(
   });
   if (!auth.ok) return auth.response;
 
-  const rateLimited = enforceRateLimit(app_id, 'write');
+  const rateLimited = await enforceRateLimit(app_id, 'write');
   if (rateLimited) return rateLimited;
 
   const { ipAddress, userAgent, authMethod } = auth;
@@ -81,7 +81,7 @@ export async function GET(
   });
   if (!auth.ok) return auth.response;
 
-  const rateLimited = enforceRateLimit(app_id, 'read');
+  const rateLimited = await enforceRateLimit(app_id, 'read');
   if (rateLimited) return rateLimited;
 
   return NextResponse.json({
