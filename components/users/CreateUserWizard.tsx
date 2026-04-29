@@ -19,6 +19,7 @@ import { AppAccessStep, type AppSelection } from './wizard/AppAccessStep';
 import { getAppsAction } from '@/app/actions/apps';
 import { grantMultiAppAccess } from '@/app/actions/users';
 import type { AppConfig } from '@/types/claims';
+import { useStepUp } from '@/components/auth/StepUpProvider';
 
 const WIZARD_STEPS = [
   { label: 'Identity' },
@@ -42,6 +43,7 @@ export function CreateUserWizard({
   const [step, setStep] = useState(0);
   const [loading, setLoading] = useState(false);
   const [createdUserId, setCreatedUserId] = useState<string | null>(null);
+  const { withStepUp } = useStepUp();
   const [createdEmail, setCreatedEmail] = useState('');
   const [apps, setApps] = useState<AppConfig[]>(appsProp || []);
   const [selections, setSelections] = useState<Record<string, AppSelection>>({});
@@ -109,8 +111,15 @@ export function CreateUserWizard({
     }
 
     setLoading(true);
-    const result = await grantMultiAppAccess(createdUserId, selectedApps);
-    setLoading(false);
+    let result;
+    try {
+      result = await withStepUp(
+        () => grantMultiAppAccess(createdUserId, selectedApps),
+        'Confirm to grant app access',
+      );
+    } finally {
+      setLoading(false);
+    }
 
     if (result.errors.length > 0) {
       result.errors.forEach((err) => toast.error(err));

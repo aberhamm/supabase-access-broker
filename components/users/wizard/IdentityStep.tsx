@@ -9,6 +9,7 @@ import { Switch } from '@/components/ui/switch';
 import { toast } from 'sonner';
 import { createUserWithPassword, inviteUserWithEmail } from '@/app/actions/users';
 import { PASSWORD_MIN_LENGTH } from '@/lib/password-policy';
+import { useStepUp } from '@/components/auth/StepUpProvider';
 
 interface IdentityStepProps {
   onUserCreated: (userId: string, email: string) => void;
@@ -24,6 +25,7 @@ export function IdentityStep({ onUserCreated, onCancel, loading, setLoading }: I
 
   const [inviteEmail, setInviteEmail] = useState('');
   const [inviteIsAdmin, setInviteIsAdmin] = useState(false);
+  const { withStepUp } = useStepUp();
 
   const handleCreateWithPassword = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,13 +42,22 @@ export function IdentityStep({ onUserCreated, onCancel, loading, setLoading }: I
 
     setLoading(true);
 
-    const result = await createUserWithPassword({
-      email: passwordEmail,
-      password: password,
-      isClaimsAdmin: passwordIsAdmin,
-    });
-
-    setLoading(false);
+    let result;
+    try {
+      result = await withStepUp(
+        () =>
+          createUserWithPassword({
+            email: passwordEmail,
+            password: password,
+            isClaimsAdmin: passwordIsAdmin,
+          }),
+        passwordIsAdmin
+          ? `Confirm to create ${passwordEmail} as a global admin`
+          : `Confirm to create ${passwordEmail}`,
+      );
+    } finally {
+      setLoading(false);
+    }
 
     if (result.success && result.user) {
       toast.success(`User ${passwordEmail} created successfully!`);
@@ -66,12 +77,21 @@ export function IdentityStep({ onUserCreated, onCancel, loading, setLoading }: I
 
     setLoading(true);
 
-    const result = await inviteUserWithEmail({
-      email: inviteEmail,
-      isClaimsAdmin: inviteIsAdmin,
-    });
-
-    setLoading(false);
+    let result;
+    try {
+      result = await withStepUp(
+        () =>
+          inviteUserWithEmail({
+            email: inviteEmail,
+            isClaimsAdmin: inviteIsAdmin,
+          }),
+        inviteIsAdmin
+          ? `Confirm to invite ${inviteEmail} as a global admin`
+          : `Confirm to invite ${inviteEmail}`,
+      );
+    } finally {
+      setLoading(false);
+    }
 
     if (result.success && result.user) {
       toast.success(`Invitation sent to ${inviteEmail}!`);

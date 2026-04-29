@@ -14,6 +14,7 @@ import { ApiKey } from '@/types/claims';
 import { deleteApiKey } from '@/app/actions/api-keys';
 import { toast } from 'sonner';
 import { AlertTriangle } from 'lucide-react';
+import { useStepUp } from '@/components/auth/StepUpProvider';
 
 interface DeleteApiKeyDialogProps {
   apiKey: ApiKey;
@@ -29,12 +30,16 @@ export function DeleteApiKeyDialog({
   onOpenChange,
 }: DeleteApiKeyDialogProps) {
   const [loading, setLoading] = useState(false);
+  const { withStepUp } = useStepUp();
 
   const handleDelete = async () => {
     setLoading(true);
 
     try {
-      await deleteApiKey(apiKey.id, appId);
+      await withStepUp(
+        () => deleteApiKey(apiKey.id, appId),
+        'Confirm to delete this API key',
+      );
       toast.success('API key deleted successfully');
       onOpenChange(false);
     } catch (error) {

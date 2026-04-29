@@ -19,6 +19,7 @@ import { Smartphone, Key, Trash2, ShieldCheck, ShieldAlert } from 'lucide-react'
 import { deleteMFAFactorAdmin } from '@/app/actions/users';
 import { unenrollMFAFactor } from '@/app/actions/account';
 import { useRouter } from 'next/navigation';
+import { useStepUp } from '@/components/auth/StepUpProvider';
 import { formatDistanceToNow } from 'date-fns';
 import type { MFAFactor } from '@/types/claims';
 
@@ -35,6 +36,7 @@ export function MFAFactorsList({
 }: MFAFactorsListProps) {
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const router = useRouter();
+  const { withStepUp } = useStepUp();
 
   const isAdminMode = !!userId;
 
@@ -42,12 +44,15 @@ export function MFAFactorsList({
     setDeletingId(factorId);
 
     try {
-      let result;
-      if (isAdminMode) {
-        result = await deleteMFAFactorAdmin(userId, factorId);
-      } else {
-        result = await unenrollMFAFactor(factorId);
-      }
+      const result = await withStepUp(
+        () =>
+          isAdminMode
+            ? deleteMFAFactorAdmin(userId, factorId)
+            : unenrollMFAFactor(factorId),
+        isAdminMode
+          ? 'Confirm to remove this user’s MFA factor'
+          : 'Confirm to remove your MFA factor',
+      );
 
       if (result.success) {
         toast.success('MFA factor removed');

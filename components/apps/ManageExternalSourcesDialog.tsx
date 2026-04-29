@@ -30,6 +30,7 @@ import {
 import { toast } from 'sonner';
 import { Settings2, Plus, Trash2 } from 'lucide-react';
 import { ExternalSourceBadge } from './ExternalSourceBadge';
+import { useStepUp } from '@/components/auth/StepUpProvider';
 
 interface ManageExternalSourcesDialogProps {
   appId: string;
@@ -45,6 +46,7 @@ export function ManageExternalSourcesDialog({
   const [open, setOpen] = useState(false);
   const [showAddForm, setShowAddForm] = useState(false);
   const [loading, setLoading] = useState(false);
+  const { withStepUp } = useStepUp();
 
   // Form state
   const [name, setName] = useState('');
@@ -67,13 +69,17 @@ export function ManageExternalSourcesDialog({
         ? JSON.stringify({ type: 'bearer', token: apiKey.trim() })
         : undefined;
 
-      await createExternalSource({
-        app_id: appId,
-        name: name.trim(),
-        source_type: sourceType,
-        api_url: apiUrl.trim(),
-        api_credentials: credentials,
-      });
+      await withStepUp(
+        () =>
+          createExternalSource({
+            app_id: appId,
+            name: name.trim(),
+            source_type: sourceType,
+            api_url: apiUrl.trim(),
+            api_credentials: credentials,
+          }),
+        'Confirm to add an external key source',
+      );
 
       toast.success('External source added successfully');
       setShowAddForm(false);
@@ -92,7 +98,10 @@ export function ManageExternalSourcesDialog({
 
   const handleToggle = async (source: ExternalKeySource) => {
     try {
-      await toggleExternalSource(source.id, appId, !source.enabled);
+      await withStepUp(
+        () => toggleExternalSource(source.id, appId, !source.enabled),
+        source.enabled ? 'Confirm to disable this source' : 'Confirm to enable this source',
+      );
       toast.success(
         `Source ${!source.enabled ? 'enabled' : 'disabled'} successfully`
       );
@@ -109,7 +118,10 @@ export function ManageExternalSourcesDialog({
     }
 
     try {
-      await deleteExternalSource(source.id, appId);
+      await withStepUp(
+        () => deleteExternalSource(source.id, appId),
+        'Confirm to delete this external key source',
+      );
       toast.success('External source deleted successfully');
     } catch (error) {
       toast.error(

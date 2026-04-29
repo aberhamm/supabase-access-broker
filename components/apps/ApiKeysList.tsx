@@ -19,6 +19,7 @@ import { toggleApiKey } from '@/app/actions/api-keys';
 import { toast } from 'sonner';
 import { DeleteApiKeyDialog } from './DeleteApiKeyDialog';
 import { ExternalSourceBadge } from './ExternalSourceBadge';
+import { useStepUp } from '@/components/auth/StepUpProvider';
 
 interface ApiKeysListProps {
   apiKeys: ApiKey[] | UnifiedApiKey[];
@@ -30,6 +31,7 @@ export function ApiKeysList({ apiKeys, appId, showSource = false }: ApiKeysListP
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [selectedKey, setSelectedKey] = useState<ApiKey | UnifiedApiKey | null>(null);
   const [togglingKey, setTogglingKey] = useState<string | null>(null);
+  const { withStepUp } = useStepUp();
 
   const isUnifiedKey = (key: ApiKey | UnifiedApiKey): key is UnifiedApiKey => {
     return 'is_local' in key;
@@ -44,7 +46,10 @@ export function ApiKeysList({ apiKeys, appId, showSource = false }: ApiKeysListP
 
     setTogglingKey(key.id);
     try {
-      await toggleApiKey(key.id, appId, !key.enabled);
+      await withStepUp(
+        () => toggleApiKey(key.id, appId, !key.enabled),
+        key.enabled ? 'Confirm to disable this API key' : 'Confirm to enable this API key',
+      );
       toast.success(
         `API key ${!key.enabled ? 'enabled' : 'disabled'} successfully`
       );

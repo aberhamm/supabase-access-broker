@@ -18,6 +18,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, Trash2 } from 'lucide-react';
 import { deleteUser } from '@/app/actions/users';
 import { toast } from 'sonner';
+import { useStepUp } from '@/components/auth/StepUpProvider';
 
 interface DeleteUserDialogProps {
   userId: string;
@@ -29,6 +30,7 @@ export function DeleteUserDialog({ userId, userEmail }: DeleteUserDialogProps) {
   const [open, setOpen] = useState(false);
   const [loading, setLoading] = useState(false);
   const [confirmText, setConfirmText] = useState('');
+  const { withStepUp } = useStepUp();
 
   const handleDelete = async () => {
     if (confirmText !== userEmail) {
@@ -39,7 +41,10 @@ export function DeleteUserDialog({ userId, userEmail }: DeleteUserDialogProps) {
     setLoading(true);
 
     try {
-      const result = await deleteUser(userId);
+      const result = await withStepUp(
+        () => deleteUser(userId),
+        `Confirm to permanently delete ${userEmail}`,
+      );
 
       if (!result.success) {
         toast.error(result.error || 'Failed to delete user');

@@ -16,6 +16,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { setClaimAction } from '@/app/actions/claims';
 import { toast } from 'sonner';
 import { getClaimType } from '@/lib/claims';
+import { useStepUp } from '@/components/auth/StepUpProvider';
 
 interface ClaimEditorProps {
   userId: string;
@@ -48,6 +49,7 @@ export function ClaimEditor({
       : ''
   );
   const [loading, setLoading] = useState(false);
+  const { withStepUp } = useStepUp();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,10 +62,15 @@ export function ClaimEditor({
     setLoading(true);
 
     try {
-      // Use custom action if provided (for app-specific claims), otherwise use default
-      const result = customAction
-        ? await customAction(userId, key, value)
-        : await setClaimAction(userId, key, value);
+      // Use custom action if provided (for app-specific claims), otherwise use default.
+      // setClaimAction is gated server-side; per-app custom actions may also be gated.
+      const runner = customAction
+        ? () => customAction(userId, key, value)
+        : () => setClaimAction(userId, key, value) as Promise<{ error?: string | null; data?: unknown }>;
+      const result = await withStepUp(
+        runner,
+        appId ? 'Confirm to update an app claim' : 'Confirm to update a claim',
+      );
 
       if (result.error) {
         toast.error(result.error);
