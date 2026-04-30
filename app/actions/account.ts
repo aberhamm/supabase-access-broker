@@ -247,6 +247,61 @@ export async function unenrollMFAFactor(
 }
 
 // =============================================================================
+// Linked Identities (OAuth provider linking)
+// =============================================================================
+
+/**
+ * Unlink an OAuth identity (e.g. Google, Apple) from the current user. The
+ * link side of the flow is client-side because it requires an OAuth redirect;
+ * unlinking is a single API call so we keep it server-side and gated.
+ *
+ * Refuses to unlink the user's only sign-in method — Supabase enforces this
+ * too, but checking here gives a clearer error.
+ */
+export async function unlinkIdentityAction(
+  identityId: string
+): Promise<{ success: boolean; error?: string }> {
+  try {
+    const supabase = await createClient();
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      return { success: false, error: 'Not authenticated' };
+    }
+
+    const { data: identitiesData, error: listError } =
+      await supabase.auth.getUserIdentities();
+    if (listError) {
+      return { success: false, error: listError.message };
+    }
+
+    const identities = identitiesData?.identities ?? [];
+    const identity = identities.find((i) => i.identity_id === identityId);
+    if (!identity) {
+      return { success: false, error: 'Identity not found' };
+    }
+
+    if (identities.length <= 1) {
+      return {
+        success: false,
+        error: "You can't disconnect your only sign-in method.",
+      };
+    }
+
+    const { error } = await supabase.auth.unlinkIdentity(identity);
+    if (error) {
+      return { success: false, error: error.message };
+    }
+
+    revalidatePath('/account');
+    return { success: true };
+  } catch (error) {
+    const err = error as Error;
+    return { success: false, error: err.message };
+  }
+}
+
+// =============================================================================
 // Return URL Validation (for external app redirects)
 // =============================================================================
 

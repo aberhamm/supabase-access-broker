@@ -10,9 +10,11 @@ import { EditProfileDialog } from '@/components/users/EditProfileDialog';
 import { MFAFactorsList } from '@/components/users/MFAFactorsList';
 import { MFAEnrollDialog } from '@/components/account/MFAEnrollDialog';
 import { ChangePasswordDialog } from '@/components/account/ChangePasswordDialog';
+import { LinkedIdentitiesCard } from '@/components/account/LinkedIdentitiesCard';
 import { PageHeader } from '@/components/layout/PageHeader';
 import { validateReturnUrl } from '@/lib/return-url';
 import { ReturnUrlBanner } from '@/components/account/ReturnUrlBanner';
+import type { UserIdentity } from '@supabase/supabase-js';
 
 export default async function AccountPage({
   searchParams,
@@ -207,6 +209,9 @@ export default async function AccountPage({
 
       {/* Passkeys Section */}
       <PasskeyManager initialPasskeys={items} onDelete={onDelete} />
+
+      {/* Linked OAuth identities */}
+      <LinkedIdentitiesCard identities={(user.identities ?? []) as UserIdentity[]} />
     </div>
   );
 }
