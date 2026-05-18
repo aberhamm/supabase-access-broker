@@ -1,4 +1,4 @@
-import { deleteTestUser, deleteTestApp, cleanupOldAuthCodes } from '../utils/test-helpers';
+import { deleteTestUser, deleteTestApp, cleanupOldAuthCodes, cleanupTestUsers } from '../utils/test-helpers';
 
 /**
  * Global teardown runs once after all tests complete.
@@ -20,6 +20,13 @@ async function globalTeardown() {
     console.log('✓ Test user cleaned up');
   } catch (e) {
     console.warn('⚠ Could not clean up test user:', (e as Error).message);
+  }
+
+  try {
+    const deleted = await cleanupTestUsers();
+    console.log(`✓ Bulk-cleaned ${deleted} prefixed test user(s)`);
+  } catch (e) {
+    console.warn('⚠ Could not bulk-clean test users:', (e as Error).message);
   }
 
   try {

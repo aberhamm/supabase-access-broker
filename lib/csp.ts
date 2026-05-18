@@ -30,18 +30,27 @@ export function buildCspHeader(params: {
   nonce: string;
   supabaseUrl: string;
   isDev: boolean;
+  /**
+   * Relaxes script-src to allow inline `<script>` and `onclick=` handlers.
+   * Used for /demo/* — public, self-hosted integration demos that ship as
+   * static HTML and don't have a server pass to inject nonces. The demo
+   * pages don't render user-controlled content, so the XSS surface is nil.
+   */
+  allowInlineScripts?: boolean;
 }): string {
-  const { nonce, supabaseUrl, isDev } = params;
+  const { nonce, supabaseUrl, isDev, allowInlineScripts } = params;
 
-  const scriptSrc = [
-    `'self'`,
-    `'nonce-${nonce}'`,
-    `'strict-dynamic'`,
-    ...SCRIPT_HOST_FALLBACKS,
-    isDev ? `'unsafe-eval'` : '',
-  ]
-    .filter(Boolean)
-    .join(' ');
+  const scriptSrc = allowInlineScripts
+    ? [`'self'`, `'unsafe-inline'`, isDev ? `'unsafe-eval'` : ''].filter(Boolean).join(' ')
+    : [
+        `'self'`,
+        `'nonce-${nonce}'`,
+        `'strict-dynamic'`,
+        ...SCRIPT_HOST_FALLBACKS,
+        isDev ? `'unsafe-eval'` : '',
+      ]
+        .filter(Boolean)
+        .join(' ');
 
   // Connect: self for our own routes, supabaseUrl for auth/realtime, plus
   // the HIBP API used by the password policy server-side check.

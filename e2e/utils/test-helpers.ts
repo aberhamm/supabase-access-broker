@@ -1,5 +1,6 @@
-import { createHash } from 'node:crypto';
-import { createClient, SupabaseClient } from '@supabase/supabase-js';
+import { createHash, randomUUID } from 'node:crypto';
+import { createClient, SupabaseClient, User } from '@supabase/supabase-js';
+import type { Browser, BrowserContext, Page } from '@playwright/test';
 
 let _supabase: SupabaseClient | null = null;
 
@@ -269,6 +270,181 @@ export async function setAppAuthMethods(
     .eq('id', appId);
 
   if (error) throw error;
+}
+
+// ---------------------------------------------------------------------------
+// Multi-user factory + bulk cleanup
+//
+// Safe to run against any environment, including production. Every test user
+// is tagged with three independent markers so cleanup can never delete a real
+// user by accident:
+//
+//   1. Email local-part starts with `e2e+`
+//   2. Email domain equals TEST_USER_DOMAIN (default `e2e.test`)
+//   3. `app_metadata.e2e_test === true`
+//
+// Bulk cleanup requires ALL THREE to match. If a real user somehow had an
+// `e2e+…@e2e.test` address, the metadata flag still protects them.
+// ---------------------------------------------------------------------------
+
+export const TEST_USER_PREFIX = 'e2e+';
+const TEST_USER_DOMAIN = process.env.TEST_USER_DOMAIN || 'e2e.test';
+
+/** Stable per-process run id, recorded on each created user for traceability. */
+const E2E_RUN_ID = process.env.E2E_RUN_ID || randomUUID();
+
+function isTestUser(u: { email?: string | null; app_metadata?: Record<string, unknown> }): boolean {
+  const email = (u.email || '').toLowerCase();
+  if (!email.startsWith(TEST_USER_PREFIX)) return false;
+  const domain = email.split('@')[1];
+  if (domain !== TEST_USER_DOMAIN.toLowerCase()) return false;
+  return u.app_metadata?.e2e_test === true;
+}
+
+export type AppClaimSeed = {
+  enabled?: boolean;
+  role?: string;
+  permissions?: string[];
+  metadata?: Record<string, unknown>;
+};
+
+export type TestUserSpec = {
+  /** Short tag baked into the email local-part for log readability (e.g. "admin"). */
+  tag?: string;
+  /** Override the password (default: random). */
+  password?: string;
+  /** Set claims_admin=true at the global level. */
+  globalAdmin?: boolean;
+  /** Per-app claim seeds keyed by app id. */
+  apps?: Record<string, AppClaimSeed>;
+};
+
+export type TestUser = {
+  id: string;
+  email: string;
+  password: string;
+  user: User;
+};
+
+/**
+ * Create a fresh test user with prefixed email and the e2e_test marker set on
+ * app_metadata. Always succeeds with a unique email.
+ */
+export async function createTestUser(spec: TestUserSpec = {}): Promise<TestUser> {
+  const tag = (spec.tag || 'user').replace(/[^a-z0-9-]/gi, '-').toLowerCase();
+  const email = `${TEST_USER_PREFIX}${tag}-${randomUUID().slice(0, 8)}@${TEST_USER_DOMAIN}`;
+  const password = spec.password || `pw-${randomUUID()}`;
+
+  // The e2e_test marker is what cleanup keys off. Do not remove it from
+  // existing users — strip-and-replace updates must preserve it.
+  const appMetadata: Record<string, unknown> = {
+    e2e_test: true,
+    e2e_run_id: E2E_RUN_ID,
+  };
+  if (spec.globalAdmin) appMetadata.claims_admin = true;
+  if (spec.apps) appMetadata.apps = spec.apps;
+
+  const { data, error } = await supabase.auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+    app_metadata: appMetadata,
+  });
+
+  if (error || !data?.user) {
+    throw new Error(`createTestUser failed: ${error?.message || 'unknown error'}`);
+  }
+
+  return { id: data.user.id, email, password, user: data.user };
+}
+
+/**
+ * Bulk delete every user that matches all three e2e markers. Iterates the full
+ * auth.users list — pass `onlyThisRun: true` to restrict to users created in
+ * the current process (matching `app_metadata.e2e_run_id === E2E_RUN_ID`).
+ */
+export async function cleanupTestUsers(opts: { onlyThisRun?: boolean } = {}): Promise<number> {
+  let deleted = 0;
+  let page = 1;
+  while (true) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 200 });
+    if (error) throw error;
+    const batch = data?.users ?? [];
+    if (batch.length === 0) break;
+
+    const targets = batch.filter((u) => {
+      if (!isTestUser(u)) return false;
+      if (opts.onlyThisRun && u.app_metadata?.e2e_run_id !== E2E_RUN_ID) return false;
+      return true;
+    });
+
+    for (const u of targets) {
+      const { error: delErr } = await supabase.auth.admin.deleteUser(u.id);
+      if (!delErr) deleted += 1;
+    }
+
+    if (batch.length < 200) break;
+    page += 1;
+  }
+  return deleted;
+}
+
+/**
+ * Drive the login form to sign a user in via password. Used to test the actual
+ * UI path. For tests that just need an authenticated session as a fixture,
+ * prefer signInAs() — it skips the form and is faster + less brittle.
+ */
+export async function loginViaPasswordUi(page: Page, user: Pick<TestUser, 'email' | 'password'>) {
+  await page.goto('/login');
+  // Force password mode in case the page defaulted to magic link / OTP.
+  const passwordTab = page.getByRole('button', { name: /Sign in with password/i });
+  if (await passwordTab.isVisible().catch(() => false)) {
+    await passwordTab.click();
+  }
+  await page.fill('input[name="email"]', user.email);
+  await page.fill('input[name="password"]', user.password);
+  await page.getByRole('button', { name: /^Sign in$/ }).click();
+}
+
+/**
+ * Establish a session for `user` in `page` without going through the UI. Uses
+ * an admin-generated magic link, which the existing /auth/confirm route turns
+ * into a server-set session cookie. Robust against UI changes.
+ */
+export async function signInAs(page: Page, user: Pick<TestUser, 'email'>, opts: { next?: string } = {}) {
+  const next = opts.next || '/';
+
+  const { data, error } = await supabase.auth.admin.generateLink({
+    type: 'magiclink',
+    email: user.email,
+  });
+  if (error || !data?.properties?.hashed_token) {
+    throw new Error(`generateLink failed for ${user.email}: ${error?.message || 'no token'}`);
+  }
+
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3050';
+  const confirmUrl = new URL('/auth/confirm', appUrl);
+  confirmUrl.searchParams.set('token_hash', data.properties.hashed_token);
+  confirmUrl.searchParams.set('type', 'magiclink');
+  confirmUrl.searchParams.set('next', next);
+
+  await page.goto(confirmUrl.toString());
+}
+
+/**
+ * Spin up an isolated browser context already signed in as `user`. Use this
+ * when a test needs multiple concurrent users (admin + member, two tenants,
+ * etc.). Each context gets its own cookie jar.
+ */
+export async function createSignedInContext(
+  browser: Browser,
+  user: TestUser,
+  opts: { next?: string } = {}
+): Promise<{ context: BrowserContext; page: Page }> {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+  await signInAs(page, user, opts);
+  return { context, page };
 }
 
 /**

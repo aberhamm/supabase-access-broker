@@ -46,7 +46,17 @@ export async function middleware(request: NextRequest) {
   // Per-request CSP nonce. Set on the inbound request headers so the root
   // layout can read it via next/headers and apply it to <script> tags.
   const nonce = generateNonce();
-  const csp = buildCspHeader({ nonce, supabaseUrl, isDev });
+  // /demo/* is a static HTML integration demo that ships inline scripts; it
+  // has no server pass to inject nonces, so it gets a relaxed CSP. Everything
+  // else (server-rendered Next.js routes) gets the strict nonce + strict-dynamic
+  // policy.
+  const isDemoRoute = request.nextUrl.pathname.startsWith('/demo/');
+  const csp = buildCspHeader({
+    nonce,
+    supabaseUrl,
+    isDev,
+    allowInlineScripts: isDemoRoute,
+  });
 
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-nonce', nonce);
