@@ -1,7 +1,10 @@
 ---
 id: 004
 title: E2E tests for dashboard user management
-status: in-progress
+status: done
+completed: 2026-05-28
+reviewed: false
+qa: automated
 blocked-by: []
 allows-migrations: false
 needs-review: none
