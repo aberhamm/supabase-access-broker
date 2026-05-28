@@ -1,6 +1,7 @@
 import { createServerClient } from '@supabase/ssr';
 import { NextResponse, type NextRequest } from 'next/server';
 import { debugLog, debugWarn, debugTrace, isDebugAuthEnabled } from '@/lib/auth-debug';
+import { logger } from '@/lib/logger';
 import { PUBLIC_ROUTE_PREFIXES, PORTAL_ROUTE_PREFIXES } from '@/lib/auth-routes';
 import { hasAnyAppAdmin } from '@/types/claims';
 import { buildCspHeader, generateNonce } from '@/lib/csp';
@@ -41,7 +42,7 @@ function isDefinitiveAuthFailure(error: AuthErrorLike | null | undefined): boole
  * HSTS is only applied when the request came over HTTPS (direct or via proxy)
  * to avoid breaking localhost HTTP during development.
  */
-function applySecurityHeaders(response: NextResponse, isSecure: boolean): void {
+function applySecurityHeaders(response: NextResponse, isSecure: boolean, requestId?: string): void {
   if (isSecure) {
     response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains');
   }
@@ -49,6 +50,9 @@ function applySecurityHeaders(response: NextResponse, isSecure: boolean): void {
   response.headers.set('X-Frame-Options', 'DENY');
   response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
   response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  if (requestId) {
+    response.headers.set('X-Request-Id', requestId);
+  }
 }
 
 export async function middleware(request: NextRequest) {
@@ -79,8 +83,12 @@ export async function middleware(request: NextRequest) {
     allowInlineScripts: isDemoRoute,
   });
 
+  // Generate a unique request ID for tracing and correlation.
+  const requestId = crypto.randomUUID();
+
   const requestHeaders = new Headers(request.headers);
   requestHeaders.set('x-nonce', nonce);
+  requestHeaders.set('x-request-id', requestId);
 
   const response = NextResponse.next({ request: { headers: requestHeaders } });
 
@@ -89,7 +97,7 @@ export async function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith('/api/webhooks/')) {
     const webhookResponse = NextResponse.next({ request: { headers: requestHeaders } });
     webhookResponse.headers.set('Content-Security-Policy', csp);
-    applySecurityHeaders(webhookResponse, isSecure);
+    applySecurityHeaders(webhookResponse, isSecure, requestId);
     return webhookResponse;
   }
 
@@ -147,7 +155,7 @@ export async function middleware(request: NextRequest) {
   const { data: sessionData, error: sessionError } = await supabase.auth.getSession();
 
   if (sessionError) {
-    console.error('[MIDDLEWARE] getSession error:', sessionError.message);
+    logger.error('getSession error', { request_id: requestId, error_message: sessionError.message });
   }
 
   // Refreshing the auth token
@@ -157,7 +165,7 @@ export async function middleware(request: NextRequest) {
   } = await supabase.auth.getUser();
 
   if (userError) {
-    console.error('[MIDDLEWARE] getUser error:', userError.message, userError.code);
+    logger.error('getUser error', { request_id: requestId, error_message: userError.message, error_code: userError.code });
   }
 
   const hasDefinitiveAuthFailure = isDefinitiveAuthFailure(userError);
@@ -173,14 +181,15 @@ export async function middleware(request: NextRequest) {
   const user = verifiedUser || fallbackUser;
 
   if (!verifiedUser && fallbackUser) {
-    console.warn('[MIDDLEWARE] Using session user as fallback (getUser failed but session exists)');
+    logger.warn('Using session user as fallback (getUser failed but session exists)', { request_id: requestId });
   }
 
   if (!verifiedUser && sessionData?.session?.user && hasDefinitiveAuthFailure) {
-    console.warn('[MIDDLEWARE] Rejecting session fallback due to definitive auth failure', {
+    logger.warn('Rejecting session fallback due to definitive auth failure', {
+      request_id: requestId,
       status: userError?.status,
       code: userError?.code,
-      message: userError?.message,
+      error_message: userError?.message,
     });
   }
 
@@ -189,7 +198,8 @@ export async function middleware(request: NextRequest) {
     const session = sessionData.session;
     const expiresAt = session.expires_at ? new Date(session.expires_at * 1000) : null;
 
-    console.warn('[MIDDLEWARE] Session exists but getUser() returned no user', {
+    logger.warn('Session exists but getUser() returned no user', {
+      request_id: requestId,
       tokenExpiresAt: expiresAt?.toISOString(),
       userError: userError ? { message: userError.message, status: userError.status, code: userError.code } : null,
     });
@@ -264,7 +274,7 @@ export async function middleware(request: NextRequest) {
     // Optional: remember where to return after login
     url.searchParams.set('next', pathname + request.nextUrl.search);
     const loginRedirect = NextResponse.redirect(url);
-    applySecurityHeaders(loginRedirect, isSecure);
+    applySecurityHeaders(loginRedirect, isSecure, requestId);
     return loginRedirect;
   }
 
@@ -286,7 +296,7 @@ export async function middleware(request: NextRequest) {
       url.searchParams.set('redirect_uri', redirectUri);
       if (state) url.searchParams.set('state', state);
       const ssoRedirect = NextResponse.redirect(url);
-      applySecurityHeaders(ssoRedirect, isSecure);
+      applySecurityHeaders(ssoRedirect, isSecure, requestId);
       return ssoRedirect;
     }
 
@@ -307,7 +317,7 @@ export async function middleware(request: NextRequest) {
         url.pathname = '/';
         url.search = '';
         const dashboardRedirect = NextResponse.redirect(url);
-        applySecurityHeaders(dashboardRedirect, isSecure);
+        applySecurityHeaders(dashboardRedirect, isSecure, requestId);
         return dashboardRedirect;
       }
     }
@@ -333,7 +343,7 @@ export async function middleware(request: NextRequest) {
         url.searchParams.set('redirect_uri', redirectUri);
         if (state) url.searchParams.set('state', state);
         const signupRedirect = NextResponse.redirect(url);
-        applySecurityHeaders(signupRedirect, isSecure);
+        applySecurityHeaders(signupRedirect, isSecure, requestId);
         return signupRedirect;
       }
     }
@@ -356,11 +366,11 @@ export async function middleware(request: NextRequest) {
     });
 
     if (!hasAdminAccess) {
-      console.warn('[MIDDLEWARE] User lacks admin access, redirecting to /access-denied');
+      logger.warn('User lacks admin access, redirecting to /access-denied', { request_id: requestId });
       const url = request.nextUrl.clone();
       url.pathname = '/access-denied';
       const deniedRedirect = NextResponse.redirect(url);
-      applySecurityHeaders(deniedRedirect, isSecure);
+      applySecurityHeaders(deniedRedirect, isSecure, requestId);
       return deniedRedirect;
     }
 
@@ -373,7 +383,7 @@ export async function middleware(request: NextRequest) {
   // here is the primary defense — inline-script injection no longer
   // executes.
   response.headers.set('Content-Security-Policy', csp);
-  applySecurityHeaders(response, isSecure);
+  applySecurityHeaders(response, isSecure, requestId);
 
   return response;
 }

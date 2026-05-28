@@ -29,10 +29,15 @@ export default async function RootLayout({
 }>) {
   // Nonce is set by middleware on every request so we can chain-trust
   // scripts through the strict-dynamic CSP without 'unsafe-inline'.
-  const nonce = (await headers()).get('x-nonce') ?? undefined;
+  const hdrs = await headers();
+  const nonce = hdrs.get('x-nonce') ?? undefined;
+  const requestId = hdrs.get('x-request-id') ?? undefined;
 
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        {requestId && <meta name="x-request-id" content={requestId} />}
+      </head>
       <body className={`${displayFont.variable} ${monoFont.variable} antialiased`}>
         <ThemeProvider
           attribute="class"

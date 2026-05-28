@@ -1,15 +1,19 @@
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { createAdminClient } from '@/lib/supabase/server';
 import { authenticateAppRequest } from '@/lib/app-api-auth';
 import { logSSOEvent } from '@/lib/audit-service';
 import { extractAppClaims } from '@/lib/app-api-validation';
+import { apiError } from '@/lib/api-error';
 
 export async function POST(request: Request) {
+  const requestId = (await headers()).get('x-request-id') ?? undefined;
+
   let body: Record<string, unknown> = {};
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    return apiError(400, 'Invalid JSON body', requestId);
   }
 
   const appId = typeof body.app_id === 'string' ? body.app_id : null;
@@ -20,7 +24,7 @@ export async function POST(request: Request) {
       errorCode: 'invalid_request',
       metadata: { reason: 'missing_app_id' },
     });
-    return NextResponse.json({ error: 'Missing app_id' }, { status: 400 });
+    return apiError(400, 'Missing app_id', requestId);
   }
 
   // Authenticate using shared auth helper (supports both API key and app_secret)
@@ -47,10 +51,7 @@ export async function POST(request: Request) {
       userAgent,
       metadata: { reason: 'missing_lookup_identifier' },
     });
-    return NextResponse.json(
-      { error: 'Missing lookup identifier (user_id, email, or telegram_id)' },
-      { status: 400 }
-    );
+    return apiError(400, 'Missing lookup identifier (user_id, email, or telegram_id)', requestId);
   }
   if (lookupCount > 1) {
     logSSOEvent({
@@ -61,10 +62,7 @@ export async function POST(request: Request) {
       userAgent,
       metadata: { reason: 'multiple_lookup_identifiers' },
     });
-    return NextResponse.json(
-      { error: 'Provide only one lookup identifier' },
-      { status: 400 }
-    );
+    return apiError(400, 'Provide only one lookup identifier', requestId);
   }
 
   try {
@@ -97,7 +95,7 @@ export async function POST(request: Request) {
         userAgent,
         metadata: { lookup_method: lookupMethod, auth_method: authMethod },
       });
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return apiError(404, 'User not found', requestId);
     }
 
     logSSOEvent({
@@ -129,6 +127,6 @@ export async function POST(request: Request) {
     });
 
     // Return generic error to avoid leaking internal details
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError(500, 'Internal server error', requestId);
   }
 }

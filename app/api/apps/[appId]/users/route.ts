@@ -1,8 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { createAdminClient } from '@/lib/supabase/server';
 import { authenticateAppRequest } from '@/lib/app-api-auth';
 import { enforceRateLimit } from '@/lib/app-api-rate-limit';
 import { logSSOEvent } from '@/lib/audit-service';
+import { apiError } from '@/lib/api-error';
 
 export async function GET(
   request: NextRequest,
@@ -16,6 +18,7 @@ export async function GET(
   const rateLimited = await enforceRateLimit(appId, 'read');
   if (rateLimited) return rateLimited;
 
+  const requestId = (await headers()).get('x-request-id') ?? undefined;
   const { ipAddress, userAgent, authMethod } = auth;
 
   try {
@@ -31,10 +34,7 @@ export async function GET(
     if (since) {
       const parsed = new Date(since);
       if (isNaN(parsed.getTime())) {
-        return NextResponse.json(
-          { error: 'Invalid since parameter. Use ISO 8601 format (e.g. 2026-03-17T00:00:00Z).' },
-          { status: 400 }
-        );
+        return apiError(400, 'Invalid since parameter. Use ISO 8601 format (e.g. 2026-03-17T00:00:00Z).', requestId);
       }
       sinceDate = parsed.toISOString();
     }
@@ -81,6 +81,6 @@ export async function GET(
       errorCode: 'server_error',
       metadata: { error_message: message, auth_method: authMethod },
     });
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError(500, 'Internal server error', requestId);
   }
 }

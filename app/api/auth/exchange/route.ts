@@ -1,17 +1,21 @@
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { debugLog, debugWarn } from '@/lib/auth-debug';
 import { createAdminClient } from '@/lib/supabase/server';
 import { consumeAuthCode } from '@/lib/sso-service';
 import { authenticateAppRequest } from '@/lib/app-api-auth';
 import { logSSOEvent } from '@/lib/audit-service';
 import { extractAppClaims } from '@/lib/app-api-validation';
+import { apiError } from '@/lib/api-error';
 
 export async function POST(request: Request) {
+  const requestId = (await headers()).get('x-request-id') ?? undefined;
+
   let body: Record<string, unknown> = {};
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body', error_code: 'invalid_request' }, { status: 400 });
+    return apiError(400, 'Invalid JSON body', requestId, { error_code: 'invalid_request' });
   }
 
   const code = typeof body.code === 'string' ? body.code : null;
@@ -25,7 +29,7 @@ export async function POST(request: Request) {
       errorCode: 'invalid_request',
       metadata: { reason: 'missing_required_params', has_code: !!code, has_app_id: !!appId, has_redirect_uri: !!redirectUri },
     });
-    return NextResponse.json({ error: 'Missing required parameters: code, app_id, and redirect_uri', error_code: 'invalid_request' }, { status: 400 });
+    return apiError(400, 'Missing required parameters: code, app_id, and redirect_uri', requestId, { error_code: 'invalid_request' });
   }
 
   // Authenticate using shared auth helper (supports both API key and app_secret)
@@ -60,7 +64,7 @@ export async function POST(request: Request) {
         ipAddress,
         userAgent,
       });
-      return NextResponse.json({ error: 'User not found', error_code: 'user_not_found' }, { status: 404 });
+      return apiError(404, 'User not found', requestId, { error_code: 'user_not_found' });
     }
 
     debugLog('[SSO Exchange] User resolved', {
@@ -89,7 +93,7 @@ export async function POST(request: Request) {
           email: user.email,
         },
       });
-      return NextResponse.json({ error: 'Internal server error', error_code: 'server_error' }, { status: 500 });
+      return apiError(500, 'Internal server error', requestId, { error_code: 'server_error' });
     }
 
     const appClaims = extractAppClaims(user, appId);
@@ -149,6 +153,6 @@ export async function POST(request: Request) {
     });
 
     const errorMessage = status === 400 ? 'Invalid or expired code' : 'Internal server error';
-    return NextResponse.json({ error: errorMessage, error_code: errorCode }, { status });
+    return apiError(status, errorMessage, requestId, { error_code: errorCode });
   }
 }

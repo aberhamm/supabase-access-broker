@@ -1,7 +1,10 @@
 ---
 id: 010
 title: Structured error logging and request-id propagation
-status: in-progress
+status: done
+completed: 2026-05-28
+reviewed: false
+qa: automated,verified
 blocked-by: [003]
 allows-migrations: false
 needs-review: none

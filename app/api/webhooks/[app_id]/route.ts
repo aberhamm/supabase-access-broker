@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { authenticateAppRequest } from '@/lib/app-api-auth';
 import { enforceRateLimit } from '@/lib/app-api-rate-limit';
 import { logSSOEvent } from '@/lib/audit-service';
+import { apiError } from '@/lib/api-error';
 
 /**
  * Placeholder webhook receiver for consuming apps.
@@ -21,12 +23,14 @@ export async function POST(
 ) {
   const { app_id } = await params;
 
+  const requestId = (await headers()).get('x-request-id') ?? undefined;
+
   // Authenticate inline — no middleware header passing
   let body: Record<string, unknown> = {};
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    return apiError(400, 'Invalid JSON body', requestId);
   }
 
   const auth = await authenticateAppRequest(request, app_id, body, {
@@ -63,10 +67,7 @@ export async function POST(
       ipAddress,
       userAgent,
     });
-    return NextResponse.json(
-      { error: 'Failed to process webhook' },
-      { status: 500 }
-    );
+    return apiError(500, 'Failed to process webhook', requestId);
   }
 }
 

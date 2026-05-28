@@ -1,7 +1,11 @@
 import { NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import pkg from '@/package.json';
 
 export async function GET() {
+  const hdrs = await headers();
+  const requestId = hdrs.get('x-request-id') ?? undefined;
+
   const serviceRoleKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   // Guard: if the service role key is missing, skip the DB check entirely
@@ -12,6 +16,7 @@ export async function GET() {
         db: 'misconfigured' as const,
         timestamp: new Date().toISOString(),
         version: pkg.version,
+        request_id: requestId ?? null,
       },
       { status: 200 }
     );
@@ -47,6 +52,7 @@ export async function GET() {
       db,
       timestamp: new Date().toISOString(),
       version: pkg.version,
+      request_id: requestId ?? null,
     },
     { status: 200 }
   );

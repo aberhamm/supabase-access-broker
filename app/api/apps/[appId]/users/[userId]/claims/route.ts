@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { createAdminClient } from '@/lib/supabase/server';
 import { authenticateAppRequest } from '@/lib/app-api-auth';
 import { enforceRateLimit } from '@/lib/app-api-rate-limit';
 import { logSSOEvent } from '@/lib/audit-service';
 import { validateClaimValues, extractAppClaims } from '@/lib/app-api-validation';
+import { apiError } from '@/lib/api-error';
 
 type RouteContext = { params: Promise<{ appId: string; userId: string }> };
 
@@ -11,9 +13,10 @@ const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/
 
 export async function GET(request: NextRequest, { params }: RouteContext) {
   const { appId, userId } = await params;
+  const requestId = (await headers()).get('x-request-id') ?? undefined;
 
   if (!UUID_RE.test(userId)) {
-    return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 });
+    return apiError(400, 'Invalid user ID', requestId);
   }
 
   const auth = await authenticateAppRequest(request, appId);
@@ -28,7 +31,7 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
     const supabase = await createAdminClient();
     const { data, error } = await supabase.auth.admin.getUserById(userId);
     if (error || !data?.user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return apiError(404, 'User not found', requestId);
     }
 
     const appClaims = extractAppClaims(data.user, appId);
@@ -58,22 +61,23 @@ export async function GET(request: NextRequest, { params }: RouteContext) {
       errorCode: 'server_error',
       metadata: { error_message: message, auth_method: authMethod },
     });
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError(500, 'Internal server error', requestId);
   }
 }
 
 export async function PATCH(request: NextRequest, { params }: RouteContext) {
   const { appId, userId } = await params;
+  const requestId = (await headers()).get('x-request-id') ?? undefined;
 
   if (!UUID_RE.test(userId)) {
-    return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 });
+    return apiError(400, 'Invalid user ID', requestId);
   }
 
   let body: Record<string, unknown> = {};
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    return apiError(400, 'Invalid JSON body', requestId);
   }
 
   const auth = await authenticateAppRequest(request, appId, body);
@@ -98,15 +102,12 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
   }
 
   if (Object.keys(updates).length === 0) {
-    return NextResponse.json(
-      { error: `No valid fields provided. Allowed: ${ALLOWED_KEYS.join(', ')}` },
-      { status: 400 }
-    );
+    return apiError(400, `No valid fields provided. Allowed: ${ALLOWED_KEYS.join(', ')}`, requestId);
   }
 
   const validationError = validateClaimValues(body);
   if (validationError) {
-    return NextResponse.json({ error: validationError }, { status: 400 });
+    return apiError(400, validationError, requestId);
   }
 
   try {
@@ -115,7 +116,7 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
     // Verify user exists
     const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
     if (userError || !userData?.user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return apiError(404, 'User not found', requestId);
     }
 
     // Deep-merge metadata rather than clobbering it. set_app_claims_batch
@@ -179,15 +180,16 @@ export async function PATCH(request: NextRequest, { params }: RouteContext) {
       errorCode: 'server_error',
       metadata: { error_message: message, auth_method: authMethod },
     });
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError(500, 'Internal server error', requestId);
   }
 }
 
 export async function DELETE(request: NextRequest, { params }: RouteContext) {
   const { appId, userId } = await params;
+  const requestId = (await headers()).get('x-request-id') ?? undefined;
 
   if (!UUID_RE.test(userId)) {
-    return NextResponse.json({ error: 'Invalid user ID' }, { status: 400 });
+    return apiError(400, 'Invalid user ID', requestId);
   }
 
   let body: Record<string, unknown> = {};
@@ -215,7 +217,7 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
     const { data: userData, error: userError } = await supabase.auth.admin.getUserById(userId);
     if (userError) throw userError;
     if (!userData.user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return apiError(404, 'User not found', requestId);
     }
 
     // Set enabled: false and clear role/permissions atomically
@@ -270,6 +272,6 @@ export async function DELETE(request: NextRequest, { params }: RouteContext) {
       errorCode: 'server_error',
       metadata: { error_message: message, auth_method: authMethod },
     });
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError(500, 'Internal server error', requestId);
   }
 }

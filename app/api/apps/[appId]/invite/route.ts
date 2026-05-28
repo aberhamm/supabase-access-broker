@@ -1,9 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { headers } from 'next/headers';
 import { createAdminClient } from '@/lib/supabase/server';
 import { authenticateAppRequest } from '@/lib/app-api-auth';
 import { enforceRateLimit } from '@/lib/app-api-rate-limit';
 import { logSSOEvent } from '@/lib/audit-service';
 import { isValidEmail, validateClaimValues, extractAppClaims } from '@/lib/app-api-validation';
+import { apiError } from '@/lib/api-error';
 
 export async function POST(
   request: NextRequest,
@@ -11,11 +13,13 @@ export async function POST(
 ) {
   const { appId } = await params;
 
+  const requestId = (await headers()).get('x-request-id') ?? undefined;
+
   let body: Record<string, unknown> = {};
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON body' }, { status: 400 });
+    return apiError(400, 'Invalid JSON body', requestId);
   }
 
   const auth = await authenticateAppRequest(request, appId, body);
@@ -30,16 +34,16 @@ export async function POST(
 
   const email = typeof body.email === 'string' ? body.email.toLowerCase().trim() : null;
   if (!email) {
-    return NextResponse.json({ error: 'Missing email' }, { status: 400 });
+    return apiError(400, 'Missing email', requestId);
   }
   if (!isValidEmail(email)) {
-    return NextResponse.json({ error: 'Invalid email format' }, { status: 400 });
+    return apiError(400, 'Invalid email format', requestId);
   }
 
   // Validate role and permissions using shared validator
   const validationError = validateClaimValues(body);
   if (validationError) {
-    return NextResponse.json({ error: validationError }, { status: 400 });
+    return apiError(400, validationError, requestId);
   }
 
   const role = typeof body.role === 'string' ? body.role : undefined;
@@ -141,6 +145,6 @@ export async function POST(
       metadata: { error_message: message, auth_method: authMethod },
     });
     // Return generic error — do not leak internal details to caller
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return apiError(500, 'Internal server error', requestId);
   }
 }
