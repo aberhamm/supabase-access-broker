@@ -1,7 +1,10 @@
 ---
 id: 013
 title: Switch deployment SSH from root to deploy user
-status: in-progress
+status: done
+completed: 2026-05-28
+reviewed: false
+qa: automated,verified
 blocked-by: []
 allows-migrations: false
 needs-review: none
