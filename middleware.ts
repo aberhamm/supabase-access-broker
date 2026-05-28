@@ -36,12 +36,33 @@ function isDefinitiveAuthFailure(error: AuthErrorLike | null | undefined): boole
   );
 }
 
+/**
+ * Set standard security response headers on any NextResponse.
+ * HSTS is only applied when the request came over HTTPS (direct or via proxy)
+ * to avoid breaking localhost HTTP during development.
+ */
+function applySecurityHeaders(response: NextResponse, isSecure: boolean): void {
+  if (isSecure) {
+    response.headers.set('Strict-Transport-Security', 'max-age=63072000; includeSubDomains');
+  }
+  response.headers.set('X-Content-Type-Options', 'nosniff');
+  response.headers.set('X-Frame-Options', 'DENY');
+  response.headers.set('Referrer-Policy', 'strict-origin-when-cross-origin');
+  response.headers.set('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+}
+
 export async function middleware(request: NextRequest) {
   const debugAuth = isDebugAuthEnabled();
 
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || '';
   const supabaseKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
   const isDev = process.env.NODE_ENV !== 'production';
+
+  // Detect if request came over HTTPS (via proxy or direct).
+  // Hoisted here so it's available to both cookie setup and security headers.
+  const isSecure = request.headers.get('x-forwarded-proto') === 'https' ||
+    request.nextUrl.protocol === 'https:' ||
+    process.env.NEXT_PUBLIC_APP_URL?.startsWith('https://') || false;
 
   // Per-request CSP nonce. Set on the inbound request headers so the root
   // layout can read it via next/headers and apply it to <script> tags.
@@ -68,6 +89,7 @@ export async function middleware(request: NextRequest) {
   if (request.nextUrl.pathname.startsWith('/api/webhooks/')) {
     const webhookResponse = NextResponse.next({ request: { headers: requestHeaders } });
     webhookResponse.headers.set('Content-Security-Policy', csp);
+    applySecurityHeaders(webhookResponse, isSecure);
     return webhookResponse;
   }
 
@@ -84,12 +106,6 @@ export async function middleware(request: NextRequest) {
       cookies: {
         getAll: () => request.cookies.getAll(),
         setAll: (cookiesToSet) => {
-          // Detect if request came over HTTPS (via proxy or direct)
-          // Also check NEXT_PUBLIC_APP_URL as fallback for when proxy doesn't set headers
-          const isSecure = request.headers.get('x-forwarded-proto') === 'https' ||
-            request.nextUrl.protocol === 'https:' ||
-            process.env.NEXT_PUBLIC_APP_URL?.startsWith('https://');
-
           debugLog('[MIDDLEWARE] setAll called with', cookiesToSet.length, 'cookies');
           const deleteIntents = cookiesToSet
             .filter(({ value, options }) =>
@@ -247,7 +263,9 @@ export async function middleware(request: NextRequest) {
     url.pathname = '/login';
     // Optional: remember where to return after login
     url.searchParams.set('next', pathname + request.nextUrl.search);
-    return NextResponse.redirect(url);
+    const loginRedirect = NextResponse.redirect(url);
+    applySecurityHeaders(loginRedirect, isSecure);
+    return loginRedirect;
   }
 
   // If user is signed in and tries to access /login:
@@ -267,7 +285,9 @@ export async function middleware(request: NextRequest) {
       url.searchParams.set('app_id', appId);
       url.searchParams.set('redirect_uri', redirectUri);
       if (state) url.searchParams.set('state', state);
-      return NextResponse.redirect(url);
+      const ssoRedirect = NextResponse.redirect(url);
+      applySecurityHeaders(ssoRedirect, isSecure);
+      return ssoRedirect;
     }
 
     // If SSO params are present with reauth=1, the user is re-authenticating
@@ -286,7 +306,9 @@ export async function middleware(request: NextRequest) {
         const url = request.nextUrl.clone();
         url.pathname = '/';
         url.search = '';
-        return NextResponse.redirect(url);
+        const dashboardRedirect = NextResponse.redirect(url);
+        applySecurityHeaders(dashboardRedirect, isSecure);
+        return dashboardRedirect;
       }
     }
 
@@ -310,7 +332,9 @@ export async function middleware(request: NextRequest) {
         url.searchParams.set('app_id', appId);
         url.searchParams.set('redirect_uri', redirectUri);
         if (state) url.searchParams.set('state', state);
-        return NextResponse.redirect(url);
+        const signupRedirect = NextResponse.redirect(url);
+        applySecurityHeaders(signupRedirect, isSecure);
+        return signupRedirect;
       }
     }
   }
@@ -335,7 +359,9 @@ export async function middleware(request: NextRequest) {
       console.warn('[MIDDLEWARE] User lacks admin access, redirecting to /access-denied');
       const url = request.nextUrl.clone();
       url.pathname = '/access-denied';
-      return NextResponse.redirect(url);
+      const deniedRedirect = NextResponse.redirect(url);
+      applySecurityHeaders(deniedRedirect, isSecure);
+      return deniedRedirect;
     }
 
     debugLog('[MIDDLEWARE] User has admin access, allowing request');
@@ -347,6 +373,7 @@ export async function middleware(request: NextRequest) {
   // here is the primary defense — inline-script injection no longer
   // executes.
   response.headers.set('Content-Security-Policy', csp);
+  applySecurityHeaders(response, isSecure);
 
   return response;
 }

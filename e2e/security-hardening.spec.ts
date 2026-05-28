@@ -162,4 +162,76 @@ test.describe('Security Hardening Regression Tests', () => {
     const url = page.url();
     expect(url).not.toContain('javascript:');
   });
+
+});
+
+// =========================================================================
+// Security response headers (Plan 002)
+// Separate describe — no DB setup needed, just HTTP requests.
+// =========================================================================
+
+test.describe('Security Response Headers', () => {
+  test('page response includes all required security headers', async ({ request }) => {
+    // Fetch a public page (login) to check headers without needing auth
+    const res = await request.get(`${APP_URL}/login`);
+
+    // X-Content-Type-Options
+    const xcto = res.headers()['x-content-type-options'];
+    expect(xcto).toBe('nosniff');
+
+    // X-Frame-Options
+    const xfo = res.headers()['x-frame-options'];
+    expect(xfo).toBe('DENY');
+
+    // Referrer-Policy
+    const rp = res.headers()['referrer-policy'];
+    expect(rp).toBe('strict-origin-when-cross-origin');
+
+    // Permissions-Policy
+    const pp = res.headers()['permissions-policy'];
+    expect(pp).toBe('camera=(), microphone=(), geolocation=()');
+
+    // CSP should still be present (not replaced)
+    const csp = res.headers()['content-security-policy'];
+    expect(csp).toBeTruthy();
+    expect(csp).toContain("default-src 'self'");
+  });
+
+  test('redirect response includes security headers', async ({ request }) => {
+    // Access a protected route without auth — middleware redirects to /login
+    // Use manual redirect to inspect the 3xx response headers
+    const res = await request.get(`${APP_URL}/`, {
+      maxRedirects: 0,
+    });
+
+    // Should be a redirect (302 or 307)
+    expect([301, 302, 307, 308]).toContain(res.status());
+
+    // Security headers should still be present on redirects
+    expect(res.headers()['x-content-type-options']).toBe('nosniff');
+    expect(res.headers()['x-frame-options']).toBe('DENY');
+    expect(res.headers()['referrer-policy']).toBe('strict-origin-when-cross-origin');
+    expect(res.headers()['permissions-policy']).toBe('camera=(), microphone=(), geolocation=()');
+  });
+
+  test('HSTS not set on localhost HTTP', async ({ request }) => {
+    // Localhost HTTP should NOT have HSTS to avoid breaking dev
+    const res = await request.get(`${APP_URL}/login`);
+    const hsts = res.headers()['strict-transport-security'];
+    // On localhost HTTP, HSTS should be absent
+    if (APP_URL.startsWith('http://')) {
+      expect(hsts).toBeUndefined();
+    }
+  });
+
+  test('webhook endpoint includes security headers', async ({ request }) => {
+    const res = await request.get(`${APP_URL}/api/webhooks/nonexistent`, {
+      headers: { 'Authorization': 'Bearer sk_test_dummy' },
+    });
+    // Even error responses from webhook should have security headers
+    expect(res.headers()['x-content-type-options']).toBe('nosniff');
+    expect(res.headers()['x-frame-options']).toBe('DENY');
+    expect(res.headers()['referrer-policy']).toBe('strict-origin-when-cross-origin');
+    expect(res.headers()['permissions-policy']).toBe('camera=(), microphone=(), geolocation=()');
+  });
 });

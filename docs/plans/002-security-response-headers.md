@@ -1,7 +1,10 @@
 ---
 id: 002
 title: Add security response headers to middleware
-status: in-progress
+status: done
+completed: 2026-05-28
+reviewed: false
+qa: automated,verified
 blocked-by: []
 allows-migrations: false
 needs-review: none
