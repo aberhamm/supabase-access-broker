@@ -1,7 +1,10 @@
 ---
 id: 009
 title: CI hardening with container smoke test and deploy gate
-status: in-progress
+status: done
+completed: 2026-05-28
+reviewed: false
+qa: automated,verified
 blocked-by: [002, 003]
 allows-migrations: false
 needs-review: none

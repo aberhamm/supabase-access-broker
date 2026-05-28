@@ -7,6 +7,7 @@ on:
 jobs:
   build:
     runs-on: self-hosted
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
       - name: Build Docker image
@@ -15,3 +16,53 @@ jobs:
             --build-arg NEXT_PUBLIC_SUPABASE_URL=${{ secrets.NEXT_PUBLIC_SUPABASE_URL }} \
             --build-arg NEXT_PUBLIC_SUPABASE_ANON_KEY=${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }} \
             --build-arg NEXT_PUBLIC_APP_URL=https://access.matthew.systems
+
+  smoke-test:
+    runs-on: self-hosted
+    needs: build
+    timeout-minutes: 5
+    steps:
+      - name: Remove stale container
+        run: |
+          docker stop smoke-test-broker 2>/dev/null || true
+          docker rm smoke-test-broker 2>/dev/null || true
+
+      - name: Start container
+        run: |
+          docker run -d \
+            --name smoke-test-broker \
+            -p 3052:3050 \
+            -e NODE_ENV=production \
+            supabase-access-broker-app
+
+      - name: Wait for healthy
+        run: |
+          echo "Waiting for container to respond on :3052..."
+          for i in $(seq 1 30); do
+            if curl -sf http://localhost:3052/api/health > /tmp/health-response.json 2>/dev/null; then
+              echo "Health check passed on attempt $i"
+              cat /tmp/health-response.json
+              exit 0
+            fi
+            echo "Attempt $i/30 — retrying in 2s..."
+            sleep 2
+          done
+          echo "Health check failed after 60s"
+          docker logs smoke-test-broker
+          exit 1
+
+      - name: Assert health response
+        run: |
+          STATUS=$(cat /tmp/health-response.json | python3 -c "import sys,json; print(json.load(sys.stdin).get('status',''))" 2>/dev/null || echo "")
+          if [ "$STATUS" != "healthy" ] && [ "$STATUS" != "degraded" ]; then
+            echo "Unexpected health status: $STATUS"
+            cat /tmp/health-response.json
+            exit 1
+          fi
+          echo "Container health status: $STATUS"
+
+      - name: Cleanup container
+        if: always()
+        run: |
+          docker stop smoke-test-broker 2>/dev/null || true
+          docker rm smoke-test-broker 2>/dev/null || true
