@@ -1,7 +1,10 @@
 ---
 id: 008
 title: Expand API e2e coverage for invite, roles, and rate limiting
-status: in-progress
+status: done
+completed: 2026-05-28
+reviewed: false
+qa: automated
 blocked-by: []
 allows-migrations: false
 needs-review: none
