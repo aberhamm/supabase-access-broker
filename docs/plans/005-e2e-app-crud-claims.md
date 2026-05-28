@@ -1,7 +1,10 @@
 ---
 id: 005
 title: E2E tests for app CRUD and claims management
-status: in-progress
+status: done
+completed: 2026-05-28
+reviewed: false
+qa: automated
 blocked-by: []
 allows-migrations: false
 needs-review: none
