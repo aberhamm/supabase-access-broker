@@ -101,6 +101,12 @@ export async function deleteClaimAction(uid: string, claim: string) {
     return { error: 'Unauthorized: You must be a claims_admin' };
   }
 
+  // Step-up: claim deletion (like claim writes) needs MFA.
+  const stepUp = await requireStepUp(supabase);
+  if (!stepUp.ok) {
+    return { error: stepUp.message, code: stepUp.code };
+  }
+
   const { data, error } = await deleteClaim(supabase, uid, claim);
 
   if (error) {

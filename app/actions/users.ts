@@ -144,7 +144,7 @@ export async function inviteUserWithEmail(params: InviteUserParams) {
  */
 export async function triggerPasswordReset(userEmail: string) {
   try {
-    const supabase = await requireClaimsAdmin();
+    const supabase = await requireClaimsAdmin({ stepUp: true });
 
     // Get the origin for the redirect URL
     const origin = getAppUrl();
@@ -160,8 +160,7 @@ export async function triggerPasswordReset(userEmail: string) {
 
     return { success: true };
   } catch (error) {
-    const err = error as Error;
-    return { success: false, error: err.message };
+    return withCode(error, 'Failed to trigger password reset');
   }
 }
 
@@ -196,7 +195,7 @@ export async function updateUserProfileAdmin(
   data: UpdateProfileData
 ) {
   try {
-    const supabase = await requireClaimsAdmin();
+    const supabase = await requireClaimsAdmin({ stepUp: true });
 
     // Update auth fields (email, phone) via Supabase Auth admin API
     if (data.email || data.phone !== undefined) {
@@ -236,8 +235,7 @@ export async function updateUserProfileAdmin(
     revalidatePath(`/users/${userId}`);
     return { success: true };
   } catch (error) {
-    const err = error as Error;
-    return { success: false, error: err.message };
+    return withCode(error, 'Failed to update user profile');
   }
 }
 
@@ -318,9 +316,9 @@ export async function deleteMFAFactorAdmin(
 export async function banUser(
   userId: string,
   duration: BanDuration
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; code?: string }> {
   try {
-    const supabase = await requireClaimsAdmin();
+    const supabase = await requireClaimsAdmin({ stepUp: true });
 
     const { error } = await supabase.auth.admin.updateUserById(userId, {
       ban_duration: duration,
@@ -333,8 +331,7 @@ export async function banUser(
     revalidatePath(`/users/${userId}`);
     return { success: true };
   } catch (error) {
-    const err = error as Error;
-    return { success: false, error: err.message };
+    return withCode(error, 'Failed to ban user');
   }
 }
 
@@ -343,9 +340,9 @@ export async function banUser(
  */
 export async function unbanUser(
   userId: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; code?: string }> {
   try {
-    const supabase = await requireClaimsAdmin();
+    const supabase = await requireClaimsAdmin({ stepUp: true });
 
     const { error } = await supabase.auth.admin.updateUserById(userId, {
       ban_duration: 'none',
@@ -358,8 +355,7 @@ export async function unbanUser(
     revalidatePath(`/users/${userId}`);
     return { success: true };
   } catch (error) {
-    const err = error as Error;
-    return { success: false, error: err.message };
+    return withCode(error, 'Failed to unban user');
   }
 }
 
@@ -368,9 +364,9 @@ export async function unbanUser(
  */
 export async function confirmUserEmail(
   userId: string
-): Promise<{ success: boolean; error?: string }> {
+): Promise<{ success: boolean; error?: string; code?: string }> {
   try {
-    const supabase = await requireClaimsAdmin();
+    const supabase = await requireClaimsAdmin({ stepUp: true });
 
     const { error } = await supabase.auth.admin.updateUserById(userId, {
       email_confirm: true,
@@ -383,8 +379,7 @@ export async function confirmUserEmail(
     revalidatePath(`/users/${userId}`);
     return { success: true };
   } catch (error) {
-    const err = error as Error;
-    return { success: false, error: err.message };
+    return withCode(error, 'Failed to confirm user email');
   }
 }
 

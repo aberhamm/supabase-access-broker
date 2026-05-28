@@ -1,7 +1,10 @@
 ---
 id: 011
 title: Add MFA step-up to claim deletion, ban, and admin profile update
-status: in-progress
+status: done
+completed: 2026-05-28
+reviewed: false
+qa: automated,verified
 blocked-by: []
 allows-migrations: false
 needs-review: none
