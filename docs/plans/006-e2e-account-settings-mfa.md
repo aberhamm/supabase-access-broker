@@ -1,7 +1,10 @@
 ---
 id: 006
 title: E2E tests for account settings and MFA enrollment
-status: in-progress
+status: done
+completed: 2026-05-28
+reviewed: false
+qa: automated
 blocked-by: []
 allows-migrations: false
 needs-review: none
