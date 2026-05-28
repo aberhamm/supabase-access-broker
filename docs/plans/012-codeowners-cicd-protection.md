@@ -1,7 +1,10 @@
 ---
 id: 012
 title: Add CODEOWNERS to protect CI/CD workflow files
-status: in-progress
+status: done
+completed: 2026-05-28
+reviewed: false
+qa: automated,verified
 blocked-by: []
 allows-migrations: false
 needs-review: none

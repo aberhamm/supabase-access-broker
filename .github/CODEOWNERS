@@ -1,0 +1,12 @@
+# Require owner review for security-sensitive paths
+
+# CI/CD workflows and GitHub config
+.github/ @aberhamm
+
+# Container and deploy configuration
+Dockerfile @aberhamm
+docker-compose*.yml @aberhamm
+Makefile @aberhamm
+
+# Environment variable templates
+.env*.example @aberhamm
