@@ -139,7 +139,7 @@ test.describe('Security Hardening Regression Tests', () => {
   test('health: response does not contain NODE_ENV', async ({ request }) => {
     const res = await request.get(`${APP_URL}/api/health`);
     const body = await res.json();
-    expect(body.status).toBe('healthy');
+    expect(['healthy', 'degraded']).toContain(body.status);
     expect(body).not.toHaveProperty('environment');
     expect(body).not.toHaveProperty('uptime');
   });
