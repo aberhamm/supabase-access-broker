@@ -142,16 +142,16 @@ deploy:
 	@echo "==> Pulling latest code..."
 	ssh $(DEPLOY_HOST) "cd $(DEPLOY_DIR) && git pull origin main"
 	@echo "==> Building and deploying..."
-	ssh $(DEPLOY_HOST) "cd $(DEPLOY_DIR) && sudo docker compose -f docker-compose.prod.yml build && sudo docker compose -f docker-compose.prod.yml up -d"
+	ssh $(DEPLOY_HOST) "cd $(DEPLOY_DIR) && docker compose -f docker-compose.prod.yml build && docker compose -f docker-compose.prod.yml up -d"
 	@echo "==> Reloading Caddy..."
 	ssh $(DEPLOY_HOST) "sudo systemctl reload caddy"
 	@echo "==> Deploy complete! https://access.matthew.systems"
 
 deploy-build:
-	ssh $(DEPLOY_HOST) "cd $(DEPLOY_DIR) && sudo docker compose -f docker-compose.prod.yml build"
+	ssh $(DEPLOY_HOST) "cd $(DEPLOY_DIR) && docker compose -f docker-compose.prod.yml build"
 
 deploy-restart:
-	ssh $(DEPLOY_HOST) "cd $(DEPLOY_DIR) && sudo docker compose -f docker-compose.prod.yml restart"
+	ssh $(DEPLOY_HOST) "cd $(DEPLOY_DIR) && docker compose -f docker-compose.prod.yml restart"
 
 deploy-sync-env:
 	scp .env.production $(DEPLOY_HOST):$(DEPLOY_DIR)/.env
@@ -162,14 +162,14 @@ deploy-env:
 	scp .env.production $(DEPLOY_HOST):$(DEPLOY_DIR)/.env
 	ssh $(DEPLOY_HOST) "sudo chmod 600 $(DEPLOY_DIR)/.env && sudo chown deploy:deploy $(DEPLOY_DIR)/.env"
 	@echo "==> .env synced to server, restarting containers..."
-	ssh $(DEPLOY_HOST) "cd $(DEPLOY_DIR) && sudo docker compose -f docker-compose.prod.yml restart"
+	ssh $(DEPLOY_HOST) "cd $(DEPLOY_DIR) && docker compose -f docker-compose.prod.yml restart"
 	@echo "==> Done. Containers restarted with updated env."
 
 deploy-logs:
-	ssh $(DEPLOY_HOST) "cd $(DEPLOY_DIR) && sudo docker compose -f docker-compose.prod.yml logs -f $(SERVICE)"
+	ssh $(DEPLOY_HOST) "cd $(DEPLOY_DIR) && docker compose -f docker-compose.prod.yml logs -f $(SERVICE)"
 
 deploy-status:
-	ssh $(DEPLOY_HOST) "cd $(DEPLOY_DIR) && sudo docker compose -f docker-compose.prod.yml ps && echo '---' && curl -s http://127.0.0.1:3050/api/health | jq ."
+	ssh $(DEPLOY_HOST) "cd $(DEPLOY_DIR) && docker compose -f docker-compose.prod.yml ps && echo '---' && curl -s http://127.0.0.1:3050/api/health | jq ."
 
 deploy-ssh:
 	ssh $(DEPLOY_HOST)
