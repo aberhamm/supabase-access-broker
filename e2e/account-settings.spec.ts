@@ -209,27 +209,30 @@ test.describe('Account Settings & MFA', () => {
     const stepUpVisible = await stepUpInput.isVisible({ timeout: 3000 }).catch(() => false);
 
     if (stepUpVisible) {
-      // Wait for a fresh TOTP period to avoid boundary expiry
-      const now = Math.floor(Date.now() / 1000);
-      const secsIntoWindow = now % 30;
-      if (secsIntoWindow > 25) {
-        await page.waitForTimeout((31 - secsIntoWindow) * 1000);
-      }
-
-      // Generate a TOTP code for step-up verification
       const totp = new OTPAuth.TOTP({
         secret: OTPAuth.Secret.fromBase32(totpSecret),
         algorithm: 'SHA1',
         digits: 6,
         period: 30,
       });
-      const stepUpCode = totp.generate();
 
-      // Enter the code in the step-up modal's input
-      await stepUpInput.fill(stepUpCode);
+      // Wait until we're early in a fresh TOTP window to avoid boundary expiry
+      const secsIntoWindow = Math.floor(Date.now() / 1000) % 30;
+      if (secsIntoWindow > 20) {
+        await page.waitForTimeout((31 - secsIntoWindow) * 1000);
+      }
 
-      // Submit the step-up verification
+      await stepUpInput.fill(totp.generate());
       await page.getByRole('button', { name: /Verify/i }).click();
+
+      // If the code was stale, the modal stays open — retry once with a fresh code
+      const stillVisible = await stepUpInput.isVisible({ timeout: 3000 }).catch(() => false);
+      if (stillVisible) {
+        await page.waitForTimeout(5000);
+        await stepUpInput.clear();
+        await stepUpInput.fill(totp.generate());
+        await page.getByRole('button', { name: /Verify/i }).click();
+      }
     }
 
     // Verify success: toast should show "MFA factor removed"

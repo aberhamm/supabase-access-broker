@@ -96,8 +96,8 @@ test.describe('Dashboard App CRUD & Claims', () => {
     // After creation, should navigate back to /apps
     await page.waitForURL('**/apps', { timeout: 15000 });
 
-    // Verify the new app appears in the grid
-    await expect(page.getByText(appName)).toBeVisible({ timeout: 10000 });
+    // Verify the new app appears in the grid (use first() — name appears in card title, description, and toast)
+    await expect(page.getByText(appName).first()).toBeVisible({ timeout: 10000 });
 
     // Extract the app ID from the grid card link
     const appLink = page.locator(`a[href^="/apps/"]`).filter({ hasText: appName });
@@ -116,7 +116,7 @@ test.describe('Dashboard App CRUD & Claims', () => {
     await page.waitForURL(`**/apps/${createdAppId}`, { timeout: 15000 });
 
     // Wait for the app detail page to render
-    await expect(page.getByText(appName)).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('heading', { name: appName })).toBeVisible({ timeout: 15000 });
 
     // Click the "Edit App" button
     const editBtn = page.getByRole('button', { name: /Edit App/i });

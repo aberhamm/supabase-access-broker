@@ -201,7 +201,7 @@ test.describe('Dashboard User Management', () => {
     // Wait for filtering to complete, then verify user is gone.
     // After typing, the filter result count ("N of M users") appears — wait
     // for that, then assert the deleted email is absent.
-    await expect(page.getByText(/\d+ of \d+ users/).or(page.getByText('No users found'))).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/\d+ of \d+ users/).first()).toBeVisible({ timeout: 5000 });
     await expect(page.getByText(deleteUser.email)).not.toBeVisible({ timeout: 5000 });
   });
 });

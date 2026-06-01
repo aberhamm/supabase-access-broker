@@ -280,6 +280,7 @@ test.describe('API Endpoints — invite, auth-methods, roles, rate limiting', ()
     // Clean up: delete the role directly via the table (RPC requires claims_admin JWT)
     if (roleId) {
       const { error: deleteError } = await supabase
+        .schema('access_broker_app')
         .from('roles')
         .delete()
         .eq('id', roleId);
