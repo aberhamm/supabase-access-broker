@@ -80,11 +80,12 @@ test.describe('Dashboard App CRUD & Claims', () => {
     const descTextarea = page.locator('#description');
     await descTextarea.fill(appDescription);
 
-    // Pick a color (click the first available color button)
-    const colorButtons = page.locator('button:has(div.rounded-full)').filter({ hasNotText: /Cancel|Create|Back/ });
-    const colorCount = await colorButtons.count();
-    if (colorCount > 0) {
-      await colorButtons.first().click();
+    // Pick a color (click the first available color button in the color grid)
+    const colorGrid = page.locator('.grid-cols-3');
+    await colorGrid.scrollIntoViewIfNeeded();
+    const colorButton = colorGrid.locator('button').first();
+    if (await colorButton.isVisible({ timeout: 3000 }).catch(() => false)) {
+      await colorButton.click();
     }
 
     // Submit the form

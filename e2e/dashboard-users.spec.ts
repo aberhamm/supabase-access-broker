@@ -86,7 +86,7 @@ test.describe('Dashboard User Management', () => {
     await expect(page.getByText('Account Status')).toBeVisible({ timeout: 5000 });
 
     // Verify claims section exists
-    await expect(page.getByText('Custom Claims')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Custom Claims', { exact: true })).toBeVisible({ timeout: 5000 });
   });
 
   test('user detail page shows email, status, and claims', async ({ page }) => {
@@ -107,7 +107,7 @@ test.describe('Dashboard User Management', () => {
     await expect(page.getByText('Email Verified').first()).toBeVisible({ timeout: 5000 });
 
     // Claims section
-    await expect(page.getByText('Custom Claims')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText('Custom Claims', { exact: true })).toBeVisible({ timeout: 5000 });
   });
 
   test('toggle admin changes admin status', async ({ page }) => {
@@ -180,7 +180,7 @@ test.describe('Dashboard User Management', () => {
     await deleteButton.click();
 
     // The dialog should appear asking for confirmation
-    await expect(page.getByText('Delete User')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('heading', { name: 'Delete User' })).toBeVisible({ timeout: 5000 });
     await expect(page.getByText('Are you sure you want to delete this user?')).toBeVisible();
 
     // Type the email to confirm deletion

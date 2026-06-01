@@ -277,9 +277,13 @@ test.describe('API Endpoints — invite, auth-methods, roles, rate limiting', ()
     );
     expect(found).toBeDefined();
 
-    // Clean up: delete the role
+    // Clean up: delete the role directly via the table (RPC requires claims_admin JWT)
     if (roleId) {
-      await supabase.rpc('delete_role', { p_id: roleId });
+      const { error: deleteError } = await supabase
+        .from('roles')
+        .delete()
+        .eq('id', roleId);
+      expect(deleteError).toBeNull();
     }
 
     // Verify deletion

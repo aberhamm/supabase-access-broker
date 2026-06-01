@@ -44,6 +44,6 @@ test.describe('Health Endpoint (Plan 003)', () => {
 
     // Only expected keys
     const keys = Object.keys(body).sort();
-    expect(keys).toEqual(['db', 'status', 'timestamp', 'version']);
+    expect(keys).toEqual(['db', 'request_id', 'status', 'timestamp', 'version']);
   });
 });

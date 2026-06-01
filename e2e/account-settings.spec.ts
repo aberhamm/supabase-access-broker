@@ -155,7 +155,7 @@ test.describe('Account Settings & MFA', () => {
 
     // After success, the factor should appear in the MFA factors list —
     // look for the "Authenticator App" label and "verified" badge
-    await expect(page.getByText('Authenticator App')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Authenticator App', { exact: true })).toBeVisible({ timeout: 10000 });
     await expect(page.getByText('verified')).toBeVisible({ timeout: 5000 });
 
     // Clean up via admin API to avoid polluting state
@@ -209,6 +209,13 @@ test.describe('Account Settings & MFA', () => {
     const stepUpVisible = await stepUpInput.isVisible({ timeout: 3000 }).catch(() => false);
 
     if (stepUpVisible) {
+      // Wait for a fresh TOTP period to avoid boundary expiry
+      const now = Math.floor(Date.now() / 1000);
+      const secsIntoWindow = now % 30;
+      if (secsIntoWindow > 25) {
+        await page.waitForTimeout((31 - secsIntoWindow) * 1000);
+      }
+
       // Generate a TOTP code for step-up verification
       const totp = new OTPAuth.TOTP({
         secret: OTPAuth.Secret.fromBase32(totpSecret),
