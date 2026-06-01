@@ -260,32 +260,23 @@ test.describe('API Endpoints — invite, auth-methods, roles, rate limiting', ()
       }
     );
     expect(createError).toBeNull();
+    expect(createData).toBe('OK');
 
-    const roleId =
-      typeof createData === 'object' && createData !== null
-        ? (createData as { id?: string }).id
-        : undefined;
-
-    // Verify the role appears in the GET response
+    // Verify the role appears in the GET response and capture its ID
     const listResponse = await page.request.get(
       `${APP_URL}/api/apps/${TEST_APP.id}/roles`
     );
     expect(listResponse.status()).toBe(200);
     const roles = await listResponse.json();
-    const found = (roles as { name: string }[]).find(
+    const found = (roles as { name: string; id: string }[]).find(
       (r) => r.name === roleName
     );
     expect(found).toBeDefined();
+    const roleId = found!.id;
 
-    // Clean up: delete the role directly via the table (RPC requires claims_admin JWT)
-    if (roleId) {
-      const { error: deleteError } = await supabase
-        .schema('access_broker_app')
-        .from('roles')
-        .delete()
-        .eq('id', roleId);
-      expect(deleteError).toBeNull();
-    }
+    // Clean up: delete the role via RPC
+    const { data: deleteResult } = await supabase.rpc('delete_role', { p_id: roleId });
+    expect(deleteResult).toBe('OK');
 
     // Verify deletion
     const afterDelete = await page.request.get(

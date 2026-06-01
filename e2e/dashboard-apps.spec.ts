@@ -124,7 +124,7 @@ test.describe('Dashboard App CRUD & Claims', () => {
     await editBtn.click();
 
     // Wait for the edit dialog to appear
-    await expect(page.getByText('Edit App')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('heading', { name: 'Edit App' })).toBeVisible({ timeout: 5000 });
     await expect(page.getByText('Update the app configuration')).toBeVisible({ timeout: 3000 });
 
     // Update name
