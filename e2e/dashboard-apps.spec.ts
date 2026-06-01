@@ -143,10 +143,10 @@ test.describe('Dashboard App CRUD & Claims', () => {
     const updateBtn = page.getByRole('button', { name: /Update$/i });
     await updateBtn.click();
 
-    // Wait for the dialog to close and page to refresh
-    await expect(page.getByText('Update the app configuration')).not.toBeVisible({ timeout: 10000 });
+    // Wait for the success toast before verifying
+    await expect(page.getByText(/updated successfully/i)).toBeVisible({ timeout: 10000 });
 
-    // Verify the updated name appears on the page
+    // Verify the updated name appears on the page after server revalidation
     await page.reload();
     await page.waitForLoadState('load');
     await expect(page.getByText(updatedName).first()).toBeVisible({ timeout: 15000 });
