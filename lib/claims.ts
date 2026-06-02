@@ -351,7 +351,10 @@ export async function createRoleInDb(
     p_description: roleData.description || null,
     p_app_id: roleData.app_id || null,
     p_is_global: roleData.is_global,
-    p_permissions: JSON.stringify(roleData.permissions || []),
+    // Pass the array directly — supabase-js serializes it to a JSON array for
+    // the jsonb param. JSON.stringify() here would double-encode it into a
+    // jsonb *string* scalar ("[]") that later crashes array consumers.
+    p_permissions: roleData.permissions || [],
   });
   return { data, error };
 }
@@ -372,9 +375,9 @@ export async function updateRoleInDb(
     p_id: roleId,
     p_label: roleData.label || null,
     p_description: roleData.description || null,
-    p_permissions: roleData.permissions
-      ? JSON.stringify(roleData.permissions)
-      : null,
+    // Pass the array directly (see createRoleInDb) — JSON.stringify would
+    // double-encode it into a jsonb string scalar.
+    p_permissions: roleData.permissions ?? null,
   });
   return { data, error };
 }

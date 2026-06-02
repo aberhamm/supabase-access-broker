@@ -23,6 +23,23 @@ function isCacheValid(): boolean {
 }
 
 /**
+ * Coerce a role's permissions into a string array. Tolerates arrays, JSON
+ * string payloads ('["read"]'), null/undefined, and malformed values.
+ */
+function normalizePermissions(permissions: unknown): string[] {
+  if (Array.isArray(permissions)) return permissions as string[];
+  if (typeof permissions === 'string') {
+    try {
+      const parsed = JSON.parse(permissions);
+      return Array.isArray(parsed) ? parsed : [];
+    } catch {
+      return [];
+    }
+  }
+  return [];
+}
+
+/**
  * Convert fallback apps to AppConfig format
  */
 function convertFallbackApps(): AppConfig[] {
@@ -156,7 +173,13 @@ async function fetchRolesFromDb(
       return convertFallbackRoles();
     }
 
-    const roles = (data as RoleConfig[]) || [];
+    // Normalize permissions to an array. Legacy rows (and any double-encoded
+    // writes) may return permissions as a JSON string like '["read"]' or '[]';
+    // UI consumers call .map()/.slice() and crash on a string.
+    const roles = ((data as RoleConfig[]) || []).map((role) => ({
+      ...role,
+      permissions: normalizePermissions(role.permissions),
+    }));
 
     // Update cache if fetching all roles
     if (!appId) {
