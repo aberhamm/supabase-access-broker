@@ -91,6 +91,9 @@ export async function updateAppAction(id: string, data: UpdateAppData) {
   refreshCache();
   revalidatePath('/apps');
   revalidatePath('/users');
+  // The app detail/overview route is a separate cache segment — revalidate it
+  // too so edits show immediately on the detail page.
+  revalidatePath(`/apps/${id}`, 'layout');
 
   return { data: result, error: null };
 }

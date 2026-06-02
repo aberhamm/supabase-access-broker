@@ -376,6 +376,16 @@ test.describe('API Endpoints — invite, auth-methods, roles, rate limiting', ()
           }
         }
       }
+
+      // The invite route buckets the write rate limit on app_id (not the API
+      // key), so the 35 requests above exhausted `app-api:write:<app_id>` for
+      // the whole 60s window. Clear it so later serial tests that POST to the
+      // same app's /invite (e.g. app_secret auth) don't get a stray 429.
+      await supabase
+        .schema('access_broker_app')
+        .from('rate_limits')
+        .delete()
+        .eq('bucket', `app-api:write:${TEST_APP.id}`);
     }
   });
 
