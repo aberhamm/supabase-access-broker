@@ -206,7 +206,7 @@ test.describe('Dashboard App CRUD & Claims', () => {
     await page.waitForURL(`**/apps/${createdAppId}/roles`, { timeout: 15000 });
 
     // Wait for the roles page to render
-    await expect(page.getByText('App-Specific Roles')).toBeVisible({ timeout: 15000 });
+    await expect(page.getByRole('heading', { name: 'App-Specific Roles' })).toBeVisible({ timeout: 15000 });
 
     // Click "Create Role" button
     const createRoleBtn = page.getByRole('button', { name: /Create Role/i }).first();
@@ -243,7 +243,7 @@ test.describe('Dashboard App CRUD & Claims', () => {
     await deleteBtn.click();
 
     // Confirm deletion in the dialog
-    await expect(page.getByText('Delete Role')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('heading', { name: 'Delete Role' })).toBeVisible({ timeout: 5000 });
     const confirmDeleteBtn = page.getByRole('button', { name: /^Delete Role$/i });
     await confirmDeleteBtn.click();
 
@@ -287,7 +287,7 @@ test.describe('Dashboard App CRUD & Claims', () => {
     await expect(page.getByText('User added')).toBeVisible({ timeout: 10000 });
 
     // Verify the user now appears in the users list on the overview
-    await expect(page.getByText(targetUser.email)).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(targetUser.email).first()).toBeVisible({ timeout: 10000 });
 
     // Verify the claim appears on the user's detail page
     await page.goto(`/users/${targetUser.id}`);
@@ -295,7 +295,7 @@ test.describe('Dashboard App CRUD & Claims', () => {
     await expect(page.getByText(targetUser.email).first()).toBeVisible({ timeout: 15000 });
 
     // Look for the "App Access" card and verify our app shows up
-    await expect(page.getByText('App Access')).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('App Access', { exact: true })).toBeVisible({ timeout: 10000 });
   });
 
   // -----------------------------------------------------------------------
@@ -319,7 +319,7 @@ test.describe('Dashboard App CRUD & Claims', () => {
     await deleteIcon.click();
 
     // Confirm in the DeleteAppConfirmDialog
-    await expect(page.getByText('Delete App')).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole('heading', { name: 'Delete App' })).toBeVisible({ timeout: 5000 });
     await expect(page.getByText('Are you sure you want to delete this app?')).toBeVisible();
 
     // Type the app ID to confirm

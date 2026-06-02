@@ -32,6 +32,11 @@ CREATE POLICY "service_role_only" ON access_broker_app.rate_limits
     current_setting('request.jwt.claims', true)::jsonb->>'role' = 'service_role'
   );
 
+-- The service_role_only policy is meaningless without table-level grants —
+-- without these, the backend (service_role) can only touch the table through
+-- the SECURITY DEFINER functions below, not via direct PostgREST queries.
+GRANT SELECT, INSERT, UPDATE, DELETE ON access_broker_app.rate_limits TO service_role;
+
 -- ============================================================================
 -- Function: access_broker_app.consume_rate_limit
 -- Atomically increments the bucket and returns whether the request is within
