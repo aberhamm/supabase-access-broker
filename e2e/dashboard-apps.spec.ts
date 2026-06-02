@@ -233,7 +233,11 @@ test.describe('Dashboard App CRUD & Claims', () => {
     const createBtn = page.getByRole('button', { name: /^Create$/i });
     await createBtn.click();
 
-    // Verify the role appears in the list
+    // Wait for the success toast — confirms the role was created server-side and
+    // the list re-fetch (handleRolesChanged → loadRoles) has been triggered.
+    await expect(page.getByText(/created successfully/i)).toBeVisible({ timeout: 10000 });
+
+    // Verify the role appears in the list (name rendered in the role row)
     await expect(page.getByText(roleName)).toBeVisible({ timeout: 10000 });
     await expect(page.getByText(roleLabel)).toBeVisible({ timeout: 5000 });
 
