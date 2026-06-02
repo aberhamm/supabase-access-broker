@@ -237,12 +237,13 @@ test.describe('Dashboard App CRUD & Claims', () => {
     // the list re-fetch (handleRolesChanged → loadRoles) has been triggered.
     await expect(page.getByText(/created successfully/i)).toBeVisible({ timeout: 10000 });
 
-    // Verify the role appears in the list (name rendered in the role row)
+    // Verify the role appears in the list (scope to the row — the success
+    // toast also contains the label and would otherwise match in strict mode).
     await expect(page.getByText(roleName)).toBeVisible({ timeout: 10000 });
-    await expect(page.getByText(roleLabel)).toBeVisible({ timeout: 5000 });
+    const roleRow = page.locator('tr').filter({ hasText: roleName });
+    await expect(roleRow.getByText(roleLabel)).toBeVisible({ timeout: 5000 });
 
     // Now delete the role — click the trash icon button in the same row
-    const roleRow = page.locator('tr').filter({ hasText: roleName });
     const deleteBtn = roleRow.locator('button').filter({ has: page.locator('svg.lucide-trash-2') });
     await deleteBtn.click();
 
@@ -335,10 +336,8 @@ test.describe('Dashboard App CRUD & Claims', () => {
     await expect(deleteAppBtn).toBeEnabled({ timeout: 3000 });
     await deleteAppBtn.click();
 
-    // Wait for the toast and verify the app is removed from the grid
-    await expect(page.getByText(`"${createdAppId}"`, { exact: false }).or(
-      page.getByText('deleted successfully')
-    )).toBeVisible({ timeout: 10000 });
+    // Wait for the delete success toast
+    await expect(page.getByText('deleted successfully')).toBeVisible({ timeout: 10000 });
 
     // The app card should no longer be visible (search for the app ID)
     await page.waitForTimeout(1000);
