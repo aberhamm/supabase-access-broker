@@ -100,6 +100,15 @@ test.describe('App Management API', () => {
   });
 
   test('T43: app_secret auth works on POST /invite', async ({ request }) => {
+    // The write rate limit is bucketed per app_id and is Postgres-backed
+    // (shared across the whole suite). Other tests' writes to this app may have
+    // filled the bucket, so clear it to verify auth in isolation.
+    await supabase
+      .schema('access_broker_app')
+      .from('rate_limits')
+      .delete()
+      .eq('bucket', `app-api:write:${TEST_APP.id}`);
+
     const response = await request.post(`${APP_URL}/api/apps/${TEST_APP.id}/invite`, {
       data: {
         app_secret: TEST_APP.secret,

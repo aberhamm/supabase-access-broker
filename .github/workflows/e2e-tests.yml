@@ -49,6 +49,10 @@ jobs:
           # Use 3051 so E2E doesn't collide with the prod container on :3050
           E2E_PORT: '3051'
           NEXT_PUBLIC_APP_URL: http://localhost:3051
+          # Disable the in-memory apps cache so edits are visible immediately
+          # after a reload (the detail page is force-dynamic but reads a 5-min
+          # module cache that doesn't reliably clear under `next start`).
+          APP_CACHE_TTL: '0'
           NEXT_PUBLIC_AUTH_PASSWORD: true
           # Enable OAuth providers globally so per-app auth_methods toggles take effect
           # in the self-signup E2E tests. Actual OAuth config lives in Supabase.

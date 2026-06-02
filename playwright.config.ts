@@ -71,6 +71,9 @@ export default defineConfig({
     env: {
       PORT: e2ePort,
       NEXT_PUBLIC_APP_URL: `http://localhost:${e2ePort}`,
+      // Disable the in-memory apps cache so edits are immediately visible to
+      // tests (otherwise the 5-min module cache serves stale data after edits).
+      APP_CACHE_TTL: process.env.APP_CACHE_TTL || '0',
     },
   },
 });
