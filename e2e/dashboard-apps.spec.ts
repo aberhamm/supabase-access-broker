@@ -252,8 +252,10 @@ test.describe('Dashboard App CRUD & Claims', () => {
     const confirmDeleteBtn = page.getByRole('button', { name: /^Delete Role$/i });
     await confirmDeleteBtn.click();
 
-    // Verify the role is removed from the list
-    await expect(page.getByText(roleName)).not.toBeVisible({ timeout: 10000 });
+    // Verify the role row is removed from the list. Scope to <tr> + count: the
+    // confirm dialog also renders the role name in a <code>, so a plain
+    // getByText(roleName) would match two elements (strict-mode violation).
+    await expect(roleRow).toHaveCount(0, { timeout: 10000 });
   });
 
   // -----------------------------------------------------------------------
