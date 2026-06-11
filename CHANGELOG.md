@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — 2026-06-04
+
+### Security
+- App-facing API endpoints are now rate-limited per app: 30 writes/minute and 60 reads/minute. Limits are stored in Postgres so they survive restarts and apply consistently across replicas; exceeding a limit returns `429` with a `Retry-After` header. (Previously the limiter was defined but inactive in production, so no limits were actually enforced.)
+
+### Fixed
+- The app **Roles** tab no longer crashes when an app has a custom role. Role permissions were stored double-encoded, which broke the roles list rendering; roles now save and display correctly.
+
+### Internal
+- Restored the end-to-end test suite to green (98 passing) after it was fully broken in CI — fixed pnpm setup on the self-hosted runner, pinned pnpm v10 / Node 22, and resolved strict-mode locators, stale assertions, and test-isolation issues (including rate-limiter bucket contamination between tests).
+- App updates now also revalidate the app detail route cache.
+
+<!-- commits: 1161dff, 17c0c97, 7f14ca8, a2cf350, 1dfe6dc, 70daa63, 8c102fb, 5f4bef6, c9007c2, 8f17d65, 9e870e6, f78e3c4, 1d4ef9c, 69c4255, f377ac0, 4f91909 -->
+
 ## [Unreleased] — 2026-05-30
 
 ### Added
