@@ -1,7 +1,7 @@
 ---
 id: 025
 title: Bind SSO auth codes to session identity and rate-limit /sso/complete
-status: pending
+status: in-progress
 blocked-by: []
 goal: sso-security-ux-audit-findings
 allows-migrations: false
