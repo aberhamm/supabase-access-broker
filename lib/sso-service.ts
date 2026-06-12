@@ -243,27 +243,6 @@ export async function validateRedirectUri(params: {
   }
 }
 
-export async function lookupUserByEmail(email: string): Promise<{ id: string; email: string } | null> {
-  const supabase = await createAdminClient();
-  const { data, error } = await supabase.rpc('lookup_user_by_identifier', {
-    p_user_id: null,
-    p_email: email,
-    p_telegram_id: null,
-  });
-
-  if (error) {
-    console.error('[SSO] Error looking up user by email:', error);
-    return null;
-  }
-
-  const user = Array.isArray(data) ? data[0] : null;
-  if (!user?.id || !user?.email) {
-    return null;
-  }
-
-  return { id: user.id as string, email: user.email as string };
-}
-
 export async function createAuthCode(params: {
   userId: string;
   appId: string;

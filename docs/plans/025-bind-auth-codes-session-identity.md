@@ -1,12 +1,15 @@
 ---
 id: 025
 title: Bind SSO auth codes to session identity and rate-limit /sso/complete
-status: in-progress
+status: done
 blocked-by: []
 goal: sso-security-ux-audit-findings
 allows-migrations: false
 needs-review: none
 created: 2026-06-12
+completed: 2026-06-13
+reviewed: false
+qa: automated
 ---
 
 ## Requirements
@@ -123,3 +126,18 @@ environment — verify with `pnpm migrate:status` before relying on it.
 - **CROSS-MODEL:** no contradictions — Codex extended this review's findings rather than disputing them.
 - **UNRESOLVED:** 0
 - **VERDICT:** ENG CLEARED — ready for autonomous execution (status flipped to pending, 2026-06-12).
+
+## Implementation Notes
+
+Removed the email lookup substitution path from `/sso/complete`, so both self-signup claim grants and SSO auth-code creation now use the authenticated session user ID directly. Added a new `sso-complete` auth limiter keyed by Cloudflare-aware client IP plus session user ID, enforced only after redirect URI validation succeeds, and audit-logged limiter denials with `temporarily_unavailable`. Deleted the dead `lookupUserByEmail` helper and `sso_user_id_mismatch` audit event type. Added route-level and limiter unit tests covering session binding, rate-limit denial, missing/invalid request handling, and access denial.
+
+**Files changed:**
+
+- `app/sso/complete/route.ts` (modified)
+- `lib/audit-service.ts` (modified)
+- `lib/auth-rate-limit.ts` (modified)
+- `lib/sso-service.ts` (modified)
+- `tests/unit/auth-rate-limit.test.ts` (created)
+- `tests/unit/sso-complete-route.test.ts` (created)
+
+**Commit:** `01febc8` — `fix(sso): bind auth codes to session user`
