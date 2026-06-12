@@ -140,4 +140,4 @@ Removed the email lookup substitution path from `/sso/complete`, so both self-si
 - `tests/unit/auth-rate-limit.test.ts` (created)
 - `tests/unit/sso-complete-route.test.ts` (created)
 
-**Commit:** `01febc8` — `fix(sso): bind auth codes to session user`
+**Commit:** `09b0c2a` — `fix(sso): bind auth codes to session user`
