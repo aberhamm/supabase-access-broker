@@ -1,7 +1,7 @@
 ---
 id: 026
 title: Sanitize SSO and login error messages (code-mapped only)
-status: pending
+status: in-progress
 blocked-by: [025]
 goal: sso-security-ux-audit-findings
 allows-migrations: false
