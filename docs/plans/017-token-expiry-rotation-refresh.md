@@ -49,7 +49,7 @@ OAuth 2.0 Security BCP Section 4.13):
 
 **Files expected to change:**
 
-- `migrations/029_refresh_tokens.sql` (new): refresh_tokens table, indexes, cleanup function
+- `migrations/030_refresh_tokens.sql` (new): refresh_tokens table, indexes, cleanup function
 - `lib/oidc/refresh-tokens.ts` (new): refresh token issuance, rotation, revocation, validation
 - `app/api/oidc/token/route.ts`: add `grant_type=refresh_token` handling
 - `lib/oidc/token-response.ts`: include `refresh_token` in response when applicable
@@ -62,7 +62,7 @@ endpoint (RFC 7009) -- these can be added later if needed.
 
 ## Tasks
 
-1. Create migration `029_refresh_tokens.sql` with the `refresh_tokens` table (id, family_id, token_hash, user_id, app_id, scope, expires_at, revoked_at, created_at), indexes on token_hash and family_id, and a cleanup function for expired tokens
+1. Create migration `030_refresh_tokens.sql` with the `refresh_tokens` table (id, family_id, token_hash, user_id, app_id, scope, expires_at, revoked_at, created_at), indexes on token_hash and family_id, and a cleanup function for expired tokens
 2. Create `lib/oidc/refresh-tokens.ts` with functions: `issueRefreshToken`, `consumeRefreshToken` (with rotation and family revocation), `revokeTokenFamily`
 3. Update `app/api/oidc/token/route.ts` to handle `grant_type=refresh_token` requests and include `refresh_token` in responses when `offline_access` scope is requested
 4. Update `lib/oidc/token-response.ts` to conditionally include `refresh_token` field
@@ -73,7 +73,7 @@ endpoint (RFC 7009) -- these can be added later if needed.
 
 - [cmd] pnpm run build
 - [cmd] pnpm run test
-- [assert] test -f migrations/029_refresh_tokens.sql
+- [assert] test -f migrations/030_refresh_tokens.sql
 - [assert] test -f lib/oidc/refresh-tokens.ts
 - [assert] grep -q "refresh_token" app/api/oidc/token/route.ts
 - [assert] grep -q "OIDC_REFRESH_TOKEN_LIFETIME_DAYS" .env.example
