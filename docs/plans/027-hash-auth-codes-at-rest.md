@@ -121,4 +121,4 @@ Updated `createAuthCode` to store `sha256Hex(code)` while returning the plaintex
 - `migrations/028_hash_auth_codes.sql` (created)
 - `tests/unit/sso-service.test.ts` (modified)
 
-**Commit:** `PENDING` — `fix(sso): hash auth codes at rest`
+**Commit:** `3ebf224` — `fix(sso): hash auth codes at rest`
