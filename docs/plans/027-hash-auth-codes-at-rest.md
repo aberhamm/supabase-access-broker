@@ -1,12 +1,15 @@
 ---
 id: 027
 title: Hash SSO auth codes at rest (SHA-256)
-status: in-progress
+status: done
 blocked-by: [025]
 goal: sso-security-ux-audit-findings
 allows-migrations: true
 needs-review: none
 created: 2026-06-12
+completed: 2026-06-13
+reviewed: false
+qa: automated
 ---
 
 ## Requirements
@@ -107,3 +110,15 @@ Testing approach: unit-only
 - **CROSS-MODEL:** no contradictions — the self-review's clean verdict held for architecture, but Codex tightened test precision and operational wording substantially.
 - **UNRESOLVED:** 0
 - **VERDICT:** ENG CLEARED — ready for autonomous execution behind plan 025 (status flipped to pending, 2026-06-12).
+
+## Implementation Notes
+
+Updated `createAuthCode` to store `sha256Hex(code)` while returning the plaintext redirect code, and updated `consumeAuthCode` to hash presented codes before calling the existing opaque `consume_auth_code` RPC. Added migration `028_hash_auth_codes.sql` to wipe existing auth-code rows, document the hashed column contract, and enforce a 64-character lowercase hex digest with `auth_codes_code_is_sha256`. Extended `sso-service` tests to prove inserts and RPC calls receive hashes and not plaintext values. Verified the OIDC coordination edits remained intact.
+
+**Files changed:**
+
+- `lib/sso-service.ts` (modified)
+- `migrations/028_hash_auth_codes.sql` (created)
+- `tests/unit/sso-service.test.ts` (modified)
+
+**Commit:** `PENDING` — `fix(sso): hash auth codes at rest`
