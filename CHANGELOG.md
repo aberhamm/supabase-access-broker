@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/).
 
+## [Unreleased] — 2026-06-13
+
+### Security
+- SSO authorization codes are now stored as SHA-256 hashes instead of plaintext while still allowing client apps to redeem the original one-time code.
+- SSO completion now binds issued auth codes to the authenticated session user, avoiding email-based lookup during code issuance.
+- Login and SSO error pages now render only mapped, safe error messages instead of raw provider or query-string descriptions.
+
+### Changed
+- The login, SSO error, and SSO continue pages now share the same glass-card auth layout, loading spinner, card width, and reduced-motion-safe background treatment.
+- The SSO error page now leads with friendlier copy, keeps technical details secondary, and hides “Try Again” for deterministic non-retryable errors.
+
+### Fixed
+- The SSO continue page now redirects missing or signed-out sessions through safe effect-based navigation while preserving SSO parameters.
+- SSO continue URLs now encode `app_id` correctly and avoid dangling or flashing copy while app/user details are loading.
+- The SSO e2e fixtures now insert hashed auth-code values to match the storage contract.
+
+### Internal
+- Added focused regression coverage for SSO URL construction, retryability rules, shared auth UI rendering, continue-page loading copy, and auth-code exchange behavior.
+- Added reviewed implementation plans for the SSO security/UX audit fixes and coordinated the OIDC backlog around the new auth-code hashing migration.
+- Added project agent guidance files for Codex/Claude portability.
+
+<!-- commits: 09472cb, 784983e, 607ba82, bd81377, 8cbd829, f92ea9a, 869c084, 3ebf224, 7880163, f6102ef, 0555564, cb23d3a, adb5f7c, c0ae734, 01f465f, 09b0c2a, cead4d5, eefe7ba, c4388e9, 4efa25b -->
+
 ## [Unreleased] — 2026-06-04
 
 ### Security
