@@ -153,4 +153,4 @@ insert hashed auth-code values after plan 027 changed the storage contract.
 - `components/auth/AuthShell.tsx` (created)
 - `components/auth/AuthSpinner.tsx` (created)
 
-**Commit:** `PENDING` — `PENDING`
+**Commit:** `bd81377` — `fix(auth): share auth flow shell and harden SSO UX`
