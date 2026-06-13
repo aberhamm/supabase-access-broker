@@ -13,8 +13,7 @@ import { AlertCircle, ArrowLeft, RefreshCw, User } from 'lucide-react';
 import { getErrorMessage } from '@/lib/auth-error-messages';
 import { AuthShell } from '@/components/auth/AuthShell';
 import { AuthSpinner } from '@/components/auth/AuthSpinner';
-
-const NON_RETRYABLE_CODES = new Set(['access_denied', 'unauthorized_client']);
+import { buildSsoCompletePath, buildSsoLoginPath, isRetryableSsoError } from '@/lib/sso-flow-utils';
 
 function SSOErrorContent() {
   const searchParams = useSearchParams();
@@ -29,15 +28,12 @@ function SSOErrorContent() {
 
   // Build "Try Again" URL if we have enough context
   const hasRetryContext = !!appId && !!redirectUri;
-  const isRetryable = !NON_RETRYABLE_CODES.has(error ?? '');
-  const retryUrl = hasRetryContext && isRetryable
-    ? `/sso/complete?app_id=${encodeURIComponent(appId)}&redirect_uri=${encodeURIComponent(redirectUri)}${state ? `&state=${encodeURIComponent(state)}` : ''}`
+  const retryUrl = hasRetryContext && isRetryableSsoError(error)
+    ? buildSsoCompletePath({ appId, redirectUri, state })
     : null;
 
   // Build "Back to Login" URL preserving SSO params if present
-  const loginUrl = hasRetryContext
-    ? `/login?app_id=${encodeURIComponent(appId)}&redirect_uri=${encodeURIComponent(redirectUri)}${state ? `&state=${encodeURIComponent(state)}` : ''}&reauth=1`
-    : '/login';
+  const loginUrl = buildSsoLoginPath({ appId, redirectUri, state, reauth: hasRetryContext });
 
   return (
     <AuthShell>

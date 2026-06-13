@@ -13,6 +13,7 @@ import {
 import { LogIn, UserCircle, ArrowRightLeft } from 'lucide-react';
 import { AuthShell } from '@/components/auth/AuthShell';
 import { AuthSpinner } from '@/components/auth/AuthSpinner';
+import { buildSsoCompletePath, buildSsoLoginPath, getSsoContinueHeaderCopy } from '@/lib/sso-flow-utils';
 
 function SSOContinueContent() {
   const searchParams = useSearchParams();
@@ -37,8 +38,8 @@ function SSOContinueContent() {
     []
   );
 
-  const ssoCompleteUrl = `/sso/complete?app_id=${encodeURIComponent(appId ?? '')}&redirect_uri=${encodeURIComponent(redirectUri ?? '')}${state ? `&state=${encodeURIComponent(state)}` : ''}`;
-  const loginUrl = `/login?app_id=${encodeURIComponent(appId ?? '')}&redirect_uri=${encodeURIComponent(redirectUri ?? '')}${state ? `&state=${encodeURIComponent(state)}` : ''}`;
+  const ssoCompleteUrl = buildSsoCompletePath({ appId, redirectUri, state }) ?? '/sso/complete';
+  const loginUrl = buildSsoLoginPath({ appId, redirectUri, state });
 
   useEffect(() => {
     if (!hasRequiredParams) {
@@ -92,6 +93,7 @@ function SSOContinueContent() {
   }, [appId]);
 
   const headerReady = userSettled && appSettled;
+  const headerCopy = getSsoContinueHeaderCopy({ appName, email });
 
   function handleContinue() {
     setLoading(true);
@@ -119,10 +121,10 @@ function SSOContinueContent() {
         ) : (
           <div className="space-y-2">
             <CardTitle className="text-2xl font-bold">
-              {appName ? `Continue to ${appName}` : 'Continue'}
+              {headerCopy.title}
             </CardTitle>
             <CardDescription>
-              {email ? `Signed in as ${email}` : 'Signed in with this account'}
+              {headerCopy.description}
             </CardDescription>
           </div>
         )}
