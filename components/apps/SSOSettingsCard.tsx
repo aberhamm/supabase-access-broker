@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Switch } from '@/components/ui/switch';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
@@ -50,6 +51,8 @@ export function SSOSettingsCard({
   const [urls, setUrls] = useState<string[]>(initialUrls);
   const [newUrl, setNewUrl] = useState('');
   const [saving, setSaving] = useState(false);
+  const [loopback, setLoopback] = useState<boolean>(app.allow_loopback_redirects ?? false);
+  const [savingLoopback, setSavingLoopback] = useState(false);
 
   const [secretDialogOpen, setSecretDialogOpen] = useState(false);
   const [generating, setGenerating] = useState(false);
@@ -113,6 +116,28 @@ export function SSOSettingsCard({
       setUrls(urls);
     } finally {
       setSaving(false);
+    }
+  };
+
+  const toggleLoopback = async (next: boolean) => {
+    const prev = loopback;
+    setLoopback(next);
+    setSavingLoopback(true);
+    try {
+      const result = await updateAppSSOSettingsAction(app.id, { allow_loopback_redirects: next });
+      if (result.error) {
+        toast.error(result.error);
+        setLoopback(prev);
+        return;
+      }
+      toast.success(next ? 'Loopback redirects enabled' : 'Loopback redirects disabled');
+      onUpdated?.();
+    } catch (e) {
+      const err = e as { message?: string };
+      toast.error(err.message || 'Failed to update loopback setting');
+      setLoopback(prev);
+    } finally {
+      setSavingLoopback(false);
     }
   };
 
@@ -233,6 +258,26 @@ export function SSOSettingsCard({
               ))}
             </div>
           )}
+
+          <div className="flex items-start justify-between gap-4 rounded-md border p-3">
+            <div className="space-y-1">
+              <Label htmlFor="allow_loopback" className="flex items-center gap-2">
+                Allow loopback redirects
+                <Badge variant="secondary">dev</Badge>
+              </Label>
+              <p className="text-xs text-muted-foreground">
+                Accept any <code>http://localhost</code> / <code>http://127.0.0.1</code> redirect (any port/path)
+                without an exact match above. For native / public PKCE clients in local development only — leave
+                OFF for confidential clients that exchange codes with a secret. The loopback host is still strictly enforced.
+              </p>
+            </div>
+            <Switch
+              id="allow_loopback"
+              checked={loopback}
+              onCheckedChange={toggleLoopback}
+              disabled={savingLoopback}
+            />
+          </div>
         </CardContent>
       </Card>
 

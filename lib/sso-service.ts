@@ -192,12 +192,19 @@ export async function isRedirectUriAllowed(params: {
     const { data, error } = await supabase
       .schema('access_broker_app')
       .from('apps')
-      .select('id,enabled,allowed_callback_urls')
+      .select('id,enabled,allowed_callback_urls,allow_loopback_redirects')
       .eq('id', appId)
       .maybeSingle();
 
     if (error || !data?.id || data.enabled === false) {
       return false;
+    }
+
+    // Per-app opt-in: accept any loopback redirect (any port/path) without an
+    // exact allowlist entry. The protocol guard above already constrained http
+    // to loopback hosts, so reaching here with http: means it is loopback.
+    if (data.allow_loopback_redirects === true && url.protocol === 'http:' && isAllowedInsecureRedirect(url)) {
+      return true;
     }
 
     const allowed = (data.allowed_callback_urls || []) as string[];
@@ -228,13 +235,20 @@ export async function validateRedirectUri(params: {
   const { data, error } = await supabase
     .schema('access_broker_app')
     .from('apps')
-    .select('id,enabled,allowed_callback_urls')
+    .select('id,enabled,allowed_callback_urls,allow_loopback_redirects')
     .eq('id', appId)
     .maybeSingle();
 
   if (error) throw error;
   if (!data?.id) throw new Error('Unknown app_id');
   if (data.enabled === false) throw new Error('App is disabled');
+
+  // Per-app opt-in: accept any loopback redirect (any port/path) without an
+  // exact allowlist entry. The protocol guard above already constrained http
+  // to loopback hosts, so reaching here with http: means it is loopback.
+  if (data.allow_loopback_redirects === true && url.protocol === 'http:' && isAllowedInsecureRedirect(url)) {
+    return;
+  }
 
   const allowed = (data.allowed_callback_urls || []) as string[];
   if (!allowed.includes(redirectUri)) {

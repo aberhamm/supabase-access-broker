@@ -162,6 +162,9 @@ export interface AppConfig {
   auth_methods?: AppAuthMethods | null;
   allow_self_signup?: boolean;
   self_signup_default_role?: string;
+  // When true, any http://localhost|127.0.0.1 redirect_uri is accepted for this
+  // app without an exact allowed_callback_urls match (native/public PKCE dev clients only).
+  allow_loopback_redirects?: boolean;
   created_at: string;
   updated_at: string;
 }

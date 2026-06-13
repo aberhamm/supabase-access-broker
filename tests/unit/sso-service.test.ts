@@ -1,9 +1,13 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
 // Mock the admin client — .schema('access_broker_app').rpc()/from().insert() chain
+// plus .from('apps').select(...).eq(...).maybeSingle() for redirect_uri validation.
 const mockRpc = vi.fn();
 const mockInsert = vi.fn();
-const mockFrom = vi.fn(() => ({ insert: mockInsert }));
+const mockMaybeSingle = vi.fn();
+const mockEq = vi.fn(() => ({ maybeSingle: mockMaybeSingle }));
+const mockSelect = vi.fn(() => ({ eq: mockEq }));
+const mockFrom = vi.fn(() => ({ insert: mockInsert, select: mockSelect }));
 const mockSchema = vi.fn(() => ({ rpc: mockRpc, from: mockFrom }));
 vi.mock('@/lib/supabase/server', () => ({
   createAdminClient: vi.fn(() =>
@@ -19,7 +23,7 @@ vi.mock('@/lib/auth-debug', () => ({
   debugWarn: vi.fn(),
 }));
 
-import { consumeAuthCode, createAuthCode, sha256Hex } from '@/lib/sso-service';
+import { consumeAuthCode, createAuthCode, sha256Hex, isRedirectUriAllowed, validateRedirectUri } from '@/lib/sso-service';
 
 beforeEach(() => {
   vi.clearAllMocks();
@@ -137,5 +141,75 @@ describe('consumeAuthCode (atomic RPC)', () => {
     await expect(
       consumeAuthCode({ code: 'expired-code', appId: 'test-app' })
     ).rejects.toThrow('Invalid or expired code');
+  });
+});
+
+describe('redirect_uri validation — allow_loopback_redirects flag', () => {
+  function mockApp(row: {
+    enabled?: boolean;
+    allowed_callback_urls?: string[];
+    allow_loopback_redirects?: boolean;
+  }) {
+    mockMaybeSingle.mockResolvedValue({
+      data: {
+        id: 'lookbook-social',
+        enabled: row.enabled ?? true,
+        allowed_callback_urls: row.allowed_callback_urls ?? [],
+        allow_loopback_redirects: row.allow_loopback_redirects ?? false,
+      },
+      error: null,
+    });
+  }
+
+  it('accepts an un-allowlisted loopback redirect when the flag is ON', async () => {
+    mockApp({ allow_loopback_redirects: true, allowed_callback_urls: [] });
+    await expect(
+      isRedirectUriAllowed({ appId: 'lookbook-social', redirectUri: 'http://localhost:3337/auth/mobile-callback' })
+    ).resolves.toBe(true);
+
+    mockApp({ allow_loopback_redirects: true, allowed_callback_urls: [] });
+    await expect(
+      // any port/path on loopback works, no registration needed
+      isRedirectUriAllowed({ appId: 'lookbook-social', redirectUri: 'http://127.0.0.1:8081/cb' })
+    ).resolves.toBe(true);
+
+    mockApp({ allow_loopback_redirects: true, allowed_callback_urls: [] });
+    await expect(
+      validateRedirectUri({ appId: 'lookbook-social', redirectUri: 'http://localhost:9999/whatever' })
+    ).resolves.toBeUndefined();
+  });
+
+  it('still requires an exact allowlist entry for loopback when the flag is OFF', async () => {
+    mockApp({ allow_loopback_redirects: false, allowed_callback_urls: [] });
+    await expect(
+      isRedirectUriAllowed({ appId: 'lookbook-social', redirectUri: 'http://localhost:3337/auth/mobile-callback' })
+    ).resolves.toBe(false);
+
+    mockApp({ allow_loopback_redirects: false, allowed_callback_urls: [] });
+    await expect(
+      validateRedirectUri({ appId: 'lookbook-social', redirectUri: 'http://localhost:3337/auth/mobile-callback' })
+    ).rejects.toThrow(/not allowed/);
+  });
+
+  it('the flag does NOT relax non-loopback redirects (exact match still required)', async () => {
+    mockApp({ allow_loopback_redirects: true, allowed_callback_urls: ['https://lookbook.social/cb'] });
+    await expect(
+      isRedirectUriAllowed({ appId: 'lookbook-social', redirectUri: 'https://evil.example.com/cb' })
+    ).resolves.toBe(false);
+  });
+
+  it('rejects a lookalike host (localhost.attacker.com) even with the flag ON', async () => {
+    // http + non-loopback host is blocked by the protocol guard before any allowlist/flag check.
+    mockApp({ allow_loopback_redirects: true, allowed_callback_urls: [] });
+    await expect(
+      isRedirectUriAllowed({ appId: 'lookbook-social', redirectUri: 'http://localhost.attacker.com/cb' })
+    ).resolves.toBe(false);
+  });
+
+  it('still honors an exact https allowlist entry when the flag is ON', async () => {
+    mockApp({ allow_loopback_redirects: true, allowed_callback_urls: ['https://lookbook.social/cb'] });
+    await expect(
+      isRedirectUriAllowed({ appId: 'lookbook-social', redirectUri: 'https://lookbook.social/cb' })
+    ).resolves.toBe(true);
   });
 });

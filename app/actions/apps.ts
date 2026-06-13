@@ -139,7 +139,7 @@ function normalizeCallbackUrls(urls: string[]): string[] {
 
 export async function updateAppSSOSettingsAction(
   appId: string,
-  data: { allowed_callback_urls: string[] }
+  data: { allowed_callback_urls?: string[]; allow_loopback_redirects?: boolean }
 ): Promise<{ data: { ok: true } | null; error: string | null }> {
   try {
     const supabase = await createClient();
@@ -149,12 +149,18 @@ export async function updateAppSSOSettingsAction(
       return { data: null, error: 'Unauthorized: You must be a claims_admin' };
     }
 
-    const allowed_callback_urls = normalizeCallbackUrls(data.allowed_callback_urls);
+    const update: Record<string, unknown> = {};
+    if (data.allowed_callback_urls !== undefined) {
+      update.allowed_callback_urls = normalizeCallbackUrls(data.allowed_callback_urls);
+    }
+    if (data.allow_loopback_redirects !== undefined) {
+      update.allow_loopback_redirects = data.allow_loopback_redirects;
+    }
 
     const { error } = await supabase
       .schema('access_broker_app')
       .from('apps')
-      .update({ allowed_callback_urls })
+      .update(update)
       .eq('id', appId);
 
     if (error) {
