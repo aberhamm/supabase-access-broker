@@ -243,27 +243,6 @@ export async function validateRedirectUri(params: {
   }
 }
 
-export async function lookupUserByEmail(email: string): Promise<{ id: string; email: string } | null> {
-  const supabase = await createAdminClient();
-  const { data, error } = await supabase.rpc('lookup_user_by_identifier', {
-    p_user_id: null,
-    p_email: email,
-    p_telegram_id: null,
-  });
-
-  if (error) {
-    console.error('[SSO] Error looking up user by email:', error);
-    return null;
-  }
-
-  const user = Array.isArray(data) ? data[0] : null;
-  if (!user?.id || !user?.email) {
-    return null;
-  }
-
-  return { id: user.id as string, email: user.email as string };
-}
-
 export async function createAuthCode(params: {
   userId: string;
   appId: string;
@@ -282,7 +261,7 @@ export async function createAuthCode(params: {
     .schema('access_broker_app')
     .from('auth_codes')
     .insert({
-      code,
+      code: sha256Hex(code),
       user_id: params.userId,
       app_id: params.appId,
       redirect_uri: params.redirectUri,
@@ -298,11 +277,12 @@ export async function consumeAuthCode(params: {
   redirectUri?: string;
 }): Promise<{ userId: string; redirectUri: string }> {
   const supabase = await createAdminClient();
+  const codeHash = sha256Hex(params.code);
 
   // Atomic consumption via RPC — prevents race conditions (Critical #2)
   // Also verifies redirect_uri matches stored value when provided (Critical #3)
   const { data, error } = await supabase.schema('access_broker_app').rpc('consume_auth_code', {
-    p_code: params.code,
+    p_code: codeHash,
     p_app_id: params.appId,
     p_redirect_uri: params.redirectUri ?? null,
   });

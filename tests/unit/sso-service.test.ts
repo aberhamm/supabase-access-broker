@@ -1,8 +1,10 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 
-// Mock the admin client — .schema('access_broker_app').rpc() chain
+// Mock the admin client — .schema('access_broker_app').rpc()/from().insert() chain
 const mockRpc = vi.fn();
-const mockSchema = vi.fn(() => ({ rpc: mockRpc }));
+const mockInsert = vi.fn();
+const mockFrom = vi.fn(() => ({ insert: mockInsert }));
+const mockSchema = vi.fn(() => ({ rpc: mockRpc, from: mockFrom }));
 vi.mock('@/lib/supabase/server', () => ({
   createAdminClient: vi.fn(() =>
     Promise.resolve({
@@ -17,10 +19,31 @@ vi.mock('@/lib/auth-debug', () => ({
   debugWarn: vi.fn(),
 }));
 
-import { consumeAuthCode } from '@/lib/sso-service';
+import { consumeAuthCode, createAuthCode, sha256Hex } from '@/lib/sso-service';
 
 beforeEach(() => {
   vi.clearAllMocks();
+  mockInsert.mockResolvedValue({ error: null });
+});
+
+describe('createAuthCode', () => {
+  it('stores only the SHA-256 hash while returning the plaintext code', async () => {
+    const code = await createAuthCode({
+      userId: 'user-123',
+      appId: 'test-app',
+      redirectUri: 'https://app.com/callback',
+    });
+
+    expect(code).toMatch(/^[A-Za-z0-9_-]+$/);
+    expect(mockFrom).toHaveBeenCalledWith('auth_codes');
+    expect(mockInsert).toHaveBeenCalledWith({
+      code: sha256Hex(code),
+      user_id: 'user-123',
+      app_id: 'test-app',
+      redirect_uri: 'https://app.com/callback',
+    });
+    expect(mockInsert).not.toHaveBeenCalledWith(expect.objectContaining({ code }));
+  });
 });
 
 describe('consumeAuthCode (atomic RPC)', () => {
@@ -39,10 +62,14 @@ describe('consumeAuthCode (atomic RPC)', () => {
     expect(result.userId).toBe('user-123');
     expect(result.redirectUri).toBe('https://app.com/callback');
     expect(mockRpc).toHaveBeenCalledWith('consume_auth_code', {
-      p_code: 'valid-code',
+      p_code: sha256Hex('valid-code'),
       p_app_id: 'test-app',
       p_redirect_uri: 'https://app.com/callback',
     });
+    expect(mockRpc).not.toHaveBeenCalledWith(
+      'consume_auth_code',
+      expect.objectContaining({ p_code: 'valid-code' })
+    );
   });
 
   it('throws on invalid code', async () => {
@@ -95,7 +122,7 @@ describe('consumeAuthCode (atomic RPC)', () => {
 
     expect(result.userId).toBe('user-456');
     expect(mockRpc).toHaveBeenCalledWith('consume_auth_code', {
-      p_code: 'valid-code',
+      p_code: sha256Hex('valid-code'),
       p_app_id: 'test-app',
       p_redirect_uri: null,
     });

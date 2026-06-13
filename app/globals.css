@@ -720,6 +720,13 @@
   animation: float-slower 25s ease-in-out infinite;
 }
 
+@media (prefers-reduced-motion: reduce) {
+  .animate-float-slow,
+  .animate-float-slower {
+    animation: none;
+  }
+}
+
 /* Shimmer loading effect */
 @keyframes skeleton-pulse {
   0%, 100% {

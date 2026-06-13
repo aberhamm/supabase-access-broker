@@ -18,11 +18,11 @@ function buildLoginRedirect(
   baseUrl: string,
   next: string,
   errorCode: string | null,
-  errorDescription?: string | null,
+  providerErrorCode?: string | null,
 ): URL {
   const loginUrl = new URL('/login', baseUrl);
   if (errorCode) loginUrl.searchParams.set('error', errorCode);
-  if (errorDescription) loginUrl.searchParams.set('error_description', errorDescription);
+  if (providerErrorCode) loginUrl.searchParams.set('error_code', providerErrorCode);
 
   if (next.startsWith('/sso/complete')) {
     try {
@@ -56,6 +56,7 @@ export async function GET(request: Request) {
   const next = safeNextPath(requestUrl.searchParams.get('next'), '/');
   const oauthError = requestUrl.searchParams.get('error');
   const oauthErrorDescription = requestUrl.searchParams.get('error_description');
+  const oauthErrorCode = requestUrl.searchParams.get('error_code');
   const baseUrl = getBaseUrl(request);
 
   debugLog('[auth/callback] Processing request:', {
@@ -63,6 +64,7 @@ export async function GET(request: Request) {
     type,
     next,
     oauthError,
+    oauthErrorCode,
   });
 
   if (!code) {
@@ -70,9 +72,13 @@ export async function GET(request: Request) {
     // (e.g. Apple → Supabase rejected the user). Forward any error params from
     // the provider so the login page can surface a useful message, and preserve
     // SSO context so the user can retry without losing their app scope.
-    debugLog('[auth/callback] No code, redirecting to login', { oauthError });
+    debugLog('[auth/callback] No code, redirecting to login', {
+      oauthError,
+      oauthErrorCode,
+      oauthErrorDescription,
+    });
     return NextResponse.redirect(
-      buildLoginRedirect(baseUrl, next, oauthError, oauthErrorDescription),
+      buildLoginRedirect(baseUrl, next, oauthError, oauthErrorCode),
     );
   }
 
@@ -82,7 +88,7 @@ export async function GET(request: Request) {
   if (error) {
     debugError('[auth/callback] exchangeCodeForSession failed:', error.message);
     return NextResponse.redirect(
-      buildLoginRedirect(baseUrl, next, 'code_exchange_failed', error.message),
+      buildLoginRedirect(baseUrl, next, 'code_exchange_failed'),
     );
   }
 

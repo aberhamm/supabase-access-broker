@@ -49,7 +49,7 @@ Upgrade path:
 **Files expected to change:**
 
 - `lib/audit-service.ts`: add new event types, request_id parameter, structured console output
-- `migrations/030_audit_oidc_events.sql` (new): extend event types in DB if needed
+- `migrations/031_audit_oidc_events.sql` (new): extend event types in DB if needed
 - `lib/logger.ts`: minor additions if needed for structured audit output
 
 Testing approach: unit-only
@@ -60,10 +60,10 @@ plan already calls `logSSOEvent`; this plan makes the types available).
 
 ## Tasks
 
-1. Extend the `SSOEventType` union in `lib/audit-service.ts` with OIDC event types
+1. Extend the `SSOEventType` union in `lib/audit-service.ts` with OIDC event types (note: plan 025 removed `sso_user_id_mismatch` along with its emitter — do not re-introduce it)
 2. Add optional `requestId` parameter to `logSSOEvent` and include it in DB writes
 3. Add structured console logging (JSON to stdout) alongside DB writes using `lib/logger.ts`
-4. Create migration `030_audit_oidc_events.sql` to accommodate new event types in the database (alter column type or extend enum)
+4. Create migration `031_audit_oidc_events.sql` to accommodate new event types in the database (alter column type or extend enum)
 5. Add typed metadata fields (`OIDCAuditMetadata` interface) for OIDC-specific audit context
 6. Add unit tests for the extended event types and structured output format
 7. Update existing `logSSOEvent` call sites to pass `requestId` where available (grep for `logSSOEvent` across the codebase)
@@ -74,4 +74,4 @@ plan already calls `logSSOEvent`; this plan makes the types available).
 - [cmd] pnpm run test
 - [assert] grep -q "oidc_token_success" lib/audit-service.ts
 - [assert] grep -q "requestId\|request_id" lib/audit-service.ts
-- [assert] test -f migrations/030_audit_oidc_events.sql
+- [assert] test -f migrations/031_audit_oidc_events.sql

@@ -1,7 +1,7 @@
 ---
 id: 014
 title: Add OIDC discovery document and JWKS endpoint
-status: pending
+status: blocked
 blocked-by: []
 allows-migrations: false
 needs-review: eng

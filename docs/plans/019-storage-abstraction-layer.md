@@ -1,7 +1,7 @@
 ---
 id: 019
 title: Create storage abstraction layer for auth data access
-status: pending
+status: blocked
 blocked-by: []
 needs-review: eng
 created: 2026-06-05

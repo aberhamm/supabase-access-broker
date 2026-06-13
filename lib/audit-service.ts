@@ -7,7 +7,6 @@ export type SSOEventType =
   | 'sso_complete_success'
   | 'sso_complete_error'
   | 'sso_complete_redirect_error'
-  | 'sso_user_id_mismatch'
   | 'token_exchange_success'
   | 'token_exchange_error'
   | 'token_exchange_user_id_mismatch'
@@ -121,6 +120,5 @@ export function buildAuditContext(
     ...overrides,
   };
 }
-
 
 

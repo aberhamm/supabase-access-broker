@@ -2,8 +2,8 @@
 id: 015
 title: Make authorization endpoint OIDC-compatible
 status: blocked
-blocked-by: [014]
-allows-migrations: false
+blocked-by: [014, 027]
+allows-migrations: true
 needs-review: eng
 created: 2026-06-05
 ---
@@ -51,13 +51,18 @@ The `auth_codes` table needs two new nullable columns: `nonce` (text) and
 to work. The `createAuthCode` function in `lib/sso-service.ts` gets optional
 `nonce` and `scope` parameters.
 
+Note (plan 027): auth codes are stored as SHA-256 hex digests. `createAuthCode`
+hashes before insert and returns the plaintext to the caller; `consumeAuthCode`
+hashes the presented code before the RPC lookup. Preserve these semantics when
+extending either function — never store or compare plaintext codes.
+
 **Files expected to change:**
 
 - `app/api/oidc/authorize/route.ts` (new): OIDC authorization endpoint
 - `lib/sso-service.ts`: add `nonce` and `scope` params to `createAuthCode` and `consumeAuthCode`
 - `lib/oidc/params.ts` (new): OIDC parameter validation and mapping
 - `lib/auth-routes.ts`: add `/api/oidc/` to `PUBLIC_ROUTE_PREFIXES`
-- `migrations/028_oidc_auth_code_fields.sql` (new): add `nonce`, `scope` columns to `auth_codes`
+- `migrations/029_oidc_auth_code_fields.sql` (new): add `nonce`, `scope` columns to `auth_codes`
 
 Testing approach: E2E
 
@@ -66,7 +71,7 @@ handles the authorization request and code issuance with OIDC metadata attached.
 
 ## Tasks
 
-1. Create migration `028_oidc_auth_code_fields.sql` adding `nonce` (text, nullable) and `scope` (text, nullable) columns to `access_broker_app.auth_codes`
+1. Create migration `029_oidc_auth_code_fields.sql` adding `nonce` (text, nullable) and `scope` (text, nullable) columns to `access_broker_app.auth_codes`
 2. Update `createAuthCode` in `lib/sso-service.ts` to accept optional `nonce` and `scope` parameters and store them
 3. Update `consumeAuthCode` and the `consume_auth_code` RPC to return `nonce` and `scope` alongside `user_id` and `redirect_uri`
 4. Create `lib/oidc/params.ts` with validation for OIDC authorization request parameters (client_id, response_type, scope, nonce, redirect_uri)
@@ -80,5 +85,5 @@ handles the authorization request and code issuance with OIDC metadata attached.
 - [cmd] pnpm run test
 - [assert] test -f app/api/oidc/authorize/route.ts
 - [assert] test -f lib/oidc/params.ts
-- [assert] test -f migrations/028_oidc_auth_code_fields.sql
+- [assert] test -f migrations/029_oidc_auth_code_fields.sql
 - [assert] grep -q "nonce" lib/sso-service.ts

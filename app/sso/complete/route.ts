@@ -1,11 +1,12 @@
 import { NextResponse } from 'next/server';
 import { debugLog, debugWarn } from '@/lib/auth-debug';
 import { createClient, createAdminClient } from '@/lib/supabase/server';
-import { createAuthCode, validateRedirectUri, isRedirectUriAllowed, lookupUserByEmail } from '@/lib/sso-service';
+import { createAuthCode, validateRedirectUri, isRedirectUriAllowed } from '@/lib/sso-service';
 import type { AppAuthMethods } from '@/types/claims';
 import { logSSOEvent, extractHostname, extractClientIP } from '@/lib/audit-service';
 import { getAppUrl } from '@/lib/app-url';
 import { enforceRateLimit } from '@/lib/app-api-rate-limit';
+import { enforceAuthLimit, getClientIp } from '@/lib/auth-rate-limit';
 
 /** Standard OAuth-style error codes */
 type SSOErrorCode =
@@ -15,6 +16,15 @@ type SSOErrorCode =
   | 'invalid_redirect_uri'
   | 'temporarily_unavailable'
   | 'server_error';
+
+const SSO_ERROR_DESCRIPTIONS: Record<SSOErrorCode, string> = {
+  invalid_request: 'The SSO request was invalid. Please try again.',
+  unauthorized_client: 'This application is not set up for SSO sign-in. Contact your administrator.',
+  access_denied: 'Your account does not have access to this application. Contact your administrator.',
+  invalid_redirect_uri: 'The redirect URL is not allowed for this application.',
+  temporarily_unavailable: 'The SSO service is temporarily unavailable. Please try again later.',
+  server_error: 'An unexpected error occurred during sign-in. Please try again.',
+};
 
 /** Map internal error messages to standard error codes */
 function mapErrorToCode(message: string): SSOErrorCode {
@@ -153,32 +163,30 @@ export async function GET(request: Request) {
     // Full validation (will throw with specific error messages)
     await validateRedirectUri({ appId, redirectUri });
 
-    let authUserId = sessionUserId;
-    if (sessionEmail) {
-      const lookup = await lookupUserByEmail(sessionEmail);
-      if (lookup?.id && lookup.id !== sessionUserId) {
-        debugWarn('[SSO Complete] Session user ID mismatch; using email lookup ID', {
-          sessionUserId,
-          lookupUserId: lookup.id,
-          email: sessionEmail,
-        });
-        logSSOEvent({
-          eventType: 'sso_user_id_mismatch',
-          userId: lookup.id,
-          ...auditContext,
-          metadata: {
-            session_user_id: sessionUserId,
-            lookup_user_id: lookup.id,
-            email: sessionEmail,
-          },
-        });
-        authUserId = lookup.id;
-      }
-    } else {
-      debugWarn('[SSO Complete] Session user missing email; using session ID', {
-        userId: sessionUserId,
-        appId,
+    const authUserId = sessionUserId;
+    const completeLimit = await enforceAuthLimit({
+      action: 'sso-complete',
+      ip: getClientIp(request.headers),
+      identifier: authUserId,
+    });
+    if (!completeLimit.allowed) {
+      logSSOEvent({
+        eventType: 'sso_complete_error',
+        userId: authUserId,
+        errorCode: 'temporarily_unavailable',
+        ...auditContext,
+        metadata: { reason: 'rate_limited' },
       });
+
+      return NextResponse.redirect(
+        buildErrorPageUrl(appOrigin, {
+          error: 'temporarily_unavailable',
+          errorDescription: 'Too many requests. Please try again later.',
+          appId,
+          redirectUri,
+          state,
+        })
+      );
     }
 
     // Create admin client early — needed for both auto-grant and auth method checks
@@ -322,6 +330,7 @@ export async function GET(request: Request) {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'SSO authorization failed';
     const errorCode = mapErrorToCode(message);
+    const errorDescription = SSO_ERROR_DESCRIPTIONS[errorCode];
 
     console.error('[SSO Complete] Error:', message, { appId, redirectUri, errorCode });
 
@@ -338,7 +347,7 @@ export async function GET(request: Request) {
 
       const clientErrorUrl = buildClientErrorRedirect(redirectUri, {
         error: errorCode,
-        errorDescription: message,
+        errorDescription,
         state,
       });
       return NextResponse.redirect(clientErrorUrl);
@@ -356,7 +365,7 @@ export async function GET(request: Request) {
     // Otherwise, show portal error page
     const errorUrl = buildErrorPageUrl(appOrigin, {
       error: errorCode,
-      errorDescription: message,
+      errorDescription,
       appId,
       redirectUri,
       state,

@@ -1,7 +1,7 @@
 /**
- * Rate-limit helpers for unauthenticated auth-portal paths (login submit,
- * OTP send, password reset send, passkey challenge generation, signup
- * auto-grant).
+ * Rate-limit helpers for auth-portal paths (login submit, OTP send,
+ * password reset send, passkey challenge generation, signup auto-grant,
+ * SSO completion).
  *
  * We compose two independent limits per action:
  *   - per-IP: defends against a single source spraying attempts
@@ -18,7 +18,8 @@ export type AuthLimitAction =
   | 'otp-send'
   | 'password-reset'
   | 'passkey-options'
-  | 'signup-grant';
+  | 'signup-grant'
+  | 'sso-complete';
 
 const LIMITS: Record<AuthLimitAction, { ip: { max: number; windowMs: number }; id: { max: number; windowMs: number } }> = {
   login:           { ip: { max: 20,  windowMs: 60_000 },  id: { max: 10,  windowMs: 60_000 } },
@@ -26,6 +27,7 @@ const LIMITS: Record<AuthLimitAction, { ip: { max: number; windowMs: number }; i
   'password-reset':{ ip: { max: 5,   windowMs: 300_000 }, id: { max: 3,   windowMs: 300_000 } },
   'passkey-options':{ ip: { max: 30, windowMs: 60_000 },  id: { max: 30,  windowMs: 60_000 } },
   'signup-grant':  { ip: { max: 10,  windowMs: 60_000 },  id: { max: 5,   windowMs: 60_000 } },
+  'sso-complete':  { ip: { max: 30,  windowMs: 60_000 },  id: { max: 10,  windowMs: 60_000 } },
 };
 
 export type AuthLimitResult =
@@ -34,7 +36,7 @@ export type AuthLimitResult =
 
 /**
  * Extract the client IP from request headers. Falls back to "unknown" if
- * the request did not pass through a proxy that sets x-forwarded-for.
+ * the request did not pass through a proxy that sets client-IP headers.
  *
  * NOTE: trusts x-forwarded-for. Only meaningful behind a trusted reverse
  * proxy (the production deploy is behind one). In environments without a
@@ -42,6 +44,9 @@ export type AuthLimitResult =
  * limit still applies.
  */
 export function getClientIp(headers: Headers): string {
+  const cf = headers.get('cf-connecting-ip');
+  if (cf) return cf.trim();
+
   const xff = headers.get('x-forwarded-for');
   if (xff) {
     const first = xff.split(',')[0]?.trim();
