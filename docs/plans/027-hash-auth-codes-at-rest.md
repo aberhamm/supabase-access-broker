@@ -1,7 +1,7 @@
 ---
 id: 027
 title: Hash SSO auth codes at rest (SHA-256)
-status: pending
+status: in-progress
 blocked-by: [025]
 goal: sso-security-ux-audit-findings
 allows-migrations: true
