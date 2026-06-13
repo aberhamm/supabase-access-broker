@@ -121,4 +121,4 @@ Moved SSO/login error copy into a pure helper module and changed both pages to r
 - `tests/unit/error-message-sanitization.test.ts` (created)
 - `tests/unit/sso-complete-route.test.ts` (modified)
 
-**Commit:** `PENDING` — `fix(auth): sanitize SSO error descriptions`
+**Commit:** `cb23d3a` — `fix(auth): sanitize SSO error descriptions`
