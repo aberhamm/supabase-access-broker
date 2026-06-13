@@ -7,7 +7,6 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
-  Card,
   CardContent,
   CardDescription,
   CardHeader,
@@ -23,6 +22,8 @@ import { safeNextPath } from '@/lib/safe-redirect';
 import { debugError, debugLog, debugWarn } from '@/lib/auth-debug';
 import { sendMagicLinkEmail, sendLoginOtpEmail } from '@/app/actions/auth-email';
 import { getLoginErrorMessage, resolveLoginUrlError } from '@/lib/auth-error-messages';
+import { AuthShell } from '@/components/auth/AuthShell';
+import { AuthSpinner } from '@/components/auth/AuthSpinner';
 
 const REMEMBERED_EMAIL_KEY = 'remembered_email';
 const PREFERRED_AUTH_KEY = 'preferred_auth_method';
@@ -450,29 +451,7 @@ export default function LoginPage() {
   const showWelcomeBack = mounted && rememberedEmail && showRemembered;
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center p-4 overflow-hidden">
-      {/* Animated gradient mesh background */}
-      <div className="absolute inset-0 -z-10">
-        <div className="absolute inset-0 bg-gradient-to-br from-background via-primary/5 to-primary/3" />
-
-        {/* Floating orbs */}
-        <div className="absolute top-20 left-20 w-96 h-96 bg-primary/20 rounded-full blur-3xl animate-float-slow" />
-        <div className="absolute bottom-20 right-20 w-96 h-96 bg-primary/15 rounded-full blur-3xl animate-float-slower" />
-
-        {/* Grid overlay */}
-        <div
-          className="absolute inset-0 opacity-[0.03]"
-          style={{
-            backgroundImage: `
-              linear-gradient(to right, var(--foreground) 1px, transparent 1px),
-              linear-gradient(to bottom, var(--foreground) 1px, transparent 1px)
-            `,
-            backgroundSize: '48px 48px'
-          }}
-        />
-      </div>
-
-      <Card className="w-full max-w-md overflow-hidden shadow-2xl glass glass-border">
+    <AuthShell>
         <CardHeader className="space-y-1 pb-6">
           {showWelcomeBack ? (
             // Welcome back state with avatar
@@ -537,9 +516,7 @@ export default function LoginPage() {
           )}
 
           {!appMethodsReady ? (
-            <div className="flex items-center justify-center py-8">
-              <div className="h-5 w-5 animate-spin rounded-full border-2 border-muted border-t-primary" />
-            </div>
+            <AuthSpinner label="Loading sign-in methods" />
           ) : (
             <>
               {/* App-level error states */}
@@ -810,7 +787,6 @@ export default function LoginPage() {
             </p>
           </div>
         </CardContent>
-      </Card>
-    </div>
+    </AuthShell>
   );
 }

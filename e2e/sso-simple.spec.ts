@@ -1,4 +1,5 @@
 import { test, expect } from '@playwright/test';
+import { createHash } from 'node:crypto';
 import {
   ensureTestUser,
   createTestApp,
@@ -9,6 +10,10 @@ import {
 
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3050';
 const DEMO_CALLBACK = `${APP_URL}/demo/sso-demo.html`;
+
+function hashAuthCode(code: string) {
+  return createHash('sha256').update(code, 'utf8').digest('hex');
+}
 
 /**
  * Simplified SSO E2E tests that work with any auth method
@@ -84,7 +89,7 @@ test.describe('SSO Integration - Simplified E2E', () => {
     // Create an auth code manually
     const code = `test-code-${Date.now()}`;
     const { error: insertError } = await supabase.schema('access_broker_app').from('auth_codes').insert({
-      code,
+      code: hashAuthCode(code),
       user_id: testUserId,
       app_id: TEST_APP.id,
       redirect_uri: DEMO_CALLBACK,
@@ -153,7 +158,7 @@ test.describe('SSO Integration - Simplified E2E', () => {
 
     const code = `test-code-reuse-${Date.now()}`;
     await supabase.schema('access_broker_app').from('auth_codes').insert({
-      code,
+      code: hashAuthCode(code),
       user_id: testUserId,
       app_id: TEST_APP.id,
       redirect_uri: DEMO_CALLBACK,
@@ -196,7 +201,7 @@ test.describe('SSO Integration - Simplified E2E', () => {
 
     const code = `test-code-redirect-${Date.now()}`;
     await supabase.schema('access_broker_app').from('auth_codes').insert({
-      code,
+      code: hashAuthCode(code),
       user_id: testUserId,
       app_id: TEST_APP.id,
       redirect_uri: DEMO_CALLBACK,
@@ -227,7 +232,7 @@ test.describe('SSO Integration - Simplified E2E', () => {
 
     const code = `test-code-noredirect-${Date.now()}`;
     await supabase.schema('access_broker_app').from('auth_codes').insert({
-      code,
+      code: hashAuthCode(code),
       user_id: testUserId,
       app_id: TEST_APP.id,
       redirect_uri: DEMO_CALLBACK,
@@ -257,7 +262,7 @@ test.describe('SSO Integration - Simplified E2E', () => {
 
     const code = `test-code-race-${Date.now()}`;
     await supabase.schema('access_broker_app').from('auth_codes').insert({
-      code,
+      code: hashAuthCode(code),
       user_id: testUserId,
       app_id: TEST_APP.id,
       redirect_uri: DEMO_CALLBACK,

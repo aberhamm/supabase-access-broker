@@ -1,12 +1,15 @@
 ---
 id: 028
 title: Shared auth layout, error-page UX, and /sso/continue fixes
-status: in-progress
+status: done
 blocked-by: [026]
 goal: sso-security-ux-audit-findings
 allows-migrations: false
 needs-review: none
 created: 2026-06-12
+completed: 2026-06-13
+reviewed: false
+qa: automated
 ---
 
 ## Requirements
@@ -127,3 +130,27 @@ Testing approach: browser-based
 
 - **UNRESOLVED:** 0
 - **VERDICT:** DESIGN CLEARED — ready for autonomous execution behind plan 026 (status flipped to pending, 2026-06-13).
+
+## Implementation Notes
+
+Extracted the login page background/card treatment into a shared AuthShell and
+added an accessible AuthSpinner used by login, /sso/error, and /sso/continue.
+The SSO error page now leads with friendly mapped copy, shows actions before
+hints/details, and hides retry for non-retryable errors. The continue page now
+redirects missing params from an effect, preserves SSO params for signed-out
+users, encodes appId in the auth-methods fetch, waits for both user and app
+lookups before rendering copy, and falls back to "Continue" when the cosmetic
+app-name lookup fails. Verification also updated sso-simple e2e fixtures to
+insert hashed auth-code values after plan 027 changed the storage contract.
+
+**Files changed:**
+
+- `app/globals.css` (modified)
+- `app/login/page.tsx` (modified)
+- `app/sso/continue/page.tsx` (modified)
+- `app/sso/error/page.tsx` (modified)
+- `e2e/sso-simple.spec.ts` (modified)
+- `components/auth/AuthShell.tsx` (created)
+- `components/auth/AuthSpinner.tsx` (created)
+
+**Commit:** `PENDING` — `PENDING`
