@@ -1,7 +1,7 @@
 ---
 id: 028
 title: Shared auth layout, error-page UX, and /sso/continue fixes
-status: pending
+status: in-progress
 blocked-by: [026]
 goal: sso-security-ux-audit-findings
 allows-migrations: false
