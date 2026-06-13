@@ -3,14 +3,16 @@ import { test, expect } from '@playwright/test';
 const APP_URL = process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3050';
 
 test.describe('Health Endpoint (Plan 003)', () => {
-  test('GET /api/health returns 200 with expected response shape', async ({ request }) => {
+  test('GET /api/health returns expected response shape with matching status code', async ({ request }) => {
     const res = await request.get(`${APP_URL}/api/health`);
-    expect(res.status()).toBe(200);
 
     const body = await res.json();
 
     // status must be one of the defined values
     expect(['healthy', 'degraded']).toContain(body.status);
+
+    // HTTP status code must match the reported health: 200 only when healthy, 503 otherwise
+    expect(res.status()).toBe(body.status === 'healthy' ? 200 : 503);
 
     // db must be one of the defined values
     expect(['ok', 'unreachable', 'misconfigured']).toContain(body.db);

@@ -18,7 +18,7 @@ export async function GET() {
         version: pkg.version,
         request_id: requestId ?? null,
       },
-      { status: 200 }
+      { status: 503 }
     );
   }
 
@@ -54,6 +54,6 @@ export async function GET() {
       version: pkg.version,
       request_id: requestId ?? null,
     },
-    { status: 200 }
+    { status: status === 'healthy' ? 200 : 503 }
   );
 }
