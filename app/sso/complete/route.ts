@@ -17,6 +17,15 @@ type SSOErrorCode =
   | 'temporarily_unavailable'
   | 'server_error';
 
+const SSO_ERROR_DESCRIPTIONS: Record<SSOErrorCode, string> = {
+  invalid_request: 'The SSO request was invalid. Please try again.',
+  unauthorized_client: 'This application is not set up for SSO sign-in. Contact your administrator.',
+  access_denied: 'Your account does not have access to this application. Contact your administrator.',
+  invalid_redirect_uri: 'The redirect URL is not allowed for this application.',
+  temporarily_unavailable: 'The SSO service is temporarily unavailable. Please try again later.',
+  server_error: 'An unexpected error occurred during sign-in. Please try again.',
+};
+
 /** Map internal error messages to standard error codes */
 function mapErrorToCode(message: string): SSOErrorCode {
   const lowerMessage = message.toLowerCase();
@@ -321,6 +330,7 @@ export async function GET(request: Request) {
   } catch (error) {
     const message = error instanceof Error ? error.message : 'SSO authorization failed';
     const errorCode = mapErrorToCode(message);
+    const errorDescription = SSO_ERROR_DESCRIPTIONS[errorCode];
 
     console.error('[SSO Complete] Error:', message, { appId, redirectUri, errorCode });
 
@@ -337,7 +347,7 @@ export async function GET(request: Request) {
 
       const clientErrorUrl = buildClientErrorRedirect(redirectUri, {
         error: errorCode,
-        errorDescription: message,
+        errorDescription,
         state,
       });
       return NextResponse.redirect(clientErrorUrl);
@@ -355,7 +365,7 @@ export async function GET(request: Request) {
     // Otherwise, show portal error page
     const errorUrl = buildErrorPageUrl(appOrigin, {
       error: errorCode,
-      errorDescription: message,
+      errorDescription,
       appId,
       redirectUri,
       state,

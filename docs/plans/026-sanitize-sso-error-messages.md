@@ -1,12 +1,15 @@
 ---
 id: 026
 title: Sanitize SSO and login error messages (code-mapped only)
-status: in-progress
+status: done
 blocked-by: [025]
 goal: sso-security-ux-audit-findings
 allows-migrations: false
 needs-review: none
 created: 2026-06-12
+completed: 2026-06-13
+reviewed: false
+qa: automated
 ---
 
 ## Requirements
@@ -101,3 +104,21 @@ Testing approach: browser-based
 - [browse] /sso/error?error=access_denied&error_description=INJECTED_PHISHING_TEXT verify the page shows the mapped "do not have permission" message and the string INJECTED_PHISHING_TEXT appears nowhere on the page
 - [browse] /sso/error?error=temporarily_unavailable verify the friendly "temporarily unavailable" message renders
 - [browse] /login?error=otp_expired verify the "verification code has expired" banner renders
+
+## Implementation Notes
+
+Moved SSO/login error copy into a pure helper module and changed both pages to render only mapped messages by machine-readable code, never raw `error_description` text. `/sso/complete` catch redirects now use generic per-code descriptions while preserving detailed errors in audit metadata, and `/auth/callback` forwards only `error` plus `error_code`. Added `/sso/error` to public routes after browser verification exposed that middleware otherwise redirected to `/login` and preserved injected text in the `next` URL. Added unit tests for message mapping, Supabase `error_code` hash precedence, callback redirect sanitization, and `/sso/complete` catch sanitization.
+
+**Files changed:**
+
+- `app/auth/callback/route.ts` (modified)
+- `app/login/page.tsx` (modified)
+- `app/sso/complete/route.ts` (modified)
+- `app/sso/error/page.tsx` (modified)
+- `lib/auth-error-messages.ts` (created)
+- `lib/auth-routes.ts` (modified)
+- `tests/unit/auth-callback-route.test.ts` (created)
+- `tests/unit/error-message-sanitization.test.ts` (created)
+- `tests/unit/sso-complete-route.test.ts` (modified)
+
+**Commit:** `PENDING` — `fix(auth): sanitize SSO error descriptions`

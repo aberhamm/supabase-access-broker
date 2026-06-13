@@ -6,6 +6,7 @@ export const PUBLIC_ROUTE_PREFIXES = [
   '/auth/logout',
   '/auth/passkey-complete',
   '/reset-password',
+  '/sso/error',
   '/api/auth/',
   '/api/health',
   // Bypasses middleware session auth for all /api/apps/* routes.

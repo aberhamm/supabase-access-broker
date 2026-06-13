@@ -212,6 +212,8 @@ describe('/sso/complete', () => {
     expect(mocks.enforceAuthLimit).not.toHaveBeenCalled();
     expect(location.origin + location.pathname).toBe('https://broker.test/sso/error');
     expect(location.searchParams.get('error')).toBe('invalid_request');
+    expect(location.searchParams.get('error_description')).toBe('The SSO request was invalid. Please try again.');
+    expect(location.searchParams.toString()).not.toContain('Invalid+redirect_uri');
   });
 
   it('redirects users without app claims to access_denied', async () => {

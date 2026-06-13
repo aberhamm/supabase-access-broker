@@ -12,40 +12,18 @@ import {
 } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertCircle, ArrowLeft, RefreshCw, User } from 'lucide-react';
-
-/** Map of machine-readable error codes to user-friendly messages */
-const ERROR_MESSAGES: Record<string, string> = {
-  invalid_request: 'The request was missing required parameters or was malformed.',
-  unauthorized_client: 'This application is not authorized to use SSO.',
-  invalid_redirect_uri: 'The redirect URL provided is not allowed for this application.',
-  temporarily_unavailable: 'The SSO service is temporarily unavailable. Please try again later.',
-  app_disabled: 'This application has been disabled by an administrator.',
-  unknown_app: 'The application ID provided was not recognized.',
-  access_denied: 'You do not have permission to access this application.',
-  server_error: 'An unexpected error occurred. Please try again.',
-};
-
-function getErrorMessage(error: string | null, errorDescription: string | null): string {
-  if (errorDescription) {
-    return errorDescription;
-  }
-  if (error && ERROR_MESSAGES[error]) {
-    return ERROR_MESSAGES[error];
-  }
-  return 'An error occurred during the SSO process.';
-}
+import { getErrorMessage } from '@/lib/auth-error-messages';
 
 function SSOErrorContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
 
   const error = searchParams.get('error');
-  const errorDescription = searchParams.get('error_description');
   const appId = searchParams.get('app_id');
   const redirectUri = searchParams.get('redirect_uri');
   const state = searchParams.get('state');
 
-  const userMessage = getErrorMessage(error, errorDescription);
+  const userMessage = getErrorMessage(error);
 
   // Build "Try Again" URL if we have enough context
   const canRetry = appId && redirectUri;
@@ -150,5 +128,3 @@ export default function SSOErrorPage() {
     </Suspense>
   );
 }
-
-

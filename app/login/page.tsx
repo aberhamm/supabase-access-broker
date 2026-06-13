@@ -22,6 +22,7 @@ import { OTPInput } from '@/components/auth/OTPInput';
 import { safeNextPath } from '@/lib/safe-redirect';
 import { debugError, debugLog, debugWarn } from '@/lib/auth-debug';
 import { sendMagicLinkEmail, sendLoginOtpEmail } from '@/app/actions/auth-email';
+import { getLoginErrorMessage, resolveLoginUrlError } from '@/lib/auth-error-messages';
 
 const REMEMBERED_EMAIL_KEY = 'remembered_email';
 const PREFERRED_AUTH_KEY = 'preferred_auth_method';
@@ -81,30 +82,6 @@ function persistPreferredAuth(value: AuthCategory) {
   }
 }
 
-/** Map machine-readable error codes to user-friendly messages */
-const LOGIN_ERROR_MESSAGES: Record<string, string> = {
-  session_failed: 'We were unable to create your session. Please try signing in again.',
-  code_exchange_failed: 'The authentication code could not be verified. It may have expired — please try signing in again.',
-  auth_failed: 'Authentication failed. Please try signing in again.',
-  access_denied: 'You do not have permission to access this application. Contact your administrator.',
-  invalid_token: 'The sign-in link is invalid or has expired. Please request a new one.',
-  otp_expired: 'Your verification code has expired. Please request a new one.',
-  server_error: 'The authentication provider returned an error. Please try signing in again.',
-};
-
-/**
- * Resolve a user-facing message from an error code + optional description.
- * Codes we know about win; otherwise we surface the provider's description so
- * the user (and we) can see what actually went wrong instead of a fallback.
- */
-function getLoginErrorMessage(error: string | null, description?: string | null): string | null {
-  if (!error && !description) return null;
-  if (error && LOGIN_ERROR_MESSAGES[error]) return LOGIN_ERROR_MESSAGES[error];
-  const desc = description?.trim();
-  if (desc) return desc;
-  return 'An unexpected error occurred. Please try signing in again.';
-}
-
 /** Extract a user-friendly message from auth errors, including network failures */
 function friendlyAuthError(error: unknown, fallback: string): string {
   const err = error as { error_description?: string; message?: string; name?: string };
@@ -147,7 +124,6 @@ export default function LoginPage() {
   const [mounted, setMounted] = useState(false);
   const [authCategory, setAuthCategory] = useState<AuthCategory>('credentials');
   const [urlError, setUrlError] = useState<string | null>(null);
-  const [urlErrorDescription, setUrlErrorDescription] = useState<string | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const supabase = createClient();
   const emailInputRef = React.useRef<HTMLInputElement>(null);
@@ -166,29 +142,20 @@ export default function LoginPage() {
       setAuthCategory(preferredAuth);
     }
 
-    // Read error from URL query params (from auth callback/confirm redirects)
-    const params = new URLSearchParams(window.location.search);
-    const errorParam = params.get('error');
-    const errorDescriptionParam = params.get('error_description');
-
-    // Also check URL hash for Supabase-generated errors (e.g. #error=...&error_description=...)
-    const hash = window.location.hash;
-    let hashError: string | null = null;
-    let hashErrorDescription: string | null = null;
-    if (hash && hash.includes('error')) {
-      const hashParams = new URLSearchParams(hash.substring(1));
-      hashError = hashParams.get('error');
-      hashErrorDescription = hashParams.get('error_description');
-    }
-
-    const errorCode = errorParam || hashError;
-    const errorDescription = errorDescriptionParam || hashErrorDescription;
-    if (errorCode || errorDescription) {
+    const resolvedError = resolveLoginUrlError(window.location.search, window.location.hash);
+    if (resolvedError) {
+      const { errorCode, errorDescription } = resolvedError;
+      if (errorDescription) {
+        debugLog('[Login] Auth redirect provided error description', {
+          errorCode,
+          errorDescription,
+        });
+      }
       setUrlError(errorCode);
-      setUrlErrorDescription(errorDescription);
       // Clean the error from the URL so refreshing/retrying doesn't re-show it
       const cleanUrl = new URL(window.location.href);
       cleanUrl.searchParams.delete('error');
+      cleanUrl.searchParams.delete('error_code');
       cleanUrl.searchParams.delete('error_description');
       cleanUrl.hash = '';
       window.history.replaceState({}, '', cleanUrl.toString());
@@ -323,7 +290,6 @@ export default function LoginPage() {
   const handleMagicLinkLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setUrlError(null);
-    setUrlErrorDescription(null);
     setFormError(null);
 
     if (!email) {
@@ -360,7 +326,6 @@ export default function LoginPage() {
   const handlePasswordLogin = async (e: React.FormEvent) => {
     e.preventDefault();
     setUrlError(null);
-    setUrlErrorDescription(null);
     setFormError(null);
     if (!email) {
       setFormError('Please enter your email');
@@ -389,7 +354,6 @@ export default function LoginPage() {
 
   const sendOtp = useCallback(async () => {
     setUrlError(null);
-    setUrlErrorDescription(null);
     setFormError(null);
     if (!email) {
       setFormError('Please enter your email');
@@ -428,7 +392,6 @@ export default function LoginPage() {
   const handleVerifyOtp = async (e: React.FormEvent) => {
     e.preventDefault();
     setUrlError(null);
-    setUrlErrorDescription(null);
     setFormError(null);
     const token = otpCode.replace(/\D/g, '');
     if (token.length !== 6) {
@@ -555,15 +518,15 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           {/* Error banner (auth redirects + form errors) */}
-          {(urlError || urlErrorDescription || formError) && (
+          {(urlError || formError) && (
             <div className="rounded-md border border-destructive/50 bg-destructive/10 p-4 text-sm animate-in fade-in-0 slide-in-from-top-2 duration-200">
               <div className="flex items-start justify-between gap-3">
                 <p className="text-destructive font-medium">
-                  {(urlError || urlErrorDescription) ? getLoginErrorMessage(urlError, urlErrorDescription) : formError}
+                  {urlError ? getLoginErrorMessage(urlError) : formError}
                 </p>
                 <button
                   type="button"
-                  onClick={() => { setUrlError(null); setUrlErrorDescription(null); setFormError(null); }}
+                  onClick={() => { setUrlError(null); setFormError(null); }}
                   className="shrink-0 text-destructive/60 hover:text-destructive transition-colors"
                   aria-label="Dismiss error"
                 >
