@@ -305,3 +305,58 @@ See [Contributing Guide](./content/docs/contributing/contributing.md).
 ## License
 
 MIT License
+
+
+### Application login branding
+
+Apply migration `030_app_login_theme.sql` through the normal migration process
+before saving themes. It adds nullable `apps.login_theme` in the existing registry;
+existing claims-admin RLS remains in force. The **Branding** tab on each app supports
+an approved font, wordmark case, light/dark palettes, live preview, contrast checks,
+and restoring shared defaults. Saving requires `claims_admin` (app-admin alone is
+insufficient). No deployment or production data update is part of this change.
+
+`lib/app-branding.ts` defines the version-1 contract. Palette overrides accept only
+opaque six-digit RGB hex colors; CSS, HTML, URLs, arbitrary fonts and unknown keys
+are rejected. Text/primary/error/muted colors must contrast at least 4.5:1 against
+both backgrounds; focus colors at least 3:1. Button foregrounds are derived for
+contrast, while the accent is reserved for the wordmark and filled controls.
+Use `mode: light`, `dark`, or `system`; missing colors inherit that mode's defaults.
+The approved asset ID `lookbook` in the existing `apps.icon` field resolves to the
+bundled icon. Other icon values safely fall back to the registry-name wordmark;
+remote image URLs and arbitrary SVG are deliberately unsupported. Adding another
+logo or font requires a reviewed bundled asset and a contract allowlist update.
+
+Only an enabled registered app with a validated SSO callback can supply login
+branding. The server reads presentation fields per request, never client CSS or
+unvalidated `app_id` alone. Unknown, disabled, deleted, unauthorized or unavailable
+apps use the shared login shell. Malformed themes use safe defaults with the existing
+validated `apps.color` hint. Missing migration columns retain legacy name/color.
+No client secrets, callbacks or other registry fields are serialized as branding.
+Authentication handlers, state, redirect validation and MFA gates are unchanged.
+
+**Lookbook reference:** `lib/branding-presets.ts` is a reviewed SSO snapshot of
+`unstructured-data-portal/packages/theme/src/palettes.ts` (commit `2ad4d77`),
+`LOOKBOOK_WEBSITE_THEME_CONFIG`, and the primary-button recipe, inspected 2026-09-08.
+The public `/api/theme-config` returned `{config:{}, updatedAt:null}`, so shipped
+code defaults apply: Inter Tight, uppercase weight-800 wordmark, red `#ff0001`,
+chalk `#f4f1ed`, cream card `#f5ede7`, black primary buttons, muted `#57514c`,
+error/focus `#c20000`, border `#d2cfcb`. Executable tokens supersede stale DESIGN.md
+values (weight 900, bright-red small error text, older border). Lookbook has no
+canonical automatic dark pairing, so this preset stays light. The app's share
+URLs, native share-intent settings, feed layouts and remote product-theme editor
+remain Lookbook-owned. SSO does not fetch those settings at login. To adopt later
+Lookbook changes, review the canonical tokens and update the snapshot explicitly.
+The Lookbook preset button stages palette changes for an admin to review and save;
+it never creates an app or changes its registered name/icon/callbacks.
+
+Fonts and the icon in `public/branding/` are copied from the canonical Lookbook
+assets; font licenses are included. The fixture uses app ID `lookbook-social`
+and both web/mobile HTTPS callbacks; it is test data only, not a production seed.
+
+Run `pnpm exec playwright test --config=playwright.branding.config.ts` for isolated
+production-build browser coverage on desktop/mobile. It starts a local Supabase
+HTTP fixture on 3063 and Next on 3062, overrides Supabase keys/URLs with fake values,
+and bypasses the normal account-creating global setup. It performs no migrations,
+real auth, email, or production writes. Unit coverage also exercises malformed CSS,
+contrast, authorization, no-row/RLS outcomes, deleted apps and rollout fallback.

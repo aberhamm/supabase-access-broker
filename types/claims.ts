@@ -149,6 +149,7 @@ export interface SsoClientSecret {
 
 // Database-backed app configuration types
 export interface AppConfig {
+  login_theme?: import('@/lib/app-branding').AppTheme | null;
   id: string;
   name: string;
   description?: string | null;

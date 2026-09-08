@@ -1,5 +1,7 @@
 export const PUBLIC_ROUTE_PREFIXES = [
   '/login',
+  // Reviewed static logo/font assets required before authentication.
+  '/branding/',
   '/signup',
   '/auth/callback',
   '/auth/confirm',

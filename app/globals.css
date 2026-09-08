@@ -1126,3 +1126,98 @@ tr:hover .table-quick-actions {
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
 }
+
+/* Login palettes are scoped: dashboard and other auth surfaces retain their theme. */
+@font-face { font-family: 'SSO Inter Tight'; src: url('/branding/inter-tight-regular.ttf') format('truetype'); font-weight: 400; font-display: swap; }
+@font-face { font-family: 'SSO Inter Tight'; src: url('/branding/inter-tight-bold.ttf') format('truetype'); font-weight: 500 700; font-display: swap; }
+@font-face { font-family: 'SSO Inter Tight'; src: url('/branding/inter-tight-extra-bold.ttf') format('truetype'); font-weight: 800 900; font-display: swap; }
+
+.brand-frame {
+  --brand-wordmark: var(--brand-light-wordmark);
+  --background: var(--brand-light-background);
+  --foreground: var(--brand-light-text);
+  --card: var(--brand-light-surface);
+  --card-foreground: var(--brand-light-text);
+  --popover: var(--brand-light-surface);
+  --popover-foreground: var(--brand-light-text);
+  --primary: var(--brand-light-primary);
+  --primary-foreground: var(--brand-light-on-primary);
+  --accent: var(--brand-light-accent);
+  --accent-foreground: var(--brand-light-on-accent);
+  --secondary: var(--brand-light-background);
+  --secondary-foreground: var(--brand-light-text);
+  --muted: var(--brand-light-background);
+  --muted-foreground: var(--brand-light-muted);
+  --destructive: var(--brand-light-error);
+  --ring: var(--brand-light-focus);
+  --border: var(--brand-light-border);
+  --input: var(--brand-light-muted);
+}
+
+.brand-frame[data-brand-mode="dark"], .dark .brand-frame[data-brand-mode="system"] {
+  --brand-wordmark: var(--brand-dark-wordmark);
+  --background: var(--brand-dark-background);
+  --foreground: var(--brand-dark-text);
+  --card: var(--brand-dark-surface);
+  --card-foreground: var(--brand-dark-text);
+  --popover: var(--brand-dark-surface);
+  --popover-foreground: var(--brand-dark-text);
+  --primary: var(--brand-dark-primary);
+  --primary-foreground: var(--brand-dark-on-primary);
+  --accent: var(--brand-dark-accent);
+  --accent-foreground: var(--brand-dark-on-accent);
+  --secondary: var(--brand-dark-background);
+  --secondary-foreground: var(--brand-dark-text);
+  --muted: var(--brand-dark-background);
+  --muted-foreground: var(--brand-dark-muted);
+  --destructive: var(--brand-dark-error);
+  --ring: var(--brand-dark-focus);
+  --border: var(--brand-dark-border);
+  --input: var(--brand-dark-muted);
+}
+
+@media (prefers-color-scheme: dark) {
+:root:not(.light):not(.dark) .brand-frame[data-brand-mode="system"] {
+  --brand-wordmark: var(--brand-dark-wordmark);
+  --background: var(--brand-dark-background);
+  --foreground: var(--brand-dark-text);
+  --card: var(--brand-dark-surface);
+  --card-foreground: var(--brand-dark-text);
+  --popover: var(--brand-dark-surface);
+  --popover-foreground: var(--brand-dark-text);
+  --primary: var(--brand-dark-primary);
+  --primary-foreground: var(--brand-dark-on-primary);
+  --accent: var(--brand-dark-accent);
+  --accent-foreground: var(--brand-dark-on-accent);
+  --secondary: var(--brand-dark-background);
+  --secondary-foreground: var(--brand-dark-text);
+  --muted: var(--brand-dark-background);
+  --muted-foreground: var(--brand-dark-muted);
+  --destructive: var(--brand-dark-error);
+  --ring: var(--brand-dark-focus);
+  --border: var(--brand-dark-border);
+  --input: var(--brand-dark-muted);
+}
+}
+
+.brand-frame { background: var(--background); color: var(--foreground); --radius: 0.5rem; padding: 48px 20px; display: grid; place-items: center; }
+.brand-frame[data-brand-font="inter-tight"] { font-family: 'SSO Inter Tight', sans-serif; }
+.brand-layout { width: 100%; max-width: 448px; }
+.brand-header { display: flex; align-items: center; gap: 12px; margin-bottom: 28px; }
+.brand-header img { border-radius: 8px; }
+.brand-wordmark { font-size: 32px; font-weight: 800; line-height: 1.1; letter-spacing: 0; overflow-wrap: anywhere; color: var(--brand-wordmark); }
+.brand-wordmark[data-case="upper"] { text-transform: uppercase; }
+.brand-wordmark[data-case="lower"] { text-transform: lowercase; }
+.brand-card { background: var(--card); color: var(--card-foreground); border: 1px solid var(--border); border-radius: 8px; box-shadow: none; }
+.brand-footer { margin-top: 24px; font-size: 12px; color: var(--muted-foreground); }
+.brand-preview { padding: 28px 20px; border-radius: 8px; }
+.brand-frame :is(button, input, a):focus-visible { outline: 3px solid var(--ring); outline-offset: 3px; box-shadow: none; }
+.brand-frame input { background: var(--card); border-color: var(--input); color: var(--foreground); }
+.brand-frame [data-variant="outline"] { background: var(--card); color: var(--foreground); }
+.brand-frame [data-variant="outline"]:hover { background: var(--accent); color: var(--accent-foreground); }
+.brand-frame [data-variant="default"]:hover { background: var(--primary); }
+.brand-frame button:not([role="checkbox"]) { min-height: 44px; }
+.brand-frame .text-destructive { color: var(--destructive); }
+.brand-frame .bg-destructive\/10 { background: var(--card); }
+@media (prefers-reduced-motion: reduce) { .brand-frame *, .brand-frame *::before, .brand-frame *::after { animation: none !important; transition: none !important; } }
+@media (max-width: 420px) { .brand-frame { padding: 28px 16px; } .brand-wordmark { font-size: 28px; } }

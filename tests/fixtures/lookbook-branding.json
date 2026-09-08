@@ -1,0 +1,11 @@
+{
+  "id": "lookbook-social",
+  "name": "Lookbook",
+  "icon": "lookbook",
+  "color": "#ff0001",
+  "enabled": true,
+  "allowed_callback_urls": [
+    "https://lookbook.social/auth/callback",
+    "https://lookbook.social/auth/mobile-callback"
+  ]
+}

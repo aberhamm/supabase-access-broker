@@ -1,3 +1,5 @@
+import { BrandFrame } from './BrandFrame';
+import type { LoginBranding } from '@/lib/app-branding';
 import type { ReactNode } from 'react';
 import { Card } from '@/components/ui/card';
 import { cn } from '@/lib/utils';
@@ -5,10 +7,19 @@ import { cn } from '@/lib/utils';
 export function AuthShell({
   children,
   className,
+  branding,
+  compact = false,
 }: {
   children: ReactNode;
   className?: string;
+  branding?: LoginBranding | null;
+  compact?: boolean;
 }) {
+  if (branding) return (
+    <BrandFrame branding={branding} compact={compact}>
+      <Card className={cn('brand-card w-full max-w-md overflow-hidden', className)}>{children}</Card>
+    </BrandFrame>
+  );
   return (
     <div className="relative flex min-h-screen items-center justify-center p-4 overflow-hidden">
       <div className="absolute inset-0 -z-10">

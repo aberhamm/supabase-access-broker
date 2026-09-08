@@ -125,8 +125,11 @@ async function fetchAppsFromDb(forceRefresh = false): Promise<AppConfig[]> {
       return convertFallbackApps();
     }
 
+    // Optional additive column for rolling deployments; keep all existing SSO fields.
+    const { data: themes } = await supabase.schema('access_broker_app').from('apps').select('id,login_theme');
+    const themesById = new Map((themes ?? []).map(row => [row.id, row.login_theme]));
     // Update cache
-    appsCache = data as AppConfig[];
+    appsCache = (data ?? []).map(row => ({ ...row, login_theme: themesById.get(row.id) ?? null })) as AppConfig[];
     lastFetch = Date.now();
 
     return appsCache;
