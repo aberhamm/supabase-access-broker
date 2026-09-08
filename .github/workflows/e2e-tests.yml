@@ -59,6 +59,9 @@ jobs:
           NEXT_PUBLIC_AUTH_GOOGLE: true
           NEXT_PUBLIC_AUTH_APPLE: true
 
+      - name: Run branding E2E tests
+        run: pnpm exec playwright test --config=playwright.branding.config.ts
+
       - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4
         if: failure()
         with:
