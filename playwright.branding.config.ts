@@ -15,7 +15,7 @@ const env = {
 };
 export default defineConfig({
   testDir: './e2e', testMatch: 'login-branding.spec.ts', workers: 1,
-  reporter: 'list', use: { baseURL: env.NEXT_PUBLIC_APP_URL, channel: 'chrome', screenshot: 'only-on-failure' },
+  reporter: 'list', use: { baseURL: env.NEXT_PUBLIC_APP_URL, screenshot: 'only-on-failure' },
   projects: [
     { name: 'desktop', use: { ...devices['Desktop Chrome'] } },
     { name: 'mobile', use: { ...devices['Pixel 5'] } },
